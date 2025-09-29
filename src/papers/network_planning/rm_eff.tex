@@ -1,0 +1,74 @@
+\documentclass{beamer}
+\usepackage{graphics}
+\usepackage{color}
+\usepackage{eurosym}
+\usepackage{amsmath}
+\usepackage{listings}
+
+\xdefinecolor{ay_struct_color}{rgb}{0.09,0.17,0.41}
+\xdefinecolor{ay_norm_color}{rgb}{0.3,0.3,0.3}
+\usetheme{boxes}
+
+\setbeamercolor{structure}{fg=ay_struct_color}
+\setbeamercolor{normal text}{fg=ay_norm_color}
+\logo{\includegraphics[width=100px]{logo.jpg}}
+
+\author{Fedor Nikitin}
+\title{Network Revenue Analysis}
+
+\begin{document}
+  \maketitle
+
+  \frame{
+    \frametitle{Philosophy}
+    Understanding what needs to be done is 50\% of solution.
+  }
+
+  \frame{
+    \frametitle{Our (RMP) failure}
+    We could not answer the questions:
+    \begin{itemize}
+      \item What is network revenue effect of swaping these two planes?
+      \item How much we need to sell in campaign?
+      \item Where we need to bust demand?
+      \item Which segment to cancel to improve profit?
+      \item What is the network value of particular departure?
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{Challenge?}
+    Is there baseline method to answer those questions?
+  }
+
+  \frame{
+    \frametitle{}
+    Answer to those is LP.
+
+    Two views: operational and strategic.
+
+    Operational = what to do
+
+    Strategic = what to do differently  
+  }
+
+  \frame{
+    \frametitle{Network LP}
+    $$
+    Revenue = p^T x \rightarrow \max,
+    $$
+    $$
+    Ax \leq c,
+    $$
+    $$
+    0 \leq x \leq \mu.
+    $$
+    Sensitivity:
+    $$
+    \Delta Revenue = \lambda_1 \Delta c + \lambda_2 \Delta \mu.
+    $$
+  }
+
+\end{document}
+
+

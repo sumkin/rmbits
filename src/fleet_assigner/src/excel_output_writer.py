@@ -1,0 +1,119 @@
+import os
+import pandas as pd
+from datetime import datetime
+
+
+class ExcelOutputWriter:
+
+    def __init__(self, fname):
+        self.fname = fname
+        self.created_dt = datetime.now().strftime("%Y-%m-%d %H:%M")
+        if os.path.exists(self.fname):
+            mode = "a"
+            if_sheet_exists = "replace"
+        else:
+            mode = "w"
+            if_sheet_exists = None
+        with pd.ExcelWriter(self.fname, mode=mode, if_sheet_exists=if_sheet_exists) as writer:
+            # This creates Excel. Content will be overwritten later.
+            data = [
+                ["Created", self.created_dt]
+            ]
+            df = pd.DataFrame(data)
+            df.to_excel(writer, header=False, index=False, sheet_name="info")
+
+    def write_info(self, info):
+        data = [
+            ["Created", self.created_dt],
+            ["Pax", info["pax"]],
+            ["Booked pax", info["booked_pax"]],
+            ["Revenue", info["rev"]],
+            ["Booked revenue", info["booked_rev"]],
+            ["Costs", info["costs"]],
+            ["Duties changed aircraft", info["duties_changed_ac"]]
+        ]
+        df = pd.DataFrame(data)
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            df.to_excel(writer, header=False, index=False, sheet_name="info")
+
+    def write_inv_df(self, inv_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            inv_df.to_excel(writer, index=False, sheet_name="inv_df")
+
+    def write_costs_df(self, costs_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            costs_df.to_excel(writer, index=False, sheet_name="costs_df")
+
+    def write_leg_distance_df(self, leg_distance_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            leg_distance_df.to_excel(writer, index=False, sheet_name="leg_distance_df")
+
+    def write_subfleet_range_df(self, subfleet_range_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            subfleet_range_df.to_excel(writer, index=False, sheet_name="subfleet_range_df")
+
+    def write_cabin_df(self, cabin_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            cabin_df.to_excel(writer, index=False, sheet_name="cabin_df")
+
+    def write_leg_df(self, leg_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            leg_df.to_excel(writer, index=False, sheet_name="leg_df")
+
+    def write_standalone_df(self, standalone_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            standalone_df.to_excel(writer, index=False, sheet_name="standalone_df")
+
+    def write_duties_df(self, duty_2legs_df, duty_3legs_df, duty_4legs_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            duty_2legs_df.to_excel(writer, index=False, sheet_name="duty_2legs_df")
+            duty_3legs_df.to_excel(writer, index=False, sheet_name="duty_3legs_df")
+            duty_4legs_df.to_excel(writer, index=False, sheet_name="duty_4legs_df")
+
+    def write_fixed_y_var_df(self, fixed_y_var):
+        # Create data frame.
+        data = {
+            "d": [],
+            "k": [],
+            "val": [],
+            "reason": []
+        }
+        for d, k in fixed_y_var.keys():
+            val, reason = fixed_y_var[(d, k)]
+            data["d"].append(d)
+            data["k"].append(k)
+            data["val"].append(val)
+            data["reason"].append(reason)
+        df = pd.DataFrame(data)
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            df.to_excel(writer, index=False, sheet_name="fixed_y_var")
+
+    def write_pairings_df(self, dr, pairings_df, sol_y, fleet_types):
+        sol_df = pd.DataFrame(columns=["duty_id", "New A/C"])
+        for duty_id in sol_y.keys():
+            row = {
+                "duty_id": duty_id,
+                "New A/C": fleet_types[sol_y[duty_id]],
+                "Costs": dr.get_duty_costs(duty_id, dr.fleet_types.index(dr.duty2at[duty_id])),
+                "New costs": dr.get_duty_costs(duty_id, sol_y[duty_id])
+            }
+            sol_df = sol_df._append(row, ignore_index=True)
+        pairings_df = pd.merge(pairings_df, sol_df, on="duty_id", how="left")
+        pairings_df["Swapped"] = (
+            (pairings_df["A/C"] != pairings_df["New A/C"]) &
+            (~pairings_df["Skipped"])
+        )
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            pairings_df.to_excel(writer, index=False, sheet_name="pairings_df")
+
+    def write_skipped_legs_df(self, skipped_legs_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            skipped_legs_df.to_excel(writer, index=False, sheet_name="skipped_legs_df")
+
+    def write_skipped_pairings_df(self, skipped_pairings_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            skipped_pairings_df.to_excel(writer, index=False, sheet_name="skipped_pairings_df")
+
+    def write_maint_df(self, maint_df):
+        with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
+            maint_df.to_excel(writer, index=False, sheet_name="maint_df")

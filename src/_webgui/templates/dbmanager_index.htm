@@ -1,0 +1,26 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <form action='/dbmanager/index' method='POST'>
+      {% csrf_token %}
+      {{ form.as_table }}
+      <input type = 'submit' value = 'Go!' />
+    </form>
+     <!--
+     <form action='/dbmanager/split_history_upload' method='POST'>{% csrf_token %}
+       <table>
+         <tr>
+           <td aligh='right'>Update split history: </td>
+           <td><input type='file' /></td>
+           <td><input type='submit' value='Upload' /></td>
+       </table>
+     </form>
+     -->
+  </body>
+</html>
+
+
+
+
+

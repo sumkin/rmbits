@@ -1,0 +1,17 @@
+*
+
+!.gitignore
+!airport.py
+!bffreader2.py
+!db_connector.py
+!defs.py
+!lambda_function.py
+!mcflyreader.py
+!rmbits.cfg
+!yield_lookup.py
+!yieldlookupreader.py
+!build.sh
+!mcflyreader_memusage.py
+
+
+

@@ -1,0 +1,13 @@
+<html>
+  <head>
+    <script type='text/javascript' src='/media/js/dygraph-combined.js'></script>
+  </head>
+<body>
+<div id='class_mix' style='width: 1200px; height: 750px'>Show</div>
+<script type='text/javascript'>
+  g1 = new Dygraph(document.getElementById('class_mix'),
+                   '/csv/class_mix/{{orgn}}/{{dstn}}/{{fltnum}}',
+                   {title: 'Class mix'});
+</script>
+</body>
+</html>

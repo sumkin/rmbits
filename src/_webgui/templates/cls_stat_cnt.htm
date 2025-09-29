@@ -1,0 +1,27 @@
+<!-- MSE: {{mse}} <br /> -->
+
+<b>Independent distribution of errors:</b>
+<br />
+&nbsp;&nbsp;&nbsp; Ljung-Box p-value: {{ lb_pval }}&nbsp;
+{% if lb_pval < 0.05 %}
+<span style='color: red'>FAIL</span>
+{% else %} 
+<span style='color: green'>PASS</span> 
+{% endif %}
+<br />
+<br />
+
+<b>Homoscedasticity:</b>
+<br />
+
+<br />
+<br />
+
+<b>Trend:</b>
+<pre>
+{{ trend_pol2 }}
+</pre>
+
+<b>Seasonality:</b>
+<br />
+<br />

@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <script type='text/javascript' src='/media/js/dygraph-combined.js'></script>
+  </head>
+<body>
+<table>
+ <tr>
+  <td><div id='rev_graph' style='width: 700px; height: 300px'></div></td>
+  <td><div id='rev_future_graph' style='width: 500px; height: 300px'></div></td>
+ </tr>
+</table>
+<script type='text/javascript'>
+  g1 = new Dygraph(document.getElementById('rev_graph'),
+                  '/csv/rev/{{orgn}}/{{dstn}}/{{fltnum}}',
+                  {valueRange: [0,50000]}); 
+</script>
+<script type='text/javascript'>
+  g2 = new Dygraph(document.getElementById('rev_future_graph'),
+                   '/csv/rev_future/{{orgn}}/{{dstn}}/{{fltnum}}',
+                   {'drawYAxis': false,
+                    valueRange: [0,50000]});
+</script>
+
+</script>
+</body>
+</html>

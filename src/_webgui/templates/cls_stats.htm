@@ -1,0 +1,37 @@
+<div id='acc' class="ui-accordion ui-widget ui-helper-reset">
+  {% for e in cls %}
+  <script type='text/javascript'>
+    var daysprior_arr = new Array(320, 286, 252, 213, 196, 180, 154, 120, 95, 76, 60, 47, 42, 37, 29, 26, 23, 21, 18, 16, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+
+    $(document).ready(function()
+                      {
+                        $('#acc_{{e}}').click(function()
+                                                {
+                                                  $(this).next().toggle();
+                                                  
+                                                  if ( $(this).next().is(':visible') )
+                                                  { 
+                                                      var orgn = $('#orgn').val();
+                                                      var dstn = $('#dstn').val();
+                                                      var fltnum = $('#fltnum').val();
+                                                      var dfrom = $('#dfrom').val();
+                                                      var dto = $('#dto').val();
+                                                      var daysprior = daysprior_arr[parseInt($('#daysprior').slider('option','value'))];
+                                                      var cls = '{{e}}';
+                                                      var err_tag = get_err_tag_clicked();
+
+                                                      var url = '/fa/ajax/cls_stat_cnt/'+err_tag+'/' + orgn + '/' + 
+                                                                dstn + '/' + fltnum + '/' + cls + '/' +
+                                                                daysprior + '/' + dfrom + '/' + dto;
+                                                      $('#cls_stat_cnt_{{e}}').load(url);
+                                                  }
+                                                  return false;
+                                                }).next().hide();
+                      });
+  </script>
+  <h3 id='acc_{{e}}' class="ui-accordion-header ui-helper-reset ui-state-active ui-corner-top" align="left">
+    <a><div class='cls_font_color_{{e}}'>{{e}} class</div></a> 
+  </h3>
+  <div id="cls_stat_cnt_{{e}}" class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom"></div>
+  {% endfor %}
+</div>

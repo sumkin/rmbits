@@ -1,0 +1,100 @@
+<style>
+  .right_border {
+    border-right-style: solid;
+    border-right-width: thin;
+  }
+  .bottom_border {
+    border-bottom-style: solid;
+    border-bottom-width: thin;
+  }
+  .right_bottom_border {
+    border-right-style: solid;
+    border-bottom-style: solid;
+    border-right-width: thin;
+    border-bottom-width: thin;
+  }
+</style>
+
+  <hr />
+  <table border='0' cellspacing='0' cellpadding='10'>
+    <tr>
+     <td class='right_bottom_border'>&nbsp;</td>
+     <td class='right_bottom_border'>DATE</td>
+     <td class='right_bottom_border'>AIRCRAFT</td>
+     <td class='right_bottom_border'>CAPACITY</td>
+     <td class='right_bottom_border'>ADJ CAP</td>
+     <td class='right_bottom_border'>BOOKED</td>
+     <td class='right_bottom_border'>ACHDMD</td>
+     <td class='right_bottom_border'>EXCDMD</td>
+     <td class='right_bottom_border'>BEST AIRCRAFT</td>
+     <td class='bottom_border'>EXTRA REVENUE</td>
+    </tr>
+    <tr>
+     <td class='right_bottom_border'>TO</td>
+     <td class='right_bottom_border'>{{dep.dptdt|date:"Y-m-d"}}</td>
+     <td class='right_bottom_border'>{{dep.aircraft_code}} - {{dep.aircraft_cfg_code}}</td>
+     <td class='right_bottom_border'>{{dep.cap_j}}/{{dep.cap_y}}</td>
+     <td class='right_bottom_border'>{{dep.adjcap_j}}/{{dep.adjcap_y}}</td>
+     <td class='right_bottom_border'>{{dep.booked_j}}/{{dep.booked_y}}</td>
+     <td class='right_bottom_border'>{{dep.achdmd_j}}/{{dep.achdmd_y}}</td>
+     <td class='right_bottom_border'>
+       {% if dep.excdmd_j < 0 %}
+          <span style='color: blue'>{{dep.excdmd_j}}</span>
+       {% else %}
+          <span style='color: red'>{{dep.excdmd_j}}</span>
+       {% endif %}
+       /
+       {% if dep.excdmd_y < 0 %}
+          <span style='color: blue'>{{dep.excdmd_y}}</span>
+       {% else %}
+          <span style='color: red'>{{dep.excdmd_y}}</span>
+       {% endif %}
+     </td>
+     <td class='right_border' rowspan='2'>{{best_ac.code}} - {{best_ac.cfg_code}}</td>
+     <td rowspan='2'>{{rev_est}}</td>
+    </tr>
+    <tr>
+     <td class='right_border'>FROM</td>
+     <td class='right_border'>{{ret_dep.dptdt|date:"Y-m-d"}}</td>
+     <td class='right_border'>{{ret_dep.aircraft_code}} - {{ret_dep.aircraft_cfg_code}}</td>
+     <td class='right_border'>{{ret_dep.cap_j}}/{{ret_dep.cap_y}}</td>
+     <td class='right_border'>{{ret_dep.adjcap_j}}/{{ret_dep.adjcap_y}}</td>
+     <td class='right_border'>{{ret_dep.booked_j}}/{{ret_dep.booked_y}}</td>
+     <td class='right_border'>{{ret_dep.achdmd_j}}/{{ret_dep.achdmd_y}}</td>
+     <td class='right_border'>
+       {% if ret_dep.excdmd_j < 0 %}
+          <span style='color: blue'>{{ret_dep.excdmd_j}}</span>
+       {% else %}
+          <span style='color: red'>{{ret_dep.excdmd_j}}</span>
+       {% endif %}
+       /
+       {% if ret_dep.excdmd_y < 0 %}
+          <span style='color: blue'>{{ret_dep.excdmd_y}}</span>
+       {% else %}
+          <span style='color: red'>{{ret_dep.excdmd_y}}</span>
+       {% endif %}
+     </td>
+    </tr>
+  </table>
+
+<!--
+<div id='rev_past' style='width: 550px; height: 300px'></div>
+<script type='text/javascript'>
+  g1 = new Dygraph(document.getElementById('rev_past'),
+                   '/csv/book_past/{{orgn}}/{{dstn}}/{{fltnum}}',
+                   {title: 'Past booked',
+                    valueRange: [0,350]}); 
+</script>
+</td>
+<td>
+<div id='rev_future' style='width: 550px; height: 300px;'></div>
+<script>
+  g2 = new Dygraph(document.getElementById('rev_future'),
+                   '/csv/book_future/{{orgn}}/{{dstn}}/{{fltnum}}',
+                   {title: 'Consfnldmd forecast',
+                    'yAxisLabelWidth': 0,
+                    'drawYAxis': false,
+                    valueRange: [0,350],
+                    colors: ["rgb(255,64,64)","rgb(142,35,35)"]});
+</script>
+-->

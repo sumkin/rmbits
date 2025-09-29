@@ -1,0 +1,81 @@
+\documentclass[a4paper,oneside]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{Principal component analysis for network RM}
+\author{Fedor Nikitin}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Network revenue management exhibits complex dynamics.
+
+Detecting changes in airline network is important...
+
+\section{Network optimization}
+Network revenue management problem could be formulated as
+dynamic programming problem. However due to curse of dimensionality
+it is intractable. Different approximations has been proposed \cite{...}.
+
+Simplest and widely used in practice approximation is Determenistic Linear Program
+(DLP) which is
+\begin{equation}
+R = p^T x \rightarrow \max,
+\label{primal_target}
+\end{equation}
+\begin{equation}
+Ax \leq c,
+\label{primal_capacity}
+\end{equation}
+\begin{equation}
+0 \leq x \leq \mu,
+\label{primal_demand}
+\end{equation}
+where $p^T\in \mathbb{R}^n$ is price vector, $A\in \mathbb{R}^{m\times n}$ is
+incidence matrix, $c\in \mathbb{R}^m$ is capacity vector and $\mu\in \mathbb{R}^n$ is expected
+demand.
+
+Airline demand experiences seasonal fluctuation and it is important to adapt for seasonal 
+fluctuations. In practice the whole planning period is split into the parts which are called
+planning windows.
+
+\section{Feature selection}
+We are given OD demand vector $\mu(t)$ defined on time interval $[t_0,T]$. Our goal 
+is to define points in time when demand vector $\mu(t)$ experiences significant changes.
+
+\subsection{Passenger flow}
+Demand flown out of vertex $i$ is given by
+$$
+\mu_{i}^{out}(t) = \sum_{j\in V, k\in F} \mu_{ijk}(t).
+$$
+Demand flown in vertex $i$ is 
+$$
+\mu_{j}^{in}(t) = \sum_{i\in V, k\in F} \mu_{ijk}(t).
+$$
+
+
+\subsection{Revenue flow features} 
+$$
+R_{i}^{out}(t) = \sum_{j\in V, k\in F} p_{ijk} \mu_{ijk}(t)
+$$
+$$
+R_{i}^{in}(t) = \sum_{i\in V, k\in F} p_{ijk} \mu_{ijk}(t)
+$$
+
+
+\subsection{Travel pattern feature}
+$$
+S(t) = \{s_{ij}(t)\} \in \mathbb{R}^{n\times n}
+$$
+$$
+s_{ij}(t) = \frac{\sum_{k\in F}\mu_{ijk}(t)}{\sum_{j\in V, k\in F}\mu_{ijk}(t)}
+$$
+
+\section{Principal component analysis}
+
+\section{Segmentation}
+
+\section{Experiments}
+
+\end{document}

@@ -1,0 +1,236 @@
+<html>
+  <link type='text/css' href='/static/css/smoothness/jquery-ui-1.8.14.custom.css' rel='Stylesheet' />
+  <script type='text/javascript' src='http://d3js.org/d3.v3.min.js'></script>
+  <script type='text/javascript' src='/static/js/jquery-1.5.1.min.js'></script>
+  <script type='text/javascript' src='/static/js/jquery-ui-1.8.14.custom.min.js'></script>  
+  <style>
+    p {
+      /*border-style:solid;
+      text-align: right;*/
+      height: 20px;
+    }
+    .div_od_left {
+      border-style: solid;
+      border-width: 0px;
+      width: 250px;
+      text-align: right;
+      padding-right: 5px;
+    }
+    .div_od_left:hover {
+      border-width: 1px;
+      background-color: rgb(255,255,200);
+      cursor: pointer;
+    }
+    .div_od_right {
+      border-style: solid;
+      border-width: 0px;
+      width: 250px;
+      text-align: left;
+      padding-left: 5px;
+    }
+    .div_od_right_highlight {
+      border-style: solid;
+      border-width: 1px;
+      width: 250px;
+      text-align: left;
+      padding-left: 5px;
+      background-color: rgb(255,255,200);
+      cursor: pointer;
+    }
+    .div_preload {
+      position:absolute;
+      width:100%;
+      height:100%;
+      left:0;
+      top:0;
+      border-style:solid;
+      z-index:10;
+      background: black;
+      opacity:0.8;
+      display:none;
+    }
+  </style>
+<body>
+
+  <!-- Preloading -->
+  <div class='div_preload'><img src='/static/pic/ajax-loader.gif' style='position:relative; top:45%; left:45%; display:none' /></div>   
+
+  <div id='container' style='width:100%'>
+
+    <!-- Date range in database -->
+    <div id='drange_header_id' style='text-align:center; background-color:red'>
+      <div id='db_range_id' style='float: left'>Date range in DB:</div>
+      <div id='db_dfrom_id' style='float: left; margin-left: 10px'></div> 
+      <div id='db_dto_id' style='float: left; margin-left: 10px'></div>      
+    </div>
+
+    <br /><br />
+    <div id='content' style='width: 100%; display: table'>
+      <div style='display: table-row'>
+        <div id='left_content_id' style='width:45%; display: table-cell; text-align: right'>
+         <input type='text' id='left_dfrom_picker_id' />
+         <input type='text' id='left_dto_picker_id' /> 
+          <div id='left_list_id'><br /><br /></div>        
+        </div>
+        <div id='center_content_id' style='width:10%; display: table-cell; text-align: center;'>
+         <input type='button' id='compare_id' value='Compare' />
+         <svg id='arrows_svg' width='95%' height='87000px' ></svg>
+        </div>
+        <div id='right_content_id' style='display: table-cell; text-align: left'>
+         <input type='text' id='right_dfrom_picker_id' >
+         <input type='text' id='right_dto_picker_id'>
+         <div id='right_list_id'><br /><br /></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+   d3.json('/sigod/json/mindt/',function(json) {
+     $('#db_dfrom_id').text(json);      
+   });	    
+   d3.json('/sigod/json/maxdt/',function(json) {
+     $('#db_dto_id').text(json);
+   });
+
+   var left_list = d3.select('#left_list_id');
+   var right_list = d3.select('#right_list_id');  
+ 
+   $(function() {
+     $('#left_dfrom_picker_id').datepicker({dateFormat: 'yy-mm-dd'});
+     $('#left_dto_picker_id').datepicker({ dateFormat: 'yy-mm-dd'});
+     $('#right_dfrom_picker_id').datepicker({ dateFormat: 'yy-mm-dd'});
+     $('#right_dto_picker_id').datepicker({ dateFormat: 'yy-mm-dd'});
+
+     $('#compare_id').click(function() {
+
+       d3.selectAll('p').remove();
+
+       l_dfrom = $('#left_dfrom_picker_id').val();
+       l_dto = $('#left_dto_picker_id').val();
+       r_dfrom = $('#right_dfrom_picker_id').val();
+       r_dto = $('#right_dto_picker_id').val();
+
+       var left_url = '/sigod/json/revenue/'+l_dfrom+'/'+l_dto+'/';
+       var right_url = '/sigod/json/revenue/'+r_dfrom+'/'+r_dto+'/';
+
+       var left_to_str = function(d) {
+         var from_s;
+         var to_s;
+         if (d.trip_orgn == d.online_orgn)
+         {
+           from_s = '('+d.rev+') '+d.online_orgn;
+         }
+         else
+         {
+           from_s = '('+d.rev+') '+d.trip_orgn+'-'+d.online_orgn;
+         }
+
+         if (d.online_dstn == d.trip_dstn)
+         {
+           to_s = d.online_dstn;
+         }
+         else
+         {
+           to_s = d.online_dstn+'-'+d.trip_dstn;
+         }
+         return from_s+'-'+to_s;
+       }
+
+       var right_to_str = function(d) {
+         var from_s;
+         var to_s;
+         if (d.trip_orgn == d.online_orgn)
+         {
+           from_s = d.online_orgn;
+         }
+         else
+         {
+           from_s = d.trip_orgn+'-'+d.online_orgn;
+         }
+
+         if (d.online_dstn == d.trip_dstn)
+         {
+           to_s = d.online_dstn+' ('+d.rev+')';
+         }
+         else
+         {
+           to_s = d.online_dstn+'-'+d.trip_dstn+' ('+d.rev+')';
+         } 
+         return from_s+'-'+to_s;
+       }
+
+       
+       d3.json(left_url,function(jsondata) {
+         left_list.selectAll('p')
+           .data(jsondata)
+           .enter()
+           .append('p').attr('align','right')
+           .append('div')
+             .attr('name','left_od_div')
+             .attr('od',function(d) {return d.trip_orgn+d.online_orgn+d.online_dstn+d.trip_dstn;})
+             .attr('id',function(d) {return 'l'+d.trip_orgn+d.online_orgn+d.online_dstn+d.trip_dstn;})
+             .attr('class','div_od_left')
+             .text(left_to_str)
+             .on('mouseover', function(d) {
+
+               // Draw border 
+               var id =  'r'+$(this).attr('od');
+               var cls = $('#'+id).attr('class');
+               $('#'+id).attr('class','div_od_right_highlight');
+
+               // Draw arrow
+               var offset_left = $(this).offset().top;
+               var offset_right = $(this).offset().top;               
+ 
+               var x1 = 0;
+               var y1 = $(this).offset().top-60;
+               var x2 = 170;
+               var y2 = $('#'+id).offset().top-60;
+
+               d3.select('#arrows_svg')
+                 .append('svg:line')
+                   .attr('x1',x1)
+                   .attr('y1',y1)
+                   .attr('x2',x2)
+                   .attr('y2',y2)
+                   .style('stroke','rgb(0,0,0)');
+               //alert($(this).offset().top+'-'+$('#'+id).offset().top);
+             })
+             .on('mouseout', function(d) {
+               var id = 'r'+$(this).attr('od');
+               var cls = $('#'+id).attr('class');
+               $('#'+id).attr('class','div_od_right');
+               d3.selectAll('line').remove();
+             })
+       });
+
+
+       d3.json(right_url,function(jsondata) {
+         right_list.selectAll('p')
+           .data(jsondata)
+           .enter()
+           .append('p')
+           .append('div')
+             .attr('name','right_od_div')
+             .attr('od',function(d) { return d.trip_orgn+d.online_orgn+d.online_dstn+d.trip_dstn; })
+             .attr('id',function(d) { return 'r'+d.trip_orgn+d.online_orgn+d.online_dstn+d.trip_dstn;})
+             .attr('class','div_od_right')
+             .text(right_to_str);
+         /* 
+         $('[name=od_div]').mouseover(function() {
+           alert('Yes!');
+         });*/ 
+       });
+     });
+   });
+  </script>
+
+
+
+</body>
+</html>  
+
+
+

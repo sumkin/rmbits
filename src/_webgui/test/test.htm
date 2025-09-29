@@ -1,0 +1,174 @@
+<html>
+<style type='text/css'>
+  a { font-size: 11pt;
+      margin-left: 10px 
+  }
+  body { padding-top: 0px }
+  .menu { position: absolute;
+          top: 0;
+          left: 0;
+          width: 220px;
+          height: 1000px;
+          border-right-style: solid;
+          border-width: 1px;
+          margin-top: 0px;
+          padding-left: 5px;
+          padding-top: 5px;
+  }
+  .main { position: absolute;
+          top: 0px;
+          left: 220px;
+          padding-left: 20px;
+          padding-top: 20px;
+  }
+  .graph { border-width: 1px;
+           border-style: solid;
+           padding-right: 40px;
+           padding-top: 40px;
+           padding-bottom: 40px;
+  }
+  .a_fa_menu_link { font-size: 9pt;
+  }
+
+  /*
+  #as { position: absolute;
+        left: 5px;
+        top: 5px;
+        right: 5px;
+        bottom: 5px;
+  } */
+</style>
+<link type='text/css' href='/media/css/smoothness/jquery-ui-1.8.14.custom.css' rel='Stylesheet' />
+<!-- jquery library -->
+<script type="text/javascript" src="/media/js/jquery-1.5.1.min.js"></script>
+<!-- jquery ui library -->
+<script type="text/javascript" src="/media/js/jquery-ui-1.8.14.custom.min.js"></script>
+<!-- dygraph library -->
+<script type="text/javascript" src="/media/js/dygraph-combined.js"></script>
+
+<!-- Main document -->
+<script language='javascript'>
+ $(document).ready(function() {
+
+   $('.a_fa_menu_link').click(function(event) {
+     faMenuLinkClickHandler(event.target.id);
+   });
+
+ });
+</script>
+
+<!-- Widgets -->
+<script type="text/javascript" src="/media/js/widgets/FaTsWidget.js"></script>
+
+<!-- Event handlers -->
+<script language='javascript'>
+
+  var graph_cnt = 0;
+
+  function faMenuLinkClickHandler(id)
+  {
+    g = new FaTsWidget('main','fa_ts_widget_'+graph_cnt); 
+    /*
+    $("#main").append("<div id='graph"+graph_cnt+"' class='graph'></div>");
+    $("#graph"+graph_cnt).append("<div id='sub_graph"+graph_cnt+"'>sub</div>");
+    $("#graph"+graph_cnt).resizable();
+    $("#graph"+graph_cnt).draggable();
+
+    g = new Dygraph(document.getElementById("sub_graph"+graph_cnt),
+                    "Date,Temperature\n" +
+                    "2008-05-07,75\n" +
+                    "2008-05-09,70\n" +
+                    "2008-05-09,80\n",{});
+    */
+
+    graph_cnt++;
+  }
+
+</script>
+
+<body>
+  <div id='menu' class='menu'>
+    <h4>Forecast accuracy</h4>
+     <a href='#' id='fa_fce' class='a_fa_menu_link'>Forecast constrained error</a><br />
+     <a href='#' id='fa_fue' class='a_fa_menu_link'>Forecast unconstrained error</a><br />
+     <a href='#' id='fa_acv' class='a_fa_menu_link'>Actual constrained value</a><br />
+     <a href='#' id='fa_auv' class='a_fa_menu_link'>Actual unconstrained value</a><br />
+     <a href='#' id='fa_fcv' class='a_fa_menu_link'>Forecasted constrained value</a><br />
+     <a href='#' id='fa_fuv' class='a_fa_menu_link'>Forecasted unconstrained value</a><br />
+     <a href='#' id='fa_cb'  class='a_fa_menu_link'>Constrained booked</a><br />
+     <a href='#' id='fa_ub'  class='a_fa_menu_link'>Unconstrained booked</a><br />
+  </div>
+  <div id='main' class='main'>
+<script>
+  $(document).ready(function() {
+    $('#fa_err_orgn').autocomplete({});
+    $('#fa_err_dstn').autocomplete({});
+    $('#fa_err_fltnum').autocomplete({});
+    $('#fa_err_daysprior').slider({});
+
+    g = new Dygraph(document.getElementById('graph'),
+                    "Date,Temperature\n" +
+                    "2008-05-07,75\n" + 
+                    "2008-05-09,70\n" +
+                    "2008-05-10,80\n" +
+                    "2008-05-12,70\n" + 
+                    "2008-05-14,90\n" + 
+                    "2008-05-16,30\n" + 
+                    "2008-05-18,60\n",{ width: 700});
+
+    $('#fa_err_cntrl').draggable();
+
+  });
+</script>
+  <div id='fa_err_cntrl' style='border-style: solid; border-width: 1px; height: 430; padding-right: 45px; padding-top: 10px;'>
+   <div id='cross' style='position: absolute; right: 10px; top: 5px' onclick="$('#fa_err_cntrl').remove();">
+    <a href='#' style='border-width: 0px'><img src='/media/pic/cross.gif' width='10' height='10' border='0'/></a>
+   </div>
+   <div id="flight" style="position: absolute; left: 55">
+     <input id='fa_err_orgn'   size='3' class='ui-widget' />
+     <input id='fa_err_dstn'   size='3' class='ui-widget' />
+     <input id='fa_err_fltnum' size='5' class='ui-widget' />
+   </div>
+   <div id="date" style="position: absolute; right: 45">
+     <input type='text' size='10' id='fa_err_dfrom' class='ui-widget' />
+     <input type='text' size='10' id='fa_err_dto' class='ui-widget' />
+   </div>
+   <div id="graph" style="position: relative; top: 30"></div>
+   <div id='fa_err_daysprior' style="position: relative; left: 55; top: 40; width: 650"></div>
+   <div style="position: relative; left: 50; top: 50">
+      <b>J:</b>&nbsp;&nbsp; A B C D<br />
+      <b>Y:</b>&nbsp;&nbsp; E F G H I J K L M
+   </div>
+  </div>
+<!--
+   <table border='0' width='700' height='400'>
+    <tr height='30'>
+      <td style='padding-left: 55px'>
+        <input id='fa_err_orgn'   size='3' class='ui-widget' />
+        <input id='fa_err_dstn'   size='3' class='ui-widget' />
+        <input id='fa_err_fltnum' size='5' class='ui-widget' />
+      </td>
+      <td width='250' align='right'>
+        <input type='text' size='10' id='fa_err_dfrom' class='ui-widget' />
+        <input type='text' size='10' id='fa_err_dto' class='ui-widget' />
+      </td>
+    </tr>
+    <tr>
+      <td colspan='2'>
+      <div id='graph'></div> 
+      </td>
+    </tr>
+    <tr height='30'>
+      <td colspan='2' style='padding-left: 55px'><div id='fa_err_daysprior'></div></td>
+    </tr>
+    <tr height='60'>
+      <td colspan='2' style='padding-left: 55px'>
+      <b>J:</b>&nbsp;&nbsp; A B C D<br />
+      <b>Y:</b>&nbsp;&nbsp; E F G H I J K L M
+      </td>
+    </tr>
+   </table>
+-->
+  </div>
+</body>
+</html>

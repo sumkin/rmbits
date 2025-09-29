@@ -1,0 +1,83 @@
+<html>
+  <head>
+    <script type='text/javascript' src='/media/js/dygraph-combined.js'></script>
+    <script type='text/javascript' src='http://www.google.com/jsapi'></script>
+    <script type='text/javascript' src='http://word-cumulus-goog-vis.googlecode.com/svn/trunk/wordcumulus.js'></script>
+    <script type="text/javascript" src="http://word-cumulus-goog-vis.googlecode.com/svn/trunk/swfobject.js"></script>
+    <script type="text/javascript">
+      google.load('visualization','1');
+      google.setOnLoadCallback(drawVisualization);
+      function drawVisualization()
+      {
+        var url_prefix;
+        if (location.port != 0)
+        {
+           url_prefix = 'http://' + location.hostname + ':' + location.port;
+        }
+        else
+        {
+           url_prefix = 'http://' + location.hostname;
+        }
+        var data = new google.visualization.DataTable();
+        data.addColumn('string','Tag');
+        data.addColumn('string','URL');
+        data.addRows(14);
+        data.setCell(0,0,'Bookings in J');
+        data.setCell(0,1,url_prefix+'/route_book_j/{{orgn}}/{{dstn}}/{{fltnum}}/J');
+        data.setCell(1,0,'Bookings in Y');
+        data.setCell(1,1,url_prefix+'/route_book_y/{{orgn}}/{{dstn}}/{{fltnum}}/Y');
+        data.setCell(2,0,'Revenue');
+        data.setCell(2,1,url_prefix+'/route_revenue/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(3,0,'Revenue in J');
+        data.setCell(3,1,url_prefix+'/route_revenue_j/{{orgn}}/{{dstn}}/{{fltnum}}/J');
+        data.setCell(4,0,'Revenue in Y');
+        data.setCell(4,1,url_prefix+'/route_revenue_y/{{orgn}}/{{dstn}}/{{fltnum}}/Y');
+        data.setCell(5,0,'Class correlation');
+        data.setCell(5,1,url_prefix+'/route_class_corr/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(6,0,'DB statistics');
+        data.setCell(6,1,url_prefix+'/route_db_stat/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(7,0,'Bookings');
+        data.setCell(7,1,url_prefix+'/route_book/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(8,0,'Forecast');
+        data.setCell(8,1,url_prefix+'/route_forecast/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(9,0,'Class mix');
+        data.setCell(9,1,url_prefix+'/route_class_mix/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(10,0,'Recent departures');
+        data.setCell(10,1,url_prefix+'/route_recent_deps/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(11,0,'Aircraft change')
+        data.setCell(11,1,url_prefix+'/route_aircraft_change/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(12,0,'Yield')
+        data.setCell(12,1,url_prefix+'/route_yield/{{orgn}}/{{dstn}}/{{fltnum}}');
+        data.setCell(13,0,'Summary')
+        data.setCell(13,1,url_prefix+'/route_summary/{{orgn}}/{{dstn}}/{{fltnum}}');
+
+        var vis = new gviz_word_cumulus.WordCumulus(document.getElementById('word_cumulus'));
+        vis.draw(data, {text_color: '#444444', speed: 80, width: 800, height: 500});
+      }     
+    </script>
+    <style>
+      object, div, table, a
+      {
+        border: 0px;
+        border-style: none;
+      }
+      
+    </style>
+  </head>
+<body style='font-family: Arial'>
+<div style='position: fixed; top: 5px; right: 5px'>{{curr_date}}</div>
+<center><h2 style='font-family: Arial'>{{orgn}}-{{dstn}}-{{fltnum}}</h2></center>
+<center><div id='word_cumulus' style='border: 0px; font-family: Arial'></div></center>
+
+<!--
+<h3>Class correlation</h3>
+
+<h3>DB statistics:</h3>
+<b>First departure date in DB:</b> {{db_stat_fdep}}<br />
+<b>Last departure date in DB:</b>  {{db_stat_ldep}}<br />
+<b># of departures in DB:</b> {{db_stat_numdep}}<br />
+<b># of flown departures in DB:</b> {{db_stat_numflowndep}}<br />
+<b># of past departures in DB:</b> {{db_stat_numpastdep}}<br />
+-->
+</body>
+</html>

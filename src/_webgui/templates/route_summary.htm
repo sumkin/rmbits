@@ -1,0 +1,170 @@
+<html>
+  <head>
+    <script type='text/javascript' src='/media/js/dygraph-combined.js'></script>
+  </head>
+<body>
+<table>
+ <!-- Revenue -->
+ <tr>
+  <td><div id='rev_graph' style='width: 700px; height: 150px'></div></td>
+  <td><div id='rev_future_graph' style='width: 500px; height: 150px'></div></td>
+ </tr>
+ <!-- Yield -->
+ <tr>
+  <td><div id='yield_graph' style='width: 700px; height: 150px'></div></td>
+  <td><div id='yield_future_graph' style='width: 500px; height: 150px'></div></td>
+ </tr>
+ <!-- Bookings -->
+ <tr>
+  <td><div id='book_graph' style='width: 700px; height: 150px'></div></td>
+  <td><div id='book_future_graph' style='width: 500px; height: 150px'></div></td>
+ </tr>
+</table>
+<script type='text/javascript'>
+  var blockRedraw = false;
+  var drawClbk = function(me, initial) {
+                   if (blockRedraw || initial) return;
+                   blockRedraw = true;
+
+                   // Define row and column indices of 
+                   // graph calling the event
+                   var rowInd;
+                   var colInd;
+                   for (rowInd = 0; rowInd < 3; rowInd++) {
+                     var toBreak = false;
+                     for (colInd = 0; colInd < 2; colInd++) {
+                       if (gs[rowInd][colInd] == me) {
+                         toBreak = true;
+                         break;
+                       }
+                     }
+                     if (toBreak) break;
+                   }
+
+                   var range = me.xAxisRange();
+                   var yrange = me.yAxisRange();
+
+                   // Update vertical zoom
+                   for (var j = 0; j < 2; j++) {
+                     if (j == colInd) continue;
+                     gs[rowInd][j].updateOptions({valueRange: yrange});
+                   }
+                   // Update horizontal zoom
+                   for (var i = 0; i < 3; i++) {
+                     if (i == rowInd) continue;
+                     gs[i][colInd].updateOptions({dateWindow: range});
+                   }
+                   blockRedraw = false;
+                 };
+
+  gs = [];
+  grow1 = [];
+  grow2 = [];
+  grow3 = [];
+  gs.push(grow1);
+  gs.push(grow2);
+  gs.push(grow3);
+
+  g11 = new Dygraph(document.getElementById('rev_graph'),
+                    '/csv/rev/{{orgn}}/{{dstn}}/{{fltnum}}',
+                    {valueRange: [0,150000],
+                     drawCallback: drawClbk,
+                     highlightCallback: function(e, x, pts, row) {
+                                          var sel = gs[0][0].getSelection();
+                                          gs[1][0].setSelection(sel);
+                                          gs[2][0].setSelection(sel);
+                                        },
+                     unhighlightCallback: function(e, x, pts, row) {					
+							  gs[0][0].clearSelection();
+							  gs[1][0].clearSelection();
+                                            gs[2][0].clearSelection();
+						      },});
+  g12 = new Dygraph(document.getElementById('rev_future_graph'),
+                    '/csv/rev_future/{{orgn}}/{{dstn}}/{{fltnum}}',
+                    {'drawYAxis': false,
+                     valueRange: [0,150000],
+                     drawCallback: drawClbk,
+                     highlightCallback: function(e, x, pts, row) {
+                                          var sel = gs[0][1].getSelection();
+                                          gs[1][1].setSelection(sel);
+                                          gs[2][1].setSelection(sel);
+                                        },
+                     unhighlightCallback: function(e, x, pts, row) {					
+							  gs[0][1].clearSelection();
+							  gs[1][1].clearSelection();
+                                            gs[2][1].clearSelection();
+						      },});
+
+  grow1.push(g11);
+  grow1.push(g12);
+
+  g21 = new Dygraph(document.getElementById('yield_graph'),
+                    '/csv/yield/{{orgn}}/{{dstn}}/{{fltnum}}',
+                    {valueRange: [0,2000],
+                     drawCallback: drawClbk,
+                     highlightCallback: function(e, x, pts, row) {
+                                          var sel = gs[1][0].getSelection();
+                                          gs[0][0].setSelection(sel);
+                                          gs[2][0].setSelection(sel);
+                                        },
+                     unhighlightCallback: function(e, x, pts, row) {					
+							  gs[0][0].clearSelection();
+							  gs[1][0].clearSelection();
+                                            gs[2][0].clearSelection();
+						      },});
+  g22 = new Dygraph(document.getElementById('yield_future_graph'),
+                    '/csv/yield_future/{{orgn}}/{{dstn}}/{{fltnum}}',
+                    {'drawYAxis': false,
+                     valueRange: [0,2000],
+                     drawCallback: drawClbk,
+                     highlightCallback: function(e, x, pts, row) {
+                                          var sel = gs[1][1].getSelection();
+                                          gs[0][1].setSelection(sel);
+                                          gs[2][1].setSelection(sel);
+                                        },
+                     unhighlightCallback: function(e, x, pts, row) {					
+							  gs[0][1].clearSelection();
+							  gs[1][1].clearSelection();
+                                            gs[2][1].clearSelection();
+						      },});
+  grow2.push(g21);
+  grow2.push(g22);
+
+  g31 = new Dygraph(document.getElementById('book_graph'),
+                    '/csv/book_past/{{orgn}}/{{dstn}}/{{fltnum}}/-/',
+                    {valueRange: [0,500],
+                     drawCallback: drawClbk,
+                     highlightCallback: function(e, x, pts, row) {
+                                          var sel = gs[2][0].getSelection();
+                                          gs[0][0].setSelection(sel);
+                                          gs[1][0].setSelection(sel);
+                                        },
+                     unhighlightCallback: function(e, x, pts, row) {					
+							  gs[0][0].clearSelection();
+							  gs[1][0].clearSelection();
+                                            gs[2][0].clearSelection();
+						      },});
+
+  g32 = new Dygraph(document.getElementById('book_future_graph'),
+                    '/csv/book_future/{{orgn}}/{{dstn}}/{{fltnum}}/-/',
+                    {drawYAxis: false,
+                     valueRange: [0,500],
+                     drawCallback: drawClbk,
+                     highlightCallback: function(e, x, pts, row) {
+                                          var sel = gs[2][1].getSelection();
+                                          gs[0][1].setSelection(sel);
+                                          gs[1][1].setSelection(sel);
+                                        },
+                     unhighlightCallback: function(e, x, pts, row) {					
+							  gs[0][1].clearSelection();
+							  gs[1][1].clearSelection();
+                                            gs[2][1].clearSelection();
+						      },});
+
+  grow3.push(g31);
+  grow3.push(g32);
+</script>
+
+</script>
+</body>
+</html>

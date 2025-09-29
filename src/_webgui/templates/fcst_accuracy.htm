@@ -1,0 +1,534 @@
+<html>
+  <head>
+    <style type='text/css'>
+     {% for cls,clr in cls_j.items %}
+         .cls_{{cls}} { background-color:  #{{clr}} } 
+         .cls_font_color_{{cls}} { color: #{{clr}} }
+     {% endfor %}
+     {% for cls,clr in cls_y.items %}
+         .cls_{{cls}} { background-color: #{{clr}} }
+         .cls_font_color_{{cls}} { color: #{{clr}} }
+     {% endfor %}
+    </style>
+    <link type='text/css' href='/media/css/smoothness/jquery-ui-1.8.14.custom.css' rel='Stylesheet' />
+    <script type='text/javascript' src='/media/js/jquery-1.5.1.min.js'></script>
+    <script type='text/javascript' src='/media/js/jquery-ui-1.8.14.custom.min.js'></script>
+    <script type='text/javascript'>
+      var daysprior_arr = new Array(320, 286, 252, 213, 196, 180, 154, 120, 95, 76, 60, 47, 42, 37, 29, 26, 23, 21, 18, 16, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+      var cls_clicked = new Array();
+      var err_tag_clicked = new Array();
+      err_tag_clicked['ae'] = 1;
+      err_tag_clicked['re'] = 0;
+      err_tag_clicked['mape'] = 0;
+
+      function change_date_url(old_url, dfrom, dto)
+      {
+          // /media/open-flash-chart.swf?width=95%&height=500&data=/fa/cd/err/<how>/ae/HEL/JFK/00005/Z/3/2010-06-01/2011-01-01
+          var url_arr = old_url.split('&');
+          var data_pcs = url_arr[2];
+          var data_arr = data_pcs.split('/');
+          data_arr[11] = dfrom;
+          data_arr[12] = dto;
+          url_arr[2] = data_arr.join('/'); 
+          return(url_arr.join('&'));
+      }
+      function change_class_url(old_url,cls_s)
+      {
+          var url_arr = old_url.split('&');
+          var data_pcs = url_arr[2];
+          var data_arr = data_pcs.split('/');
+          data_arr[9] = cls_s;
+          url_arr[2] = data_arr.join('/');
+          return(url_arr.join('&'));
+      }
+      function change_daysprior_url(old_url,daysprior)
+      {
+          // /media/open-flash-chart.swf?width=95%&height=500&data=/fa/cd/err/<how>/ae/HEL/JFK/00005/Z/3/2010-06-01/2011-01-01
+          var url_arr = old_url.split('&');
+          var data_pcs = url_arr[2];
+          var data_arr = data_pcs.split('/');
+          data_arr[10] = daysprior;
+          url_arr[2] = data_arr.join('/');
+          return(url_arr.join('&'));
+      }
+      function change_error_type_url(old_url, type)
+      {
+          var url_arr = old_url.split('&');
+          var data_pcs = url_arr[2];
+          var data_arr = data_pcs.split('/');
+          data_arr[5] = type;
+          url_arr[2] = data_arr.join('/');
+          return(url_arr.join('&'))
+      }        
+      function get_cls_str(cls_clicked)
+      {
+          ret = '';
+          for (var cls in cls_clicked)
+          {
+              if (cls_clicked[cls] == 1)
+              {
+                  ret = ret + cls;
+              }
+          }
+          return(ret);
+      }
+      function get_urls_in_flash()
+      {
+          var tab_selected = $('#tabs').tabs('option','selected');
+          var orgn = $('#orgn').val();
+          var dstn = $('#dstn').val();
+          var fltnum = $('#fltnum').val();
+          var dfrom = $('#dfrom').val();
+          var dto = $('#dto').val();
+          var cls = get_cls_str(cls_clicked);
+
+          ret_d = new Array();         
+ 
+          var rest_url = '';
+          if (tab_selected == 0)
+          {
+              var daysprior = daysprior_arr[parseInt($('#daysprior').slider('option','value'))];
+
+              var ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/cons_err/bydptdt/';
+              ret = ret + 'ae/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/'+daysprior+'/'+dfrom+'/'+dto;
+              ret_d['cons_err'] = ret;
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/cons_aval/bydptdt/';
+              ret = ret + '/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/'+daysprior+'/'+dfrom+'/'+dto;
+              ret_d['cons_aval'] = ret;
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/cons_fval/bydptdt/';
+              ret = ret + '/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/'+daysprior+'/'+dfrom+'/'+dto;
+              ret_d['cons_fval'] = ret;
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/uncons_err/bydptdt/';
+              ret = ret + 'ae/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/'+daysprior+'/'+dfrom+'/'+dto;
+              ret_d['uncons_err'] = ret;
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/uncons_aval/bydptdt/';
+              ret = ret + '/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/'+daysprior+'/'+dfrom+'/'+dto;
+              ret_d['uncons_aval'] = ret;
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/uncons_fval/bydptdt/';
+              ret = ret + '/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/'+daysprior+'/'+dfrom+'/'+dto;
+              ret_d['uncons_fval'] = ret;
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/cons_booked/bydptdt/';
+              ret = ret + '/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/'+daysprior+'/'+dfrom+'/'+dto;
+              ret_d['cons_booked'] = ret;          
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/uncons_booked/bydptdt/';
+              ret = ret + '/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/'+daysprior+'/'+dfrom+'/'+dto;
+              ret_d['uncons_booked'] = ret;
+
+              return (ret_d);
+          }
+          else
+          {
+              var ret ='/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/cons_err/bydaysprior/';
+              ret = ret + 'ae/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/None/'+dfrom+'/'+dto;
+              ret_d['cons_err'] = ret
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/cons_lbpval/';
+              ret = ret + 'ae/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/None/'+dfrom+'/'+dto;
+              ret_d['cons_lbpval'] = ret;
+
+              ret ='/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/uncons_err/bydaysprior/';
+              ret = ret + 'ae/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/None/'+dfrom+'/'+dto;
+              ret_d['uncons_err'] = ret
+
+              ret = '/media/open-flash-chart.swf?width=100%25&height=100%25&data=/fa/cd/uncons_lbpval/';
+              ret = ret + 'ae/'+orgn+'/'+dstn+'/'+fltnum+'/'+cls+'/None/'+dfrom+'/'+dto;
+              ret_d['uncons_lbpval'] = ret;
+              
+              return (ret_d);
+          }
+      }
+      function reload_tab_content(new_url_d)
+      {
+          var tab_selected = $('#tabs').tabs('option','selected');
+          if (tab_selected == 0)
+          {
+              try { $('#param_movie_bydptdt_cons_err').attr('value',new_url_d['cons_err']);} catch(err){;}
+              try { $('#param_movie_bydptdt_cons_aval').attr('value',new_url_d['cons_aval']);} catch(err){;}
+              try { $('#param_movie_bydptdt_cons_fval').attr('value',new_url_d['cons_pval']);} catch(err){;}
+              try { $('#param_movie_bydptdt_uncons_err').attr('value',new_url_d['uncons_err']);} catch(err){;}
+              try { $('#param_movie_bydptdt_uncons_aval').attr('value',new_url_d['uncons_aval']);} catch(err){;}
+              try { $('#param_movie_bydptdt_uncons_fval').attr('value',new_url_d['uncons_pval']);} catch(err){;}
+              try { $('#param_movie_bydptdt_cons_booked').attr('value',new_url_d['cons_booked']);} catch(err){;}
+              try { $('#param_movie_bydptdt_uncons_booked').attr('value',new_url_d['uncons_booked']);} catch(err){;}
+             
+              //var tmp = $('#chart_obj_bydptdt_cons_err');
+              //tmp = tmp[0];
+              //tmp = document['chart_obj_bydptdt_cons_err'];
+              //try { tmp.reload(new_url_d['cons_err']); } catch(err) { alert(err); alert(tmp); }
+
+              try { $('#chart_obj_bydptdt_cons_err').reload(new_url_d['cons_err']);} catch(err){;}
+              try { $('#chart_obj_bydptdt_cons_aval').reload(new_url_d['cons_aval']);} catch(err){;}
+              try { $('#chart_obj_bydptdt_cons_fval').reload(new_url_d['cons_pval']);} catch(err){;}
+              try { $('#chart_obj_bydptdt_uncons_err').reload(new_url_d['uncons_err']);} catch(err){;}
+              try { $('#chart_obj_bydptdt_uncons_aval').reload(new_url_d['uncons_aval']);} catch(err){;}
+              try { $('#chart_obj_bydptdt_uncons_fval').reload(new_url_d['uncons_pval']);} catch(err){;}
+              try { $('#chart_obj_bydptdt_cons_booked').reload(new_url_d['cons_booked']);} catch(err){;}
+              try { $('#chart_obj_bydptdt_uncons_booked').reload(new_url_d['uncons_booked']);} catch(err){;}
+
+              try { $('#chart_embed_bydptdt_cons_err').attr('src',new_url_d['cons_err']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_cons_aval').attr('src',new_url_d['cons_aval']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_cons_fval').attr('src',new_url_d['cons_fval']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_uncons_err').attr('src',new_url_d['uncons_err']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_uncons_aval').attr('src',new_url_d['uncons_aval']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_uncons_fval').attr('src',new_url_d['uncons_fval']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_cons_booked').attr('src',new_url_d['cons_booked']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_uncons_booked').attr('src',new_url_d['uncons_booked']);} catch(err) {;}              
+
+              try { $('#chart_embed_bydptdt_cons_err').reload(new_url_d['cons_err']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_cons_aval').reload(new_url_d['cons_aval']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_cons_fval').reload(new_url_d['cons_fval']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_uncons_err').reload(new_url_d['uncons_err']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_uncons_aval').reload(new_url_d['uncons_aval']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_uncons_fval').reload(new_url_d['uncons_fval']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_cons_booked').reload(new_url_d['cons_booked']);} catch(err) {;}
+              try { $('#chart_embed_bydptdt_uncons_booked').reload(new_url_d['uncons_booked']);} catch(err) {;}
+
+              cls_url = '/fa/ajax/cls_stats/' + $('#orgn').val();
+              cls_url = cls_url + '/' + $('#dstn').val();
+              cls_url = cls_url + '/' + $('#fltnum').val()
+              cls_url = cls_url + '/' + get_cls_str(cls_clicked);
+              sl_val = $('#daysprior').slider('option','value');
+              cls_url = cls_url + '/' + daysprior_arr[parseInt(sl_val)];
+              cls_url = cls_url + '/' + $('#dfrom').val();
+              cls_url = cls_url + '/' + $('#dto').val();
+
+              $('#cls_stats').load(cls_url);
+          }
+          else if (tab_selected == 1)
+          {
+              try { $('#param_movie_bydaysprior_cons_err').attr('value',new_url_d['cons_err']);} catch(err){;}
+              try { $('#param_movie_bydaysprior_cons_aval').attr('value',new_url_d['cons_fcst']);} catch(err){;}
+              try { $('#param_movie_bydaysprior_cons_lbpval').attr('value',new_url_d['cons_lbpval']);} catch(err){;}
+
+              try { $('#chart_obj_bydaysprior_cons_err').reload(new_url_d['cons_err']);} catch(err) {;}
+              try { $('#chart_obj_bydaysprior_cons_aval').reload(new_url_d['cons_fcst']);} catch(err) {;}
+              try { $('#chart_obj_bydaysprior_cons_lbpval').reload(new_url_d['cons_lbpval']);} catch(err) {;}
+ 
+              try { $('#chart_embed_bydaysprior_cons_err').attr('src',new_url_d['cons_err']);} catch(err) {;}
+              try { $('#chart_embed_bydaysprior_cons_aval').attr('src',new_url_d['cons_fcst']);} catch(err) {;}
+              try { $('#chart_embed_bydaysprior_cons_lbpval').attr('src',new_url_d['cons_lbpval']);} catch(err){;}
+
+              try { $('#chart_embed_bydaysprior_cons_err').reload(new_url_d['cons_err']);} catch(err) {;}
+              try { $('#chart_embed_bydaysprior_cons_aval').reload(new_url_d['cons_fcst']);} catch(err) {;}
+              try { $('#chart_embed_bydaysprior_cons_lbpval').reload(new_url_d['cons_lbpval']);} catch(err) {;}
+
+              try { $('#param_movie_bydaysprior_uncons_err').attr('value',new_url_d['uncons_err']);} catch(err){;}
+              try { $('#param_movie_bydaysprior_uncons_aval').attr('value',new_url_d['uncons_fcst']);} catch(err){;}
+              try { $('#param_movie_bydaysprior_uncons_lbpval').attr('value',new_url_d['uncons_lbpval']);} catch(err){;}
+
+              try { $('#chart_obj_bydaysprior_uncons_err').reload(new_url_d['uncons_err']);} catch(err) {;}
+              try { $('#chart_obj_bydaysprior_uncons_aval').reload(new_url_d['uncons_fcst']);} catch(err) {;}
+              try { $('#chart_obj_bydaysprior_uncons_lbpval').reload(new_url_d['uncons_lbpval']);} catch(err) {;}
+ 
+              try { $('#chart_embed_bydaysprior_uncons_err').attr('src',new_url_d['uncons_err']);} catch(err) {;}
+              try { $('#chart_embed_bydaysprior_uncons_aval').attr('src',new_url_d['uncons_fcst']);} catch(err) {;}
+              try { $('#chart_embed_bydaysprior_uncons_lbpval').attr('src',new_url_d['uncons_lbpval']);} catch(err){;}
+
+              try { $('#chart_embed_bydaysprior_uncons_err').reload(new_url_d['uncons_err']);} catch(err) {;}
+              try { $('#chart_embed_bydaysprior_uncons_aval').reload(new_url_d['uncons_fcst']);} catch(err) {;}
+              try { $('#chart_embed_bydaysprior_uncons_lbpval').reload(new_url_d['uncons_lbpval']);} catch(err) {;}
+           }
+           else
+           {
+              alert('Yes!');
+           }
+      }
+      function update_tabs_href()
+      {
+          var orgn = $('#orgn').val();
+          var dstn = $('#dstn').val();
+          var fltnum = $('#fltnum').val();
+          var dfrom = $('#dfrom').val();
+          var dto = $('#dto').val();
+          var cls_s = get_cls_str(cls_clicked);
+          var daysprior = daysprior_arr[parseInt($('#daysprior').slider('option','value'))];
+
+          var bydptdt_url = '/fa/ajax/tabs/bydptdt/'+orgn+'/'+dstn+'/'+fltnum+'/';
+          bydptdt_url = bydptdt_url + cls_s+'/'+daysprior+'/'+dfrom+'/'+dto;
+          var bydaysprior_url = '/fa/ajax/tabs/bydaysprior/'+orgn+'/'+dstn+'/'+fltnum+'/';
+          bydaysprior_url = bydaysprior_url + cls_s+'/'+daysprior+'/'+dfrom+'/'+dto;
+          var outliers_url = '/fa/ajax/tabs/outliers/'+orgn+'/'+dstn+'/'+fltnum+'/';
+          outliers_url = outliers_url + cls_s+'/'+daysprior+'/'+dfrom+'/'+dto;
+
+          $('#tabs').tabs('url',0,bydptdt_url);
+          $('#tabs').tabs('url',1,bydaysprior_url);
+          $('#tabs').tabs('url',2,outliers_url);
+
+          $('#tabs_bydptdt').attr('href',bydptdt_url+'#ui-tabs-1');
+          $('#tabs_bydaysprior').attr('href',bydaysprior_url+'#ui-tabs-2');
+          $('#tabs_outliers').attr('href',outliers_url+'#ui-tabs-3');
+      }
+      function err_tag_chng_bright(tag)
+      {
+        $('#'+tag+'_tag').css({'border': '1px solid #000', 'color': '#000'});
+      }
+
+      function err_tag_chng_dull(tag)
+      {
+        $('#'+tag+'_tag').css({'border': '1px solid #ccc', 'color': '#ccc'});
+      }
+      function get_err_tag_clicked()
+      {
+          for (k in err_tag_clicked)
+          {
+              if (err_tag_clicked[k] == 1)
+              {
+                  return k;
+              }
+          }
+      }
+
+      $(document).ready(function() {
+
+        $('#orgn').autocomplete({ source: '/fa/ajax/orgn', 
+                                  change: function(event,ui)
+                                          {
+                                              var val = $('#orgn').val();
+                                              $('#dstn').autocomplete('option','source','/ajax/dstn/'+val);
+                                          }
+                                });
+        $('#dstn').autocomplete({ source: '/fa/ajax/dstn',
+                                  change: function(event,ui)
+                                          {
+                                              var orgn = $('#orgn').val();
+                                              var dstn = $('#dstn').val();
+                                          }
+                                });
+        $('#dstn').focus(function()
+                         {
+                             var orgn = $('#orgn').val();
+                             $('#dstn').autocomplete('option', 'source', '/fa/ajax/dstn/'+orgn);
+                         });
+        $('#fltnum').focus(function()
+                           {
+                               var orgn = $('#orgn').val();
+                               var dstn = $('#dstn').val();
+                               var url = '/fa/ajax/fltnum/'+orgn+'/'+dstn;
+                               
+                               $('#fltnum').load(url);
+                               $('#submit').removeAttr('disabled');
+                           });
+        $('#submit').click(function()
+                           {
+                               var orgn = $('#orgn').val();
+                               var dstn = $('#dstn').val();
+                               var fltnum = $('#fltnum').val();
+
+                               var action = '/fa/main/'+orgn+'/'+dstn+'/'+fltnum;
+                               $('#form').attr('action',action);
+                               $('#form').submit();
+                           }); 
+        $('#dfrom').datepicker({ dateFormat: 'yy-mm-dd',
+                                 onSelect: function(dfromText, inst) 
+                                           {
+                                               var dto = $('#dto').val();
+                                               var dfrom = $('#dfrom').val();
+
+                                               if (dto != '')
+                                               {
+                                                   if (dto <= dfrom)
+                                                   {
+                                                       alert('date from should be less than date to!');
+                                                   }
+                                                   else
+                                                   {
+                                                       url_d = get_urls_in_flash();
+                                                       for (var k in url_d)
+                                                       {
+                                                           var new_url = change_date_url(url_d[k],dfrom,dto); 
+                                                           url_d[k] = new_url;
+                                                       }
+                                                       reload_tab_content(url_d);
+                                                       update_tabs_href();
+                                                   }
+                                               }
+                                           }
+                              });
+        $('#dto').datepicker({ dateFormat: 'yy-mm-dd',
+                               onSelect: function(dtoText, inst)
+                                         {
+                                             var dto = $('#dto').val();
+                                             var dfrom = $('#dfrom').val();
+
+                                             if (dfrom != '')
+                                             {
+                                                 if (dto <= dfrom)
+                                                 {
+                                                     alert('date from should be less than date to!');
+                                                 }
+                                                 else
+                                                 {
+                                                     var url_d = get_urls_in_flash();
+                                                     for (var k in url_d)
+                                                     {
+                                                         var new_url = change_date_url(url_d[k],dfrom,dto); 
+                                                         url_d[k] = new_url;
+                                                     }
+                                                     reload_tab_content(url_d);
+                                                     update_tabs_href();
+                                                 }
+                                             }
+                                         }
+                            });
+        $('#tabs').tabs();
+        $('#dfrom').val('{{dfrom}}');
+        $('#dto').val('{{dto}}');
+
+        {% for cls,clr in cls_j.items %}
+        cls_clicked['{{cls}}'] = 0;
+        $('td.blank_{{cls}}').mouseover(function()
+                                        {   
+                                            if (cls_clicked['{{cls}}'] == 0)
+                                            {
+                                                $(this).addClass('cls_{{cls}}');
+                                            }
+                                        });
+        $('td.blank_{{cls}}').mouseout(function()
+                                       { 
+                                            if (cls_clicked['{{cls}}'] == 0)
+                                            {
+                                                $(this).removeClass();
+                                            }
+                                       });
+        $('td.blank_{{cls}}').click(function()
+                                    {
+                                        if (cls_clicked['{{cls}}'] == 0)
+                                        {
+                                            cls_clicked['{{cls}}'] = 1;
+                                            $(this).addClass('cls_{{cls}}');
+                                        }
+                                        else
+                                        {
+                                            cls_clicked['{{cls}}'] = 0;
+                                            $(this).removeClass();
+                                        }
+                                        cls_s = get_cls_str(cls_clicked);
+                                        var url_d = get_urls_in_flash();
+                                        for (var k in url_d)
+                                        {
+                                            var new_url = change_class_url(url_d[k],cls_s);
+                                            url_d[k] = new_url;
+                                        }
+                                        reload_tab_content(url_d);
+                                        update_tabs_href();
+                                    });
+        {% endfor %}
+        {% for cls,clr in cls_y.items %}
+        cls_clicked['{{cls}}'] = 0;
+        $('td.blank_{{cls}}').mouseover(function()
+                                        { 
+                                            if (cls_clicked['{{cls}}'] == 0)
+                                            {
+                                                $(this).addClass('cls_{{cls}}');
+                                            }
+                                        });
+        $('td.blank_{{cls}}').mouseout(function()
+                                       {
+                                            if (cls_clicked['{{cls}}'] == 0)
+                                            {
+                                                $(this).removeClass(); 
+                                            }
+                                       });
+        $('td.blank_{{cls}}').click(function()
+                                    {
+                                        if (cls_clicked['{{cls}}'] == 0)
+                                        {
+                                            cls_clicked['{{cls}}'] = 1;
+                                            $(this).addClass('cls_{{cls}}');
+                                        }
+                                        else
+                                        {
+                                            cls_clicked['{{cls}}'] = 0;
+                                            $(this).removeClass();
+                                        }
+                                        cls_s = get_cls_str(cls_clicked);
+                                       
+                                        var url_d = get_urls_in_flash();
+                                        for (var k in url_d)
+                                        {
+                                            var new_url = change_class_url(url_d[k],cls_s);
+                                            url_d[k] = new_url;
+                                        }
+                                        reload_tab_content(url_d);
+                                        update_tabs_href();
+                                    });
+        {% endfor %}
+      });
+  </script>
+</head>
+  <body style='background-color: #dddddd'>
+    <form id='form' action=''>
+      <table border='0' width='100%'>
+        <tr>
+          <td width='50'>
+            <input id='orgn' size='3' class='ui-widget' value='{{orgn}}' />
+          </td>
+          <td width='50'>
+            <input id='dstn' size='3' class='ui-widget' value='{{dstn}}' />
+          </td>
+          <td width='50'>
+            <select id='fltnum' class='ui-widget' >
+              {% if fltnum %}
+                <option value='{{fltnum}}'>{{fltnum}}</option>
+              {% else %} 
+                <option>-----</option>
+              {% endif %}
+            </select>
+          </td>
+          <td width='50'>
+            <input id='submit' type='submit' value="Go!" class='ui-widget' disabled />
+          </td>
+          <td>
+            &nbsp;
+          </td>
+          <td width='200'>
+            From: <input type='text' size='10' id='dfrom' />
+          </td>
+          <td width='200'>
+            To: <input type='text' size='10' id='dto' />
+          </td>
+        </tr>
+      </table>
+    </form>
+    <hr />
+    <table border='0'>
+      <tr>
+        <td width='30'><b>J:</b></td>
+        {% for cls,clr in cls_j.items %}
+        <td width='30' align='center' class='blank_{{cls}}' style='cursor:pointer;'>
+          {{cls}}
+        </td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <td width='30'><b>Y:</b></td>
+        {% for cls,clr in cls_y.items %}
+        <td width='30' align='center' class='blank_{{cls}}' style='cursor:pointer;'>
+          {{cls}}
+        </td>
+        {% endfor %}
+      </tr>
+    </table>
+   <br />
+
+   <div id='tabs'>
+    <ul>
+     <li><a href='/fa/ajax/tabs/bydptdt/{{orgn}}/{{dstn}}/{{fltnum}}////' id='tabs_bydptdt'>BY DPTDT</a></li>
+     <li><a href='/fa/ajax/tabs/bydaysprior/{{orgn}}/{{dstn}}/{{fltnum}}////' id='tabs_bydaysprior'>BY DAYSPRIOR</a></li>
+     <!-- <li><a href='/fa/ajax/tabs/outliers/{{orgn}}/{{dstn}}/{{fltnum}}////' id='tabs_outliers'>OUTLIERS</a></li> -->
+    </ul>
+   </div>
+    <br />
+  </body>
+</html>
+
+
+
+

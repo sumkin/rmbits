@@ -1,0 +1,55 @@
+<html>
+<script src='http://d3js.org/d3.v3.min.js'></script>	
+<body>
+Yes!
+<p id='chart'></p>
+Revenue accounting data.
+
+<script>
+
+var margin = {top: 19.5, right: 19.5, bottom: 19.5, left: 39.5}
+    width = 1200 - margin.right,
+    height = 1000 - margin.top - margin.bottom;
+
+var svg = d3.select('#chart').append('svg')
+    .attr('width',width + margin.left + margin.right)
+    .attr('height',height + margin.top + margin.bottom)
+  .append('g')
+    .attr('transform','translate(' + margin.left + ',' + margin.top + ')');
+
+var mercator = d3.geo.mercator();
+
+d3.json(
+ '/network/json/airports',
+ function(jsondata) {
+   // FIXME: why we need x_scale and y_scale?	 
+   var x_scale = d3.scale.linear()
+     .domain([
+       d3.min(jsondata, function(d) {return d.latitude}),
+       d3.max(jsondata, function(d) {return d.latitude})
+     ])
+     .range([0,width])
+   var y_scale = d3.scale.linear()
+     .domain([
+       d3.min(jsondata, function(d) {return d.longitude}),
+       d3.max(jsondata, function(d) {return d.longitude})
+     ])
+     .range([0,height])
+     
+   svg.selectAll('circle')
+    .data(jsondata)
+    .enter().append('circle')
+     .attr('cx',function(d) { return mercator([d.longitude,d.latitude])[0] })
+     .attr('cy',function(d) { return mercator([d.longitude,d.latitude])[1] })
+     .attr('r',5)
+     .append('svg:title')
+     .text(function(d) { return d.code; });
+ });
+</script>
+
+</body>
+</html>
+
+
+
+

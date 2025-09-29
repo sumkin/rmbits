@@ -1,0 +1,15 @@
+*.pyc
+*.aux
+*.log
+*.nav
+*.toc
+*.swj
+*.swl
+optimizer/rmlp/build/
+optimizer/rmlp/tools/
+optimizer/rmlp/tools/FlameGraph
+__pycache__
+fleet_assigner/output
+*.uuid
+*.idea
+*/cache

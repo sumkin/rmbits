@@ -1,0 +1,386 @@
+<center>
+ <table width='95%' border='0'>
+  <tr>
+   <td width='105' align='center'><b>Days prior:</b></td>
+   <td width='50' align='center' id='daysprior_val'>320</td>
+   <td><div id='daysprior' value='0'></div></td>
+  </tr>
+ </table>
+</center>
+
+<br />
+<table cellpadding='15'>
+ <tr>
+  <td>
+   <input type='checkbox' id='fcst_cons_err_chckbox' value='' checked />Forecast constrained error <br />
+   <input type='checkbox' id='fcst_uncons_err_chckbox' value='' />Forecst unconstrained error <br />
+  </td>
+  <td>
+   <input type='checkbox' id='cons_aval_chckbox' value='' />Actual constrained value <br />
+   <input type='checkbox' id='uncons_aval_chckbox' value='' />Actual unconstrained value <br />
+  </td>
+  <td>
+   <input type='checkbox' id='cons_fval_chckbox' value='' />Forecasted constrained value <br />
+   <input type='checkbox' id='uncons_fval_chckbox' value='' />Forecasted unconstrained value <br />
+  </td>
+  <td>
+   <input type='checkbox' id='cons_booked_chckbox' value='' />Constrained booked <br />
+   <input type='checkbox' id='uncons_booked_chckbox' value='' />Unconstrained booked <br />
+  </td>
+ </tr>
+</table>
+<div id='tabs-1' align='center'>
+
+ <! -- FORECAST CONSTRAINED ERROR -->
+ <div id='fl_obj_fcst_cons_err_div'>
+  <center>
+   <div id='fcst_cons_err_resize' style='width:90% height:200px padding: 10px'>
+   {{ fl_obj_htm_cons_err|safe }}
+   </div>
+  </center>
+  <br />
+  <center>
+   <table width='95%' border='0'>
+     <tr>
+       <td><div id='cls_stats'></td>
+     </tr>
+   </table>
+  </center>
+ </div>
+
+ <!-- FORECAST UNCONSTRAINED ERROR -->
+ <div id='fl_obj_fcst_uncons_err_div'>
+  <center>
+   <div id='fcst_uncons_err_resize' style='width:90% height:200px padding: 10px'>
+   {{ fl_obj_htm_uncons_err|safe }}
+   </div>
+  </center>
+  <br />
+  <center>
+   <table width='95%' border='0'>
+     <tr>
+       <td><div id='cls_stats'></td>
+     </tr>
+   </table>
+  </center>
+ </div>
+
+ <!-- CONSTRAINED ACTUAL VALUES -->
+ <div id='fl_obj_cons_aval_div'>
+  <center>
+   <div id='cons_aval_resize' style='width:90% height:200px padding: 10px'>
+   {{ fl_obj_htm_cons_aval|safe }}
+   </div>
+  </center>
+ </div>
+
+ <!-- UNCONSTRAINED ACTUAL VALUES -->
+ <div id='fl_obj_uncons_aval_div'>
+  <center>
+   <div id='uncons_aval_resize' style='width:90% height:200px padding: 10px'>
+   {{ fl_obj_htm_uncons_aval|safe }}
+   </div>
+  </center>
+ </div>
+
+ <!-- CONSTRAINED FORECASTED VALUES -->
+ <div id='fl_obj_cons_fval_div'>
+  <center>
+   <div id='cons_fval_resize' style='width:90% height:200px padding: 10px'>
+   {{ fl_obj_htm_cons_fval|safe }}
+   </div>
+  </center>
+ </div>
+
+ <!-- UNCONSTRAINED FORECASTED VALUES -->
+ <div id='fl_obj_uncons_fval_div'>
+  <center>
+   <div id='uncons_fval_resize' style='width:90% height:200px padding: 10px'>
+   {{ fl_obj_htm_uncons_fval|safe }}
+   </div>
+  </center>
+ </div>
+
+ <!-- CONSTRAINED BOOKED VALUES -->
+ <div id='fl_obj_cons_booked_div'>
+  <center>
+   <div id='cons_booked_resize' style='width:90% height:200px padding: 10px'>
+   {{ fl_obj_htm_cons_booked|safe }}
+   </div>
+  </center>
+ </div>
+
+ <!-- UNCONSTRAINED BOOKED VALUES -->
+ <div id='fl_obj_uncons_booked_div'>
+  <center>
+   <div id='uncons_booked_resize' style='width:90% height:200px padding: 10px'>
+   {{ fl_obj_htm_uncons_booked|safe }}
+   </div>
+  </center>
+ </div>
+</div>
+
+   <script type='text/javascript'>
+        $('#ae_tag').css({   'border': '1px solid #000', 'cursor': 'pointer', 'color': '#000' });
+        $('#re_tag').css({   'border': '1px solid #ccc', 'cursor': 'pointer', 'color': '#ccc' });
+        $('#mape_tag').css({ 'border': '1px solid #ccc', 'cursor': 'pointer', 'color': '#ccc' });
+
+
+        $('#ae_tag').mouseover(function()
+                               {
+                                   if (err_tag_clicked['ae'] == 0)
+                                   {
+                                       err_tag_chng_bright('ae');
+                                   }
+                               });
+        $('#ae_tag').mouseout(function()
+                              {
+                                  if (err_tag_clicked['ae'] == 0)
+                                  {
+                                      err_tag_chng_dull('ae');
+                                  }
+                              });
+        $('#re_tag').mouseover(function()
+                               {
+                                   if (err_tag_clicked['re'] == 0)
+                                   {
+                                       err_tag_chng_bright('re');
+                                   }
+                               });
+        $('#re_tag').mouseout(function()
+                              {
+                                  if (err_tag_clicked['re'] == 0)
+                                  {
+                                      err_tag_chng_dull('re');
+                                  }
+                              }); 
+        $('#mape_tag').mouseover(function()
+                                 {
+                                     if (err_tag_clicked['mape'] == 0)
+                                     {
+                                         err_tag_chng_bright('mape');
+                                     }
+                                 });
+        $('#mape_tag').mouseout(function()
+                                {
+                                    if (err_tag_clicked['mape'] == 0)
+                                    {
+                                        err_tag_chng_dull('mape');
+                                    }
+                                });
+        $('#ae_tag').click(function()
+                           {
+                               if (err_tag_clicked['ae'] == 0)
+                               {
+                                   err_tag_clicked['ae'] = 1;
+                               }
+                               else
+                               {
+                                   err_tag_clicked['ae'] = 0;
+                               }
+                               err_tag_clicked['re'] = 0;
+                               err_tag_clicked['mape'] = 0;
+                               err_tag_chng_dull('re');
+                               err_tag_chng_dull('mape');
+                                             
+                               var url_d = get_urls_in_flash();
+                               for (var k in url_d)
+                               {
+                                   var new_url = change_error_type_url(url_d[k],'ae');
+                                   url_d[k] = new_url;
+                               }
+                               reload_tab_content(url_d);
+                               update_tabs_href();  
+                           });
+        $('#re_tag').click(function()
+                           {
+                               if (err_tag_clicked['re'] == 0)
+                               {
+                                   err_tag_clicked['re'] = 1;
+                               }
+                               else
+                               {
+                                   err_tag_clicked['re'] = 0;
+                               }
+                               err_tag_clicked['ae'] = 0;
+                               err_tag_clicked['mape'] = 0;
+                               err_tag_chng_dull('ae');
+                               err_tag_chng_dull('mape');
+
+                               var url_d = get_urls_in_flash();
+                               for (var k in url_d)
+                               {
+                                   var new_url = change_error_type_url(url_d[k],'re');
+                                   url_d[k] = new_url;
+                               }
+                               reload_tab_content(new_url);
+                               update_tabs_href();
+                           });
+        $('#mape_tag').click(function()
+                             {
+                                 if (err_tag_clicked['mape'] == 0)
+                                 {
+                                     err_tag_clicked['mape'] = 1;
+                                 }
+                                 else
+                                 {
+                                     err_tag_clicked['mape'] = 0;
+                                 }
+                                 err_tag_clicked['ae'] = 0;
+                                 err_tag_clicked['re'] = 0;
+                                 err_tag_chng_dull('ae');
+                                 err_tag_chng_dull('re');
+
+                                 var url_d = get_urls_in_flash();
+                                 for (var k in url_d)
+                                 {
+                                     var new_url = change_error_type_url(url_d[k],'mape');
+                                     url_d[k] = new_url;
+                                 }
+                                 reload_tab_content(url_d);
+                                 update_tabs_href();
+                             });
+        $('#daysprior').slider({ min: 0, 
+                                 max: daysprior_arr.length-1,
+                                 change: function(event, ui)
+                                         {
+                                             // update daysprior on page
+                                             var val = $('#daysprior').slider('option','value');
+                                             var daysprior = daysprior_arr[parseInt(val)];
+                                             $('#daysprior_val').html(daysprior);
+                                            
+                                             // change daysprior
+                                             var url_d = get_urls_in_flash();
+                                             for (var k in url_d)
+                                             {
+                                                 var new_url = change_daysprior_url(url_d[k],daysprior+'');
+                                                 url_d[k] = new_url;
+                                             }
+                                             reload_tab_content(url_d);
+                                             update_tabs_href();
+                                         }
+                               });
+        // set daysprior for flash (for default usage)
+        $('#daysprior').val(daysprior_arr.indexOf({{daysprior}}));
+        var val = $('#daysprior').slider('option', 'value');
+        var daysprior = daysprior_arr[parseInt(val)];
+
+        var url_d = get_urls_in_flash();
+        for (var k in url_d)
+        {
+            var new_url = change_daysprior_url(url_d[k],daysprior+'');
+            url_d[k] = new_url;
+        }
+        reload_tab_content(url_d);
+        update_tabs_href();
+
+        // make actual and forecasted values hidden at initialization
+        $('#fl_obj_fcst_uncons_err_div').hide();
+        $('#fl_obj_cons_aval_div').hide();
+        $('#fl_obj_uncons_aval_div').hide();
+        $('#fl_obj_cons_fval_div').hide();
+        $('#fl_obj_uncons_fval_div').hide();
+        $('#fl_obj_cons_booked_div').hide();
+        $('#fl_obj_uncons_booked_div').hide();
+
+        $('#fcst_cons_err_chckbox').change(function() 
+                                           {
+                                               if ( $('#fcst_cons_err_chckbox').is(':checked') )
+                                               {
+                                                   $('#fl_obj_fcst_cons_err_div').show();
+                                               }
+                                               else
+                                               {
+                                                   $('#fl_obj_fcst_cons_err_div').hide();
+                                               }
+                                           });
+        $('#fcst_uncons_err_chckbox').change(function()
+                                             {
+                                                 if ( $('#fcst_uncons_err_chckbox').is(':checked') )
+                                                 {
+                                                     $('#fl_obj_fcst_uncons_err_div').show();
+                                                 }
+                                                 else
+                                                 {
+                                                     $('#fl_obj_fcst_uncons_err_div').hide();
+                                                 }
+                                             });
+        $('#cons_aval_chckbox').change(function()
+                                       {
+                                           if ( $('#cons_aval_chckbox').is(':checked') )
+                                           {
+                                               $('#fl_obj_cons_aval_div').show();
+                                           }
+                                           else
+                                           {
+                                               $('#fl_obj_cons_aval_div').hide();
+                                           }
+                                       });
+        $('#uncons_aval_chckbox').change(function()
+                                         {
+                                             if ( $('#uncons_aval_chckbox').is(':checked') )
+                                             {
+                                                 $('#fl_obj_uncons_aval_div').show();
+                                             }
+                                             else
+                                             {
+                                                 $('#fl_obj_uncons_aval_div').hide();
+                                             }
+                                         });
+        $('#cons_fval_chckbox').change(function()
+                                       {
+                                           if ( $('#cons_fval_chckbox').is(':checked') )
+                                           {
+                                               $('#fl_obj_cons_fval_div').show();
+                                           }
+                                           else
+                                           {
+                                               $('#fl_obj_cons_fval_div').hide();
+                                           }
+                                       });
+        $('#uncons_fval_chckbox').change(function()
+                                         {
+                                             if ( $('#uncons_fval_chckbox').is(':checked') )
+                                             {
+                                                 $('#fl_obj_uncons_fval_div').show();
+                                             }
+                                             else
+                                             {
+                                                 $('#fl_obj_uncons_fval_div').hide();
+                                             }
+                                         });
+        $('#cons_booked_chckbox').change(function()
+                                         {
+                                             if ( $('#cons_booked_chckbox').is(':checked') )
+                                             {
+                                                 $('#fl_obj_cons_booked_div').show();
+                                             }
+                                             else
+                                             {
+                                                 $('#fl_obj_cons_booked_div').hide();
+                                             }
+                                         });
+        $('#uncons_booked_chckbox').change(function()
+                                           {
+                                              if ( $('#uncons_booked_chckbox').is(':checked') )
+                                              {
+                                                  $('#fl_obj_uncons_booked_div').show();
+                                              }
+                                              else
+                                              {
+                                                  $('#fl_obj_uncons_booked_div').hide();
+                                              }
+                                           });
+        $(document).ready(function()
+                          {
+                              $('#fcst_cons_err_resize').resizable();
+                              $('#fcst_uncons_err_resize').resizable();
+                              $('#cons_aval_resize').resizable();
+                              $('#uncons_aval_resize').resizable();
+                              $('#cons_fval_resize').resizable();
+                              $('#uncons_fval_resize').resizable();
+                              $('#cons_booked_resize').resizable();
+                              $('#uncons_booked_resize').resizable();
+                          });
+
+

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <title>Revenue accounting data upload</title>
+    <link href='/static/bootstrap/css/bootstrap.css' rel='stylesheet' media='screen'>
+    <style>
+      body {
+        padding-top: 60px;
+      }
+    </style>
+  </head>
+  <body>
+    <script src='http://code.jquery.com/jquery-latest.js'></script>
+    <script src='/static/bootstrap/js/bootstrap.min.js'></script>
+
+    <div class='navbar navbar-inverse navbar-fixed-top'>
+      <div class='navbar-inner'>
+        <div class='container'>
+        </div>
+     </div>
+    </div>
+
+    <div class='container'>
+      <form method='POST' enctype='multipart/form-data' class='form-horizontal'>
+        {% csrf_token %}
+        <fieldset>
+          <div id='legend' class=''>
+            <legend class=''>Upload revenue accounting data</legend>
+          </div>
+
+          <!-- Email -->
+          <div class='control-group'>
+            <label class='control-label'>Email</label>
+            <div class='controls'>
+              {{form.email}}
+            </div>
+          </div>
+
+          <!-- File -->
+          <div class='control-group'>
+            <label class='control-label'>File</label>
+            <div class='controls'>
+              {{form.fname}}
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div class='control-group'>
+            <div class='controls'>
+              <input type='submit' class='btn btn-success' value='Submit' />
+            </div>
+        </fieldset>
+      </form>
+    </div>
+ </body>
+</html>
+

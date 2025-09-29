@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <script type='text/javascript' src='/media/js/dygraph-combined.js'></script>
+  </head>
+<body>
+<h1>OD competition:</h1>
+<form action='/od/competition/' method='POST'>
+ {% csrf_token %}
+ <h3>Airlines</h3>
+  {{form.finnair}} Finnair
+  {{form.aeroflot}} Aeroflot
+  {{form.rossiya}} Rossiya
+  {{form.airbaltic}} AirBaltic
+ <h3>OD</h3>
+  From: {{form.od_from}} To: {{form.od_to}}
+ <h3>Departure range</h3>
+  Start: {{form.dep_from}} End: {{form.dep_to}}
+ <h3>Days of week</h3>
+  {{form.monday}} Monday
+  {{form.tuesday}} Tuesday
+  {{form.wednesday}} Wednesday
+  {{form.thursday}} Thursday
+  {{form.friday}} Friday
+  {{form.saturday}} Saturday
+  {{form.sunday}} Sunday
+ <h3>Stay lengths</h3>
+  {{form.sl_days}} days
+  <br /><br />
+  <input type='submit' name='go' value='            Start           ' />
+</form>
+
+</body>
+</html>

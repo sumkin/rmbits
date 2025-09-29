@@ -1,0 +1,157 @@
+\documentclass[a4paper,oneside]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{On Deterministic LP for Airline Network Capacity Control}
+\author{Fedor Nikitin}
+
+\newtheorem{defi}{Definition}
+\newtheorem{theo}{Theorem}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+One of the method to optimize network resource is determenistic
+linear programming problem.
+
+Network optimizer produces shadow prices which serve as input
+to leg-based optimizer. Optimization on leg level is carried out
+with EMSR optimization heuristics.
+
+Deficiency is that classic determenistic linear programming
+could produce inverted values... This is obstacle to apply
+EMSR optimization method.
+
+Different workarounds proposed which fix the order of values.
+
+In this paper classic determenistic LP is modified to take
+into account possible inversions of fares for leg-based optimizer.
+We show that our method produces optimal allocations.
+
+Also uniqueness of solution of LP is studied....
+
+
+\section{Network optimization}
+Primal LP is
+\begin{equation}
+p^T x \longrightarrow \max
+\label{primal_target}
+\end{equation}
+\begin{equation}
+Ax \leq c,
+\label{primal_cons_1}
+\end{equation}
+\begin{equation}
+0 \leq x \leq \mu,
+\label{primal_cons_2}
+\end{equation}
+where
+\begin{itemize}
+  \item $p\in \mathbb{R}^n$ is price vector
+  \item $A\in \mathbb{R}^{m\times n}$ is leg-product matrix
+  \item $c\in \mathbb{R}^m$ is capacity vector 
+  \item $\mu\in \mathbb{R}^n$ is demand vector
+\end{itemize}
+Dual LP to (\ref{primal_target}),(\ref{primal_cons_1}),(\ref{primal_cons_2}) is 
+\begin{equation}
+\lambda_1^T c + \lambda_2^T \mu \longrightarrow \min,
+\label{dual_target}
+\end{equation}
+\begin{equation}
+\lambda_1^T A + \lambda_2^T \geq p^T,
+\label{dual_cons_1}
+\end{equation}
+\begin{equation}
+\lambda_1 \geq 0, \lambda_2 \geq 0,
+\label{dual_cons_2}
+\end{equation}
+where
+\begin{itemize}
+  \item $\lambda_1\in \mathbb{R}^m$ is shadow price vector of capacities
+  \item $\lambda_2\in \mathbb{R}^n$ is shadow price vector of demand
+\end{itemize} 
+
+Desirability vector is
+$$
+d = p - \lambda_1^T A.
+$$
+Pseudo fare matrix is
+$$
+F = d\otimes \lambda_1^T,
+$$
+where $\otimes$ is tropical product.
+
+\noindent
+Input fares is vector $\nu$ satisfying the system of linear equations
+$$
+(\mathcal{A}\mu)^T \nu = \mathcal{A} \mu^T F.
+$$
+\begin{defi}
+Feasible dual solution $\lambda = (\lambda_1,\lambda_2)$ of (\ref{dual_target}),(\ref{dual_cons_1}),(\ref{dual_cons_2})
+preserves the order of input fares if
+$$
+(E - E_+) \nu \geq 0.
+$$
+\end{defi}
+Above $E$ is unity matrix and $E_+$ is ...
+
+\section{Extending dual LP}
+Extended dual LP is
+\begin{equation}
+R = \lambda_1^T c + \lambda_2^T \mu \longrightarrow \min,
+\label{ext_dual_target}
+\end{equation}
+\begin{equation}
+\lambda_1^T A + \lambda_2^T \geq p^T,
+\label{ext_dual_cons_1}
+\end{equation}
+\begin{equation}
+(\mathcal{A}\mu)^T \nu = \mathcal{A} \mu^T F,
+\label{ext_dual_cons_2}
+\end{equation}
+\begin{equation}
+(E - E_+) \nu \geq 0,
+\end{equation}
+\begin{equation}
+\lambda_1\geq 0, \lambda_2 \geq 0, \nu \geq 0.
+\label{ext_dual_cons_3}
+\end{equation}
+
+\begin{theo}
+Optimal value of 
+(\ref{ext_dual_target}),(\ref{ext_dual_cons_1}),(\ref{ext_dual_cons_2}),(\ref{ext_dual_cons_3})
+\end{theo}
+
+\section{Uniqueness of solution for extended dual LP}
+=======
+Desirability vector
+$$
+d = p - \lambda_1^T A.
+$$
+Pseudo fare matrix
+$$
+PF = d \otimes \lambda_1^T,
+$$
+where $\otimes$ is tropical product.
+
+Resource-class matrix $\mathcal{A}$.
+
+Input fares for class optimizer is vector $\nu$ which is found from 
+the system of linear equations
+$$
+(\mathcal{A}\mu)\nu = \mathcal{A}(\mu^T PF).
+$$
+
+
+\section{Uniqueness of dual solution}
+That is needed in order to uniquely identify input fares for leg optimizer.
+If it is not unique what does it mean?
+
+\end{document}
+
+
+
+
+
+

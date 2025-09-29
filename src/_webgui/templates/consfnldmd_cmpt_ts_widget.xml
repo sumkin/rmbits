@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module>
+  <ModulePrefs title="Constrained final demand" />
+  <Content type="html">
+    <![CDATA[
+      This is consfnldmd_cmpt_ts_widget!<br /><br />
+
+      orgn:   {{orgn}}<br />
+      dstn:   {{dstn}}<br />
+      fltnum: {{fltnum}}<br />
+      cmpt:   {{cmpt}}
+    ]]>
+  </Content>
+</Module>

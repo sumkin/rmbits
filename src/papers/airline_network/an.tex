@@ -1,0 +1,73 @@
+\documentclass{beamer}
+\usepackage{graphics}
+\usepackage{color}
+\usepackage{eurosym}
+\usepackage{amsmath}
+\usepackage{listings}
+
+\xdefinecolor{ay_struct_color}{rgb}{0.09,0.17,0.41}
+\xdefinecolor{ay_norm_color}{rgb}{0.3,0.3,0.3}
+\usetheme{boxes}
+
+\setbeamercolor{structure}{fg=ay_struct_color}
+\setbeamercolor{normal text}{fg=ay_norm_color}
+\logo{\includegraphics[width=100px]{logo.jpg}}
+
+\author{Fedor Nikitin}
+\title{Airline network analysis}
+
+\begin{document}
+  \maketitle
+  \frame{
+    \frametitle{AY network}
+    123
+  }
+
+  \frame{
+    \frametitle{Challenges}
+    abc
+  }
+
+  \frame{
+    \frametitle{Network optimization.}
+    NRPS does this.
+    $$
+    Rev = \langle f, x \rangle \rightarrow \max,
+    $$
+    $$
+    A x \leq c,
+    $$
+    $$
+    0 \leq x \leq \mu.
+    $$
+    where
+    \begin{itemize}
+      \item $\mu$ is vector of ODIFs demands.
+      \item $A$ is product matrix.
+      \item $c$ is vector of leg capacities.
+      \item $f$ is vector of ODIF fares.
+      \item $x$ is vector of allocations.
+    \end{itemize}
+  }
+  
+  \frame{
+    \frametitle{Controlled vs Uncontrolled}
+    Controlled:
+    \begin{itemize}
+      \item $f$ is our price (BMs).
+      \item $A$ is about where we fly and SigOD list.
+      \item $c$ is our capacity on leg.
+    \end{itemize}
+    Uncontrolled:
+    \begin{itemize}
+      \item $\mu$ is demand on ODIFs.
+    \end{itemize}
+  }
+\end{document}
+
+
+
+
+
+
+

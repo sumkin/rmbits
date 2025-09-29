@@ -1,0 +1,173 @@
+\documentclass{beamer}
+\usepackage{graphics}
+\usepackage{color}
+\usepackage{eurosym}
+\usepackage{amsmath}
+\usepackage{listings}
+
+\xdefinecolor{ay_struct_color}{rgb}{0.09,0.17,0.41}
+\xdefinecolor{ay_norm_color}{rgb}{0.3,0.3,0.3}
+\usetheme{boxes}
+
+\setbeamercolor{structure}{fg=ay_struct_color}
+\setbeamercolor{normal text}{fg=ay_norm_color}
+\logo{\includegraphics[width=100px]{logo.jpg}}
+
+\author{Fedor Nikitin}
+\title{Programmed iteration method for airline network optimization}
+
+\begin{document}
+  \maketitle
+
+  \frame{
+    \frametitle{Airline network optimization. Static case.}
+    $$
+    Revenue = \langle f,x \rangle \rightarrow \max,
+    $$
+    $$
+    Ax \leq c(t),
+    $$
+    $$
+    0 \leq x \leq \mu.
+    $$
+    where
+    \begin{itemize}
+      \item $f_i$ is ODIF price.
+      \item $x_i$ is allocation for ODIF.
+      \item $A$ is product matrix.
+      \item $\mu$ is ODIF demand.
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{Airline network optimization. Dynamic case.}
+    Network optimized on finite horizon $[t_0,T]$.
+    $$
+    Revenue = \int_{t_0}^T \langle f(\tau),x(\tau) \rangle d\tau \rightarrow \max,
+    $$
+    $$
+    A(t) x(t) \leq c(t),
+    $$
+    $$
+    0 \leq x(t) \leq \mu(t).
+    $$
+    Given dynamic product matrix $A(t)$, capacities $c(t)$, prices $f(t)$ and 
+    demand $\mu(t)$ find dynamic allocations $x(t)$ maximizing revenue.
+  }
+
+  \frame{
+    \frametitle{Airline network optimization. Simplified case.}
+    Simplification assumptions:
+    \begin{itemize}
+      \item Product matrix $A(t) = A$ is constant.
+      \item Capacity vector $c(t) = c$ is constant.
+      \item Price vector $f(t) = f$ is constant.
+    \end{itemize}
+    Then
+    $$
+    Revenue = \int_{t_0}^T \langle f,x(\tau) \rangle d\tau \rightarrow \max,
+    $$
+    $$
+    A x(t) \leq c,
+    $$
+    $$
+    0 \leq x(t) \leq \mu(t).
+    $$
+    We solve this problem.
+  }
+
+  \frame{
+    \frametitle{Programmed iteration method. Initial approximation.}
+    Suppose constant allocation (control) $x$ on $[t_0,T]$ is used.
+    $$
+    \langle f,x \rangle (T-t_0) \rightarrow \max,
+    $$
+    $$
+    Ax \leq c,
+    $$
+    $$
+    0 \leq x \leq \min_{t\in [t_0,T]} \mu(t).
+    $$
+    Classic Linear Programming (LP) problem.
+
+    Define $X(t) = \{x | Ax \leq c, 0\leq x \leq \min_{\tau\in [t,T]} \mu(\tau) \}$.
+
+    Initial approximation
+    $$
+    w^{(0)}(t) = \max_{x\in X(t)} \langle f,x \rangle (T-t). 
+    $$
+    Interpretation: maximum revenue achievable on $[t,T]$ using some constant allocations.
+  }  
+
+  \frame{
+    \frametitle{Programmed iteration method. Next iterations}
+    Suppose we allowed to use one switch of constant allocation policy.
+   
+    \vspace{10pt} 
+    The maximum achievable revenue is then
+    $$
+    w^{(1)}(t) = \max_{\tau \in [t,T]} \max_{x\in X(\tau)} \Big[ \langle f,x \rangle (\tau -t) + w^{(0)}(\tau) \Big]
+    $$
+
+    ...and so on
+
+    $$
+    w^{(n)}(t) = \max_{\tau \in [t,T]} \max_{x \in X(\tau)} \Big[ \langle f,x \rangle (\tau-t) + w^{(n-1)}(\tau) \Big]
+    $$
+
+    \vspace{10pt}
+    Taking a limit
+    $$
+    w^{(n)}(\cdot ) \longrightarrow w^*(\cdot).
+    $$
+
+    $w^*(\cdot)$ is maximum revenue.
+  }
+
+  \frame{
+    \frametitle{Questions to be answered}
+    Proposed approach potentially could answer the following questions.
+    \begin{itemize}
+      \item What is optimal revenue and optimal allocations?
+      \item What is maximum revenue we could achieve using finite number of constant policies.
+      \item How frequently network should be re-optimized?
+      \item What are planning windows? 
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{Computations}
+    To find $w^{(0)}(\cdot)$ for each $t\in [t_0,T]$ 
+    \begin{itemize}
+      \item Solve LP.
+    \end{itemize}
+
+    \vspace{10pt}
+    To find $w^{(n)}(\cdot)$ for each $t\in [t_0,T]$
+    \begin{itemize}
+      \item For each $\tau\in [t,T]$ solve LP.
+      \item Maximize by $\tau$ over $[t,T]$.
+    \end{itemize}
+
+    \vspace{10pt}
+    Suppose time is discretized with $n$ steps.
+
+    \vspace{10pt}
+    For each iteration we require to solve $n^2$ LPs and $n$ maximization of non-linear function.
+
+    For given demand vector $\mu(t)$ closed-form solutions (perhaps) possible.
+  }
+
+  \frame{
+    \frametitle{Further research}
+    \begin{itemize}
+      \item Get rid of simplification assumptions.
+      \item Stochastic version (demand is stochastic process).
+      \item Overbooking version (allow sell more than capacity).
+      \item Game-theoretic version (two or more players).
+    \end{itemize}
+  }
+
+\end{document}
+
+

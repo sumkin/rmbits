@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang='en'>
+ <head>
+  <title>Split history</title>
+
+  <link href='/static/bootstrap/css/bootstrap.css' rel='stylesheet' media='screen'>
+  <link href='/static/bootstrap/css/datepicker.css' rel='stylesheet' media='screen'>
+
+  <script src='http://code.jquery.com/jquery-latest.js'></script>
+  <script src='/static/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/static/bootstrap/js/bootstrap-datepicker.js'></script>
+  <script src='/static/bootstrap/js/bootstrap.file-input.js'></script>
+  <script src='/static/js/dygraph-combined.js'></script>
+  <style>
+    body {
+      padding-top: 60px;
+    }
+
+    .preload {
+      position: absolute;
+      margin-left: 150px;
+      margin-top: 130px;
+      width: 600px;
+    }
+    
+  </style>
+ </head>
+ <body>
+  <div class='navbar navbar-inverse navbar-fixed-top'>
+   <div class='navbar-inner'>
+    <div class='container'></div>
+   </div>
+  </div>
+
+  <!--
+  <div class='container'>
+    <form method='POST' enctype='multipart/form-data' class='form-horizontal'>
+      {% csrf_token %}
+      <fieldset>
+        <div id='legend' class=''>
+          <legend class=''>Holidays</legend>
+
+          <div class='control-group'>
+            <label class='control-label'>2012&nbsp;&nbsp;&nbsp;</label>
+            <div class='control-group'>
+              <input type='text' name='holiday' year='2012' number='1' end='0' id='201210' class='input-small' placeholder='Xmas starts' >
+              <input type='text' name='holiday' year='2012' number='1' end='1' id='201211'  class='input-small' placeholder='Xmas ends' > 
+              <input type='text' name='holiday' year='2012' number='2' end='0' id='201220' class='input-small' placeholder='Easter starts' >
+              <input type='text' name='holiday' year='2012' number='2' end='1' id='201221' class='input-small' placeholder='Easter ends' > 
+              <input type='text' name='holiday' year='2012' number='3' end='0' id='201230' class='input-small' placeholder='Midsum starts' >
+              <input type='text' name='holiday' year='2012' number='3' end='1' id='201231' class='input-small' placeholder='Midsum ends' >
+            </div>
+            <script>
+              $(document).ready(function() {
+                $('#201210').datepicker({format: 'yyyy-mm-dd'});
+                $('#201211').datepicker({format: 'yyyy-mm-dd'});
+                $('#201220').datepicker({format: 'yyyy-mm-dd'});
+                $('#201221').datepicker({format: 'yyyy-mm-dd'});
+                $('#201230').datepicker({format: 'yyyy-mm-dd'});
+                $('#201231').datepicker({format: 'yyyy-mm-dd'});
+              });
+            </script> 
+
+            <label class='control-label'>2013&nbsp;&nbsp;&nbsp;</label>
+            <div class='control-group'>
+              <input type='text' name='holiday' year='2013' number='1' end='0' id='201310' class='input-small' placeholder='Xmas starts' >
+              <input type='text' name='holiday' year='2013' number='1' end='1' id='201311' class='input-small' placeholder='Xmas ends' > 
+              <input type='text' name='holiday' year='2013' number='2' end='0' id='201320' class='input-small' placeholder='Easter starts' >
+              <input type='text' name='holiday' year='2013' number='2' end='1' id='201321' class='input-small' placeholder='Easter ends' > 
+              <input type='text' name='holiday' year='2013' number='3' end='0' id='201330' class='input-small' placeholder='Midsum starts' >
+              <input type='text' name='holiday' year='2013' number='3' end='1' id='201331' class='input-small' placeholder='Midsum ends' >
+            </div>
+            <script>
+              $(document).ready(function() {
+                $('#201310').datepicker({format: 'yyyy-mm-dd'});
+                $('#201311').datepicker({format: 'yyyy-mm-dd'});
+                $('#201320').datepicker({format: 'yyyy-mm-dd'});
+                $('#201321').datepicker({format: 'yyyy-mm-dd'});
+                $('#201330').datepicker({format: 'yyyy-mm-dd'});
+                $('#201331').datepicker({format: 'yyyy-mm-dd'});
+              });
+            </script> 
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+
+  <div class='container'>
+    <legend class=''>Parameters</legend>
+    <form class='form-horizontal'>
+      <fieldset>
+        <div class='control-group'>
+          <label class='control-label'>h:</label>
+          <div class='controls'>
+            <input id='h' type='text' class='input-mini' >
+            <span class='help-inline'>Minimum ratio of points in segment (out of total)</span>
+          </div>
+        </div>
+        <div class='control-group'>
+          <label class='control-label'>breaks:</label>
+          <div class='controls'>
+            <input id='breaks' type='text' class='input-mini'>
+            <span class='help-inline'>Maximum number of breaks in segment</span>
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+  -->
+
+  <div class='container'>
+    <legend class=''>Revenue</legend>
+    <div style='width: 900px; height: 200px; vertical-align: middle;'>
+      <div id='loading_rev' class='progress progress-striped active preload'>
+        <div class='bar' style='width: 100%;'></div>
+      </div>
+      <div id='rev' style='width: 900px; height: 200px'></div>
+    </div>
+  </div>
+
+  <div class='container'>
+    <legend class=''>Number of paxes</legend>
+    <div style='width: 900px; height: 200px; vertical-align: middle;'>
+      <div id='loading_npax' class='progress progress-stripped active preload'>
+        <div class='bar' style='width: 100%;'></div>
+      </div>
+      <div id='npax' style='width: 900px; height: 200px'></div>
+    </div>
+  </div>
+
+  <div class='container'>
+    <legend class=''>Yield</legend>
+    <div style='width: 900px; height: 200px; vertical-align: middle;'>
+      <div id='loading_yield' class='progress progress-stripped active preload'>
+        <div class='bar' style='width: 100%;'></div>
+      </div>
+      <div id='yield' style='width: 900px; height: 200px'></div>
+    </div>
+  </div>
+
+  <div class='container'>
+    <legend class=''>Number of edges</legend>
+    <div style='width: 900px; height: 200px; vertical-align: middle;'>
+      <div id='loading_nedge' class='progress progress-stripped active preload'>
+        <div class='bar' style='width: 100%;'></div>
+      </div>
+      <div id='nedge' style='width: 900px; height: 200px'></div>
+    </div>
+  </div>
+
+  <div class='container'>
+    <legend class=''>P2P paxes ratio</legend>
+    <div style='width: 900px; height: 200px; vertical-align: middle;'>
+      <div id='loading_p2p_npax_ratio' class='progress progress-stripped active preload'>
+        <div class='bar' style='width: 100%;'></div>
+      </div>
+      <div id='p2p_npax_ratio' style='width: 900px; height: 200px'></div>
+    </div>
+  </div>
+
+  <!--
+  <div class='container'>
+    <legend class=''>First principal component</legend>
+    <div style='width: 900px; height: 200px; vertical-align: middle;'>
+      <div id='loading_first_pc' class='progress progress-striped active preload'>
+        <div class='bar' style='width: 100%;'></div>
+      </div>
+      <div id='first_pc' style='width: 900px; height: 200px'>123</div>
+    </div>
+    <br />
+  </div> -->
+  <br />
+  <br />
+  <br />
+  <br />
+ </body>
+</html>
+
+<script type='text/javascript'>
+  g_rev = new Dygraph(document.getElementById('rev'),
+    '/sh/csv/rev',
+    { colors: ['#0000FF','#FF0000'],
+      drawCallback: function(g,init) {
+        $('#loading_rev').hide();
+        $('#rev').show();
+      }
+    });
+
+  g_npax = new Dygraph(document.getElementById('npax'),
+    'sh/csv/npax',
+    { colors: ['#0000FF','#FF0000'],
+      drawCallback: function(g,init) {
+        $('#loading_npax').hide();
+        $('#npax').show();
+      }
+    });
+
+  g_yield = new Dygraph(document.getElementById('yield'),
+    'sh/csv/yield',
+    { colors: ['#0000FF','#FF0000'],
+      drawCallback: function(g,init) {
+        $('#loading_yield').hide();
+        $('#npax').show();
+      }
+    });
+
+  g_nedge = new Dygraph(document.getElementById('nedge'),
+    'sh/csv/nedge',
+    { colors: ['#0000FF'],
+      drawCallback: function(g,init) {
+        $('#loading_nedge').hide();
+        $('#nedge').show();
+      }
+    });
+
+  g_p2p_npax_ratio = new Dygraph(document.getElementById('p2p_npax_ratio'),
+    'sh/csv/p2p_npax_ratio',
+    { colors: ['#0000FF'],
+      drawCallback: function(g,init) {
+        $('#loading_p2p_npax_ratio').hide();
+        $('#p2p_npax_ratio').show();
+      }
+    });
+
+  /*
+  g_first_pc = new Dygraph(document.getElementById('first_pc'),
+    '/sh/csv/first_pc',
+    { colors: ['#0000FF','#FF0000'],
+      drawCallback: function(g,init) {
+        $('#loading_first_pc').hide();
+        $('#first_pc').show();
+      }  
+    });
+  */
+  /*
+  $('#recalculate').click(function() {
+    var h = $('#h').val();
+    var breaks = $('#breaks').val();
+
+    var url = '/sh/csv/first_pc?h='+h+'&breaks='+breaks;
+
+    $('#first_pc').hide();
+    $('#loading').show();
+    g_first_pc.updateOptions({ file: url });
+
+    $.each($('[name="holiday"]'), function(index) {
+      url += '&hol='+$(this).val();
+    });
+
+    alert(url);
+    g_first_pc.updateOptions({ file: url });
+
+  }); */
+
+</script>
+
+

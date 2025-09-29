@@ -1,0 +1,52 @@
+Hi, 
+<br /><br />
+Below you could find the list
+of denied boarding cases found in Siebel CRM system
+for period {{dfrom}} --- {{dto}}.
+<br />
+
+At the bottom of email there are also graphs for
+number of denied boarding cases and compensation amount
+per week.
+<br /><br />
+
+Total number of passengers: {{tot_num}}<br />
+Total compensation: {{tot_amt}}<br />
+<br />
+<br />
+<table border='1' cellspacing='0' cellpadding='3'>
+ <tr>
+  <td>Case id</td>
+  <td>Case created</td>
+  <td>Flight, Departure date</td>
+  <td>Number of passengers</td>
+  <td>Amount, reason, status</td>
+ </tr>
+ {% for case in db_cases %}
+  <tr>
+   <td>{{case.case_id}}</td>
+   <td>{{case.rec_cre_dt}}</td>
+   <td>
+     {{case.flight.0}}-{{case.flight.1}} {{case.flight.2}}{{case.flight.3}} {{case.flight.4}}<br />
+   </td>
+   <td>{{case.num_pax}}</td>
+   <td>
+     {% for cmp in case.cmpn %}
+       {{cmp.1}} {{cmp.2}} {{cmp.0}}<br />
+     {% endfor %}
+   </td>
+  </tr>
+ {% endfor %}
+</table>
+
+<br /><br />
+<img src="cid:{{fname_db_pax}}" />
+<br />
+<br />
+<img src="cid:{{fname_db_comp}}" />
+
+<br /><br />
+
+Regards,<br />
+Fedor
+

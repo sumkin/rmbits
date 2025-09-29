@@ -1,0 +1,60 @@
+\documentclass{beamer}
+\usepackage{graphics}
+\usepackage{color}
+\usepackage{eurosym}
+
+\xdefinecolor{ay_struct_color}{rgb}{0.09,0.17,0.4}
+\xdefinecolor{ay_norm_color}{rgb}{0.3,0.3,0.3}
+\usetheme{boxes}
+
+\setbeamercolor{structure}{fg=ay_struct_color}
+\setbeamercolor{normal text}{fg=ay_norm_color}
+\logo{\includegraphics[width=100px]{logo.jpg}}
+\title{Network structure analysis}
+\author{Fedor Nikitin}
+
+\begin{document}
+  \maketitle
+  \begin{frame}
+    \frametitle{Background}
+    \begin{itemize}
+      \item Airline network is complicated.
+      \item Many POS, many ODs, many classes.
+      \item Passengers travel from anywhere to anywhere.
+      \item Hard to analyze and make sense of data.
+      \item When considered in dynamics --- even more complicated.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Snapshot of AY network}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Goals}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Feature selection strategy}
+    Feature set should include ones containing information about
+
+    \vspace{10pt} 
+    \structure{\bf Structure of the network}  
+
+    Where to passengers from certain origin fly in the sense of popularity
+    of destinations.
+    
+    \vspace{10pt} 
+    \structure{\bf Number of passengers}
+
+    How many, where from and where to passengers travel by volume. 
+
+     \vspace{10pt}
+    \structure{\bf Yield} 
+  \end{frame}
+
+\end{document}

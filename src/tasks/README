@@ -1,0 +1,7 @@
+This folder contains scripts executing recurrent tasks like
+file conversion, filling databases, sending emails with alarms etc.
+
+daily -- tasks are run daily
+adhoc -- might be run from time to time
+
+

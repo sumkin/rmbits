@@ -1,0 +1,184 @@
+<html>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Post analysis. Week {{week_num}} {{year}}.</title>
+    <script src="https://www.amcharts.com/lib/4/core.js"></script>
+    <script src="https://www.amcharts.com/lib/4/maps.js"></script>
+    <script src="https://www.amcharts.com/lib/4/geodata/worldLow.js"></script>
+    <script src="https://www.amcharts.com/lib/4/geodata/worldHigh.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous">
+    </script>
+    <style>
+        body {
+            font-size: 9pt:
+        }
+        .osgroups_table {
+            font-size: 9pt;
+            background-color: #ffd6cc;
+        }
+        .usgroups_table {
+            font-size: 9pt;
+            background-color: #e6ffe6;
+        }
+        .osgroups_pos_table {
+            font-size: 9pt;
+            background-color: #ffd6cc;
+        }
+        .usgroups_pos_table {
+            font-size: 9pt;
+            background-color: #e6ffe6;
+        }
+    </style>
+    <body>
+        <center><h1>Post analysis. Week {{week_num}}. Year {{year}}.</h1></center>
+        <h2>General</h2>
+            &nbsp;&nbsp;&nbsp;&nbsp;Dates:&nbsp;{{dfrom}}&nbsp;-&nbsp;{{dto}}<br /> 
+            &nbsp;&nbsp;&nbsp;&nbsp;Number of passengers:&nbsp;{{num_pax}}</br />
+            &nbsp;&nbsp;&nbsp;&nbsp;Revenue:&nbsp;{{rev}}</br />
+            &nbsp;&nbsp;&nbsp;&nbsp;Yield:&nbsp;{{yld}}<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;P2P bookings ratio:&nbsp;{{p2p_bkg_ratio}}<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;P2P revenue ratio:&nbsp;{{p2p_rev_ratio}}<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;Empty seats ratio:&nbsp;{{empty_seats_ratio}}<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;Groups bookings ratio:&nbsp;{{groups_bkg_ratio}}<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;Groups revenue ratio:&nbsp;{{groups_rev_ratio}}<br />
+        <h2>Groups</h2>
+            <input type="radio" name="dow" value="All" onclick="showMap('All');" checked>All</input>
+            <input type="radio" name="dow" value="Monday" onclick="showMap('Monday');">Monday</input>
+            <input type="radio" name="dow" value="Tuesday" onclick="showMap('Tuesday');">Tuesday</input>
+            <input type="radio" name="dow" value="Wednesday" onclick="showMap('Wednesday');">Wednesday</input>
+            <input type="radio" name="dow" value="Thursday" onclick="showMap('Thursday');">Thursday</input>
+            <input type="radio" name="dow" value="Friday" onclick="showMap('Friday');">Friday</input>
+            <input type="radio" name="dow" value="Saturday" onclick="showMap('Saturday');">Saturday</input>
+            <input type="radio" name="dow" value="Sunday" onclick="showMap('Sunday');">Sunday</input>
+        <table>
+            <tr>
+                <td style="vertical-align: top">
+                    <div id="mapdiv" style="width: 700; background-color: #eeeeee; height: 450px;"></div>
+                </td>
+                <td style="vertical-align: top">
+                    <div id="osg_tablediv"></div>
+                </td>
+                <td style="vertical-align: top">
+                    <div id="usg_tablediv"></div>
+                </td>
+            </tr>
+        </table>
+        <br /><br /><br />
+    </body>
+    <script>
+        var groups_pos = {{groups_pos|tojson}};
+        var osgroups_pos_table = {{osgroups_pos_table|tojson}};
+        var usgroups_pos_table = {{usgroups_pos_table|tojson}};
+        var osgroups_ond_pos_tables = {{osgroups_ond_pos_tables|tojson}};
+        var usgroups_ond_pos_tables = {{usgroups_ond_pos_tables|tojson}}
+
+        console.log(groups_pos);
+        console.log(osgroups_pos_table);
+        console.log(usgroups_pos_table);
+        console.log(osgroups_ond_pos_tables);
+        console.log(usgroups_ond_pos_tables);
+
+        showMap('All')
+
+        function showMap(weekday) {
+            console.log('showMap() called');
+            console.log('weekday = ' + weekday);
+            var map = am4core.create("mapdiv", am4maps.MapChart);
+            map.geodata = am4geodata_worldHigh;
+            map.projection = new am4maps.projections.Miller();
+            var polygonSeries = map.series.push(new am4maps.MapPolygonSeries());
+            polygonSeries.exclude = ["AQ"];
+            
+            polygonSeries.heatRules.push({
+                "property": "fill",
+                "target": polygonSeries.mapPolygons.template,
+                "min": am4core.color("#66FF66"),
+                "max": am4core.color("#FF6666"),
+                "minValue": -groups_pos[weekday][0],
+                "maxValue": groups_pos[weekday][0],
+            });
+            polygonSeries.data = groups_pos[weekday][1];
+
+            var osg_pos = osgroups_pos_table[weekday];
+            var usg_pos = usgroups_pos_table[weekday];
+            var osg_ond_pos_array = osgroups_ond_pos_tables[weekday];
+            var usg_ond_pos_array = usgroups_ond_pos_tables[weekday];
+
+            var heatLegend = map.createChild(am4maps.HeatLegend);
+            heatLegend.series = polygonSeries;
+            heatLegend.height = am4core.percent(100);
+            heatLegend.width = 3;
+            heatLegend.valueAxis.renderer.labels.template.fontSize = 9;
+            heatLegend.orientation = "vertical";
+            heatLegend.minValue = -groups_pos[weekday][0];
+            heatLegend.maxValue = groups_pos[weekday][0];
+            heatLegend.minColor = am4core.color("#66FF66");
+            heatLegend.maxColor = am4core.color("#FF6666");
+
+            $("#osg_tablediv").html(osg_pos);
+            $("#usg_tablediv").html(usg_pos);
+
+            polygonSeries.mapPolygons.template.events.on("over", function(ev) {
+                if (!isNaN(ev.target.dataItem.value)) {
+                    var pos = ev.target.dataItem._dataContext['id'];
+                    heatLegend.valueAxis.showTooltipAt(ev.target.dataItem.value);
+                    if (typeof osg_ond_pos_array[pos] !== "undefined") {
+                        $("#osg_tablediv").html(osg_ond_pos_array[pos]);
+                    }
+                    else {
+                        $("#osg_tablediv").html("");
+                    }
+                    if (typeof usg_ond_pos_array[pos] !== "undefined") {
+                        $("#usg_tablediv").html(usg_ond_pos_array[pos]);
+                    }
+                    else {
+                        $("#usg_tablediv").html("");
+                    }
+                }
+                else {
+                    heatLegend.valueAxis.hideTooltip();
+                }
+            });
+
+            polygonSeries.mapPolygons.template.events.on("out", function(ev) {
+                heatLegend.valueAxis.hideTooltip();
+                $("#osg_tablediv").html(osg_pos);
+                $("#usg_tablediv").html(usg_pos);
+            });
+
+            polygonSeries.mapPolygons.template.events.on("click", function(ev) {
+                alert(ev.target.dataItem.value + ' clicked');
+            });
+
+            polygonSeries.useGeodata = true;
+            polygonSeries.mapPolygons.template.events.on("hit", function(ev) {
+                map.zoomToMapObject(ev.target);
+            });
+            var polygonTemplate = polygonSeries.mapPolygons.template;
+            polygonTemplate.tooltipHTML = `<b>{name}</b><br />
+                                           <!--
+                                           <div style='font-size: 9pt'>
+                                               Demand: - <br />
+                                               Oversold - %: <br />
+                                               Undersold - %: <br />
+                                           </div>-->`;
+       
+            map.areasSettings = {
+                unlistedAreasColor: "#87CEEB"
+            };
+            map.imagesSettings = {
+                color: "#CC0000",
+                rollOverColor: "#CC0000",
+                selectedColor: "#000000"
+            };
+            map.linesSettings = {
+                color: "#CC0000",
+                alpha: 0.4
+            };
+            map.mouseWheelZoomEnabled = true;
+            map.backgroundZoomsToTop = true;
+            map.linesAboveImages = true;
+        }
+    </script>
+</html>

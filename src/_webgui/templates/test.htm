@@ -1,0 +1,149 @@
+<html>
+<style type='text/css'>
+  a { font-size: 11pt;
+      margin-left: 10px 
+  }
+  body { padding-top: 0px }
+  .menu { position: absolute;
+          top: 0;
+          left: 0;
+          width: 220px;
+          height: 1000px;
+          border-right-style: solid;
+          border-width: 1px;
+          margin-top: 0px;
+          padding-left: 5px;
+          padding-top: 5px;
+<<<<<<< HEAD
+          z-index: 10;
+=======
+          z-index: 30;
+>>>>>>> 3cf7da556bc22723cfbfc836f8396103600cea02
+          background-color: white;
+  }
+  .main { position: absolute;
+          top: 0px;
+          left: 220px;
+          padding-left: 20px;
+          padding-top: 20px;
+          z-index: 9;
+          background-color: white;
+  }
+  .graph { border-width: 1px;
+           border-style: solid;
+           padding-right: 40px;
+           padding-top: 40px;
+           padding-bottom: 40px;
+  }
+  .a_fa_menu_link { font-size: 9pt;
+  }
+
+</style>
+<link type='text/css' href='/media/css/smoothness/jquery-ui-1.8.14.custom.css' rel='Stylesheet' />
+<!-- jquery library -->
+<script type="text/javascript" src="/media/js/jquery-1.5.1.min.js"></script>
+<!-- jquery ui library -->
+<script type="text/javascript" src="/media/js/jquery-ui-1.8.14.custom.min.js"></script>
+<!-- dygraph library -->
+<script type="text/javascript" src="/media/js/dygraph-combined.js"></script>
+<!-- file uploader -->
+<script type="text/javascript" src="/media/js/fileuploader.js"></script>
+
+<!-- Main document -->
+<script language='javascript'>
+ $(document).ready(function() {
+
+   $('.a_fa_menu_link').click(function(event) {
+     faMenuLinkClickHandler(event.target.id);
+   });
+
+ });
+</script>
+
+<!-- Widgets -->
+<script type="text/javascript" src="/media/js/widgets/FaTsWidget.js"></script>
+<script type="text/javascript" src="/media/js/widgets/AdminFaMarkets.js"></script>
+<script type="text/javascript" src="/media/js/widgets/AdminSplitHistoryUploader.js"></script>
+<script type="text/javascript" src="/media/js/widgets/AdminSplitHistoryViewer.js"></script>
+
+<!-- Event handlers -->
+<script language='javascript'>
+
+  var graph_cnt = 0;
+
+  function faMenuLinkClickHandler(id)
+  {
+    if (id == "fa_fce")
+    {
+      g = new FaTsWidget('main','fa_fce_ts_widget'+graph_cnt);
+    }
+    else if (id == "fa_fue")
+    {
+      g = new FaTsWidget('main','fa_fue_ts_widget'+graph_cnt);
+    }
+    else if (id == "fa_acv")
+    {
+      g = new FaTsWidget('main','fa_acv_ts_widget'+graph_cnt);
+    }
+    else if (id == "fa_auv")
+    {
+      g = new FaTsWidget('main','fa_auv_ts_widget'+graph_cnt);
+    }
+    else if (id == "fa_fcv")
+    {
+      g = new FaTsWidget('main','fa_fcv_ts_widget'+graph_cnt);
+    }
+    else if (id == "fa_fuv")
+    {
+      g = new FaTsWidget('main','fa_fuv_ts_widget'+graph_cnt);
+    }
+    else if (id == "fa_cb")
+    {
+      g = new FaTsWidget('main','fa_cb_ts_widget'+graph_cnt);
+    }
+    else if (id == "fa_ub")
+    {
+      g = new FaTsWidget('main','fa_ub_ts_widget'+graph_cnt);
+    } 
+    else if (id == "admin_fa_markets")
+    {
+      g = new AdminFaMarkets('main','admin_fa_markets_widget'+graph_cnt);
+    }
+    else if (id == "admin_split_history_uploader")
+    {
+      g = new AdminSplitHistoryUpload('main','admin_split_history_uploader_widget'+graph_cnt);
+    }
+    else if (id == "admin_split_history_viewer")
+    {
+      g = new AdminSplitHistoryViewer('main','admin_split_history_viewer_widget'+graph_cnt);
+    }
+
+    graph_cnt++;
+  }
+
+</script>
+
+<body>
+  <div id='menu' class='menu'>
+    <h4>Forecast accuracy</h4>
+     <a href='#' id='fa_fce' class='a_fa_menu_link'>Forecast constrained error</a><br />
+     <a href='#' id='fa_fue' class='a_fa_menu_link'>Forecast unconstrained error</a><br />
+     <a href='#' id='fa_acv' class='a_fa_menu_link'>Actual constrained value</a><br />
+     <a href='#' id='fa_auv' class='a_fa_menu_link'>Actual unconstrained value</a><br />
+     <a href='#' id='fa_fcv' class='a_fa_menu_link'>Forecasted constrained value</a><br />
+     <a href='#' id='fa_fuv' class='a_fa_menu_link'>Forecasted unconstrained value</a><br />
+     <a href='#' id='fa_cb'  class='a_fa_menu_link'>Constrained booked</a><br />
+     <a href='#' id='fa_ub'  class='a_fa_menu_link'>Unconstrained booked</a><br />
+   <h4>Admin</h4>
+     <a href='#' id='admin_fa_markets' class='a_fa_menu_link'>FAs markets</a><br />
+     <a href='#' id='admin_split_history_uploader' class='a_fa_menu_link'>Split history uploader</a><br />
+     <a href='#' id='admin_split_history_viewer' class='a_fa_menu_link'>Split history viewer</a><br />
+   <h4>Simulator</h4>
+     <a href='#' id='simulator_control' class='a_fa_menu_link'>Control</a><br />
+     <a href='#' id='simulator_od_viewer' class='a_fa_menu_link'>OD viewer</a><br />
+
+  </div>
+  <div id='main' class='main'>
+  </div>
+</body>
+</html>

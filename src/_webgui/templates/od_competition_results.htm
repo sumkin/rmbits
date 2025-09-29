@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <script type='text/javascript' src='/media/js/dygraph-combined.js'></script>
+  </head>
+<body>
+<h1>OD competition:</h1>
+Airlines: {{airlines}}<br />
+{{od_from}} {{od_to}}<br />
+From: {{dep_from}} {{dep_to}}<br />
+DOW: {{dows}}<br />
+Days of length: {{sl_days}}<br />
+<hr />
+
+<div id='prices_graph' style='width: 700px; height: 300px'></div>
+<script type='text/javascript'>
+  g = new Dygraph(document.getElementById('prices_graph'),
+                  {{csv_file}}, {valueRange: [0,5000]});
+</script>
+
+
+</body>
+</html>

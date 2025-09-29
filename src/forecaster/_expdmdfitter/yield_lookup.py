@@ -1,0 +1,115 @@
+import pandas as pd
+from datetime import datetime, timedelta
+
+from airport import *
+
+
+class YieldLookup:
+
+
+    def __init__(self, dt):
+        '''
+        datetime should be in format YYYYMMDD.
+        '''
+        dtyear  = dt[:4]
+        dtmonth = dt[4:6]
+        dtday   = dt[6:8]
+
+        # Read dataframe.
+        NUM_TRIES = 3
+        for i in range(NUM_TRIES):
+            try:
+                self.ydf = pd.read_csv('s3://ay-emr-job/nrm/yield/'+dtyear+'/'+dtmonth+\
+                                       '/YIELD_'+dt+'.csv.gz').fillna('')
+                break
+            except Exception as e:
+                if i == NUM_TRIES - 1:
+                    raise e
+        self.ydf = self.ydf.loc[(self.ydf['TRVLFROM'] <= int(dt)) & (int(dt) <= self.ydf['TRVLTO'])]
+
+        # Create key.
+        self.ydf['KEY'] = self.ydf['ORGN'] +\
+                          self.ydf['DSTN'] +\
+                          self.ydf['POS'] +\
+                          self.ydf['CLS']  
+        self.ydf['KEY'] = self.ydf['KEY'].astype('category')
+        self.ydf.set_index(['KEY'])
+
+        # Create cache.
+        self.m = {}
+        for k,r in self.ydf.iterrows():
+            self.m[r['KEY']] = []
+            dtfrom = datetime.strptime(str(r['TRVLFROM']), '%Y%m%d')
+            dtto = datetime.strptime(str(r['TRVLTO']), '%Y%m%d')
+            days = (dtto - dtfrom).days
+            self.m[r['KEY']].append([float(r['GBL_AM']), str(r['TRVLFROM']), str(r['TRVLTO']), days])
+
+        self.ap = Airport()
+       
+
+    def lookup(self,orgn,dstn,pos,cls):
+        # Check cache.
+        k = orgn+dstn+pos+cls
+        try:
+            res, mindays = self.m[k][0][0], self.m[k][0][3]
+            for e in self.m[k][1:]:
+                if e[3] < mindays:
+                    res, mindays = e[0], e[3]
+            return res
+        except:
+            pass
+
+        # Try the same with ROW.
+        k = orgn+dstn+'ROW'+cls
+        try:
+            res, mindays = self.m[k][0][0], self.m[k][0][3]
+            for e in self.m[k][1:]:
+                if e[3] < mindays:
+                    res, mindays = e[0], e[3]
+            return res
+        except:
+            pass
+
+        orgn_country, orgn_region = self.ap.get_cr(orgn)
+        dstn_country, dstn_region = self.ap.get_cr(dstn)
+
+        # Lookup country to country.
+        k = orgn_country+dstn_country+'ROW'+cls
+        try:
+            res, mindays = self.m[k][0][0], self.m[k][0][3]
+            for e in self.m[k][1:]:
+                if e[3] < mindays:
+                    res, mindays = e[0], e[3]
+            return res
+        except:
+            pass
+
+        # Lookup region to region.
+        k = orgn_region+dstn_region+'ROW'+cls
+        try:
+            res, mindays = self.m[k][0][0], self.m[k][0][3]
+            for e in self.m[k][1:]:
+                if e[3] < mindays:
+                    res, mindays = e[0], e[3]
+            return res
+        except:
+            if orgn_region == 'MEAST' and dstn_region == 'ASIA':
+                orgn_region = 'EUROP'
+                try:
+                    k = orgn_region+dstn_region+'ROW'+cls
+                    res, mindays = self.m[k][0][0], self.m[k][0][3]
+                    for e in self.m[k][1:]:
+                        if e[3] < mindays:
+                            res, mindays = e[0], e[3]
+                    return res
+                except:
+                    print(orgn,dstn,pos,cls)
+                    assert False
+
+
+if __name__ == "__main__":
+    yl = YieldLookup('20180725')
+    for i in range(100000):
+        yl.lookup('CAN','LIS','CN','J')
+
+ 

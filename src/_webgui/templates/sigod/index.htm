@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang='en'>
+ <head>
+  <title>SigOD list</title>
+
+  <link href='/static/bootstrap/css/bootstrap.css' rel='stylesheet' media='screen'>
+  <link href='/static/bootstrap/css/datepicker.css' rel='stylesheet' media='screen'>
+
+  <script src='http://code.jquery.com/jquery-latest.js'></script>
+  <script src='/static/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/static/bootstrap/js/bootstrap-datepicker.js'></script>
+  <script src='/static/bootstrap/js/bootstrap.file-input.js'></script>
+  <style>
+    body {
+      padding-top: 60px;
+    }
+  </style>
+ </head>
+ <body>
+  <script>
+   $(document).ready(function() {
+     $('#id_old_dfrom').datepicker({format: 'yyyy-mm-dd'});
+     $('#id_old_dto').datepicker({format: 'yyyy-mm-dd'});
+     $('#id_new_dfrom').datepicker({format: 'yyyy-mm-dd'});
+     $('#id_new_dto').datepicker({format: 'yyyy-mm-dd'});
+   });
+  </script>
+  <div class='navbar navbar-inverse navbar-fixed-top'>
+   <div class='navbar-inner'>
+    <div class='container'></div>
+   </div>
+  </div>
+
+  <div class='container'>
+   <form method='POST' enctype='multipart/form-data' class='form-horizontal'>
+     {% csrf_token %}
+     <fieldset>
+       <div id='legend' class=''>
+         <legend class=''>Update SigOD list</legend>   
+       </div>
+
+       <!-- Email -->
+       <div class='control-group'>
+         <label class='control-label'>Email</label>
+         <div class='controls'>
+           {{form.email}}
+         </div>
+       </div>
+
+       <!-- Old SigOD list date range -->
+       <div class='control-group'>
+         <label class='control-label'>Old date range</label>
+         <div class='controls'>{{form.old_dfrom}}{{form.old_dto}}</div>
+       </div>
+
+       <!-- New SigOD list date range -->
+       <div class='control-group'>
+         <label class='control-label'>New date range</label>
+         <div class='controls'>{{form.new_dfrom}}{{form.new_dto}}</div>
+       </div>
+
+       <!-- Old SigOD list file -->
+       <div class='control-group'>
+         <label class='control-label'>Current SigOD list file</label>
+         <div class='controls'>
+           {{form.fname}}
+         </div>
+       </div>
+
+       <!-- Submit -->
+       <div class='control-group'>
+         <div class='controls'>
+           <input type='submit' class='btn btn-success' value='Submit' />
+         </div>
+       </div>   
+     </fieldset>
+   </form>
+  </div>
+ </body>
+</html>  
+
+
+

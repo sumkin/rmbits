@@ -1,0 +1,45 @@
+<center>
+ <table width='95%' border='1'>
+  <tr>
+   <td width='105' align='center'><b>Days prior:</b></td>
+   <td width='50' align='center' id='daysprior_val'>320</td>
+   <td><div id='daysprior' value='0'></div></td>
+  </tr>
+ </table>
+</center>
+<br />
+
+<script type='text/javascript'>
+  $(document).ready(function() 
+                    {
+                      alert('Yes!');
+                      $('#daysprior').slider({ min: 0, 
+                                               max: daysprior_arr.length-1,
+                                               change: function(event, ui)
+                                                       {
+                                                          ;
+                                                          /*
+                                                          // update daysprior on page
+                                                          var val = $('#daysprior').slider('option','value');
+                                                          var daysprior = daysprior_arr[parseInt(val)];
+                                                          $('#daysprior_val').html(daysprior);
+                                            
+                                                          // change daysprior
+                                                          var url_d = get_urls_in_flash();
+                                                          for (var k in url_d)
+                                                          {
+                                                             var new_url = change_daysprior_url(url_d[k],daysprior+'');
+                                                             url_d[k] = new_url;
+                                                          }
+                                                          reload_tab_content(url_d);
+                                                          update_tabs_href();
+                                                          */
+                                                       }
+                                             });
+                    });
+  // set daysprior for flash (for default usage)
+  //$('#daysprior').val(daysprior_arr.indexOf({{daysprior}}));
+  //var val = $('#daysprior').slider('option', 'value');
+  //var daysprior = daysprior_arr[parseInt(val)];
+
+</script>

@@ -1,0 +1,161 @@
+\documentclass[8pt]{article}
+\usepackage{titlesec}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage[cm]{fullpage}
+\usepackage{supertabular}
+\usepackage{longtable}
+\usepackage{color}
+\usepackage{array}
+\usepackage{ifpdf}
+\usepackage{graphicx}
+
+\oddsidemargin=0pt
+\evensidemargin=0pt
+\marginparsep=0pt
+\marginparwidth=0pt
+\hoffset=-45pt
+\setcounter{secnumdepth}{-1} 
+
+\begin{document}
+\thispagestyle{empty}
+
+\renewcommand\arraystretch{0.6}
+
+\noindent
+\Large {{orgn}}-{{dstn}} vv. {{dfrom}}---{{dto}}\normalsize
+
+\section{Forecast error measures}
+
+\noindent
+Forecast error
+$$
+e_i = f_i - a_i,\ \ \ i = 1,\ldots,n,
+$$
+where $f_i$ --- forecasted value, $a_i$ --- actual value.
+
+\noindent
+\vspace{10pt}
+Root mean squared error
+$$
+RMSE = \sqrt{ \frac{1}{n} \sum_{i=1}^n e_i^2 }.
+$$
+
+\noindent
+\vspace{10pt}
+Mean of error
+$$
+Mean = \frac{1}{n} \sum_{i=1}^n e_i.
+$$
+
+\noindent
+\vspace{10pt}
+Standard deviation of error
+$$
+SD = \sqrt{ \frac{1}{n} \sum_{i=1}^n (e_i - Mean)^2 }.
+$$
+
+\section{Both compartments forecast error}
+\noindent
+\begin{longtable}{c|c|{% for d in dayspriors %}p{0.52cm}{% endfor %}}
+\scriptsize Dmd & \scriptsize
+{% for d in dayspriors %}
+ & \scriptsize {{d}}
+{% endfor %}
+\\
+\hline
+{% for d in data_fl %}
+\multirow{3}{*}{\scriptsize {{d.1.0}}$\pm${{d.1.1}} }
+                          & \scriptsize RMSE {% for e in d.0 %}& \tiny {{e.0}} {% endfor %} \\
+                          & \scriptsize Mean {% for e in d.0 %}& \tiny {{e.1}} {% endfor %} \\
+                          & \scriptsize SD   {% for e in d.0 %}& \tiny {{e.2}} {% endfor %} \\
+\hline
+{% endfor %}
+\end{longtable}
+
+\vspace{20pt} 
+
+\section{Compartment level forecast error}
+\noindent
+\begin{longtable}{c|c|c|{% for d in dayspriors %}p{0.52cm}{% endfor %}}
+ \scriptsize & \scriptsize Dmd & \scriptsize  
+{% for d in dayspriors %}
+ & \scriptsize {{d}}
+{% endfor %}
+\\
+\hline
+{% for d in data_cmp %}
+\multirow{3}{*}{ \scriptsize {{d.0}} } & \multirow{3}{*}{\scriptsize {{d.2.0}}$\pm${{d.2.1}} }
+                            & \scriptsize RMSE  {% for e in d.1 %}& \tiny {{e.0}} {% endfor %} \\
+                     &      & \scriptsize Mean {% for e in d.1 %}& \tiny {{e.1}} {% endfor %} \\
+                     &      & \scriptsize SD   {% for e in d.1 %}& \tiny {{e.2}} {% endfor %} \\
+\hline
+{% endfor %}
+\end{longtable}
+
+\newpage
+%####################################################################################
+
+\section{Class level forecast error}
+\noindent
+\begin{longtable}{p{0.3cm}|c|c|{% for d in dayspriors %}p{0.52cm}{% endfor %}}
+ \scriptsize & \scriptsize Dmd & \scriptsize 
+{% for d in dayspriors %}
+ & \scriptsize {{d}}
+{% endfor %}
+\\
+\hline
+{% for d in data_cls %}
+\multirow{3}{*}{ \scriptsize {{d.0}} } & \multirow{3}{*}{\scriptsize {{d.2.0}}$\pm${{d.2.1}} }
+                           & \scriptsize RMSE  {% for e in d.1 %}& \tiny {{e.0}} {% endfor %} \\
+                     &     & \scriptsize Mean {% for e in d.1 %}& \tiny {{e.1}} {% endfor %} \\
+                     &     & \scriptsize SD   {% for e in d.1 %}& \tiny {{e.2}} {% endfor %} \\
+\hline
+{% endfor %}
+\end{longtable}
+
+\newpage
+%##################################################################################
+
+\noindent
+\begin{center}
+\large Both compartments \normalsize
+\nopagebreak
+\vspace{3pt}
+\nopagebreak
+\includegraphics{%templatetag openbrace%}{{imgs_fl.0.0}}{%templatetag closebrace%}
+\end{center}
+
+\vspace{20pt}
+
+{% for e in imgs_cmp %}
+
+\noindent
+\begin{center}
+\large {{e.0}} compartment \normalsize
+\nopagebreak
+\vspace{3pt}
+\nopagebreak
+\includegraphics{%templatetag openbrace%}{{e.1}}{%templatetag closebrace%}
+\end{center}
+
+{% endfor %}
+
+\newpage
+%##################################################################################
+
+{% for e in imgs_cls %}
+
+\noindent
+\begin{center}
+\large {{e.0}} class \normalsize
+\nopagebreak
+\vspace{5pt}
+\nopagebreak
+\includegraphics{%templatetag openbrace%}{{e.1}}{%templatetag closebrace%}
+\end{center}
+
+{% endfor %}
+
+
+\end{document}

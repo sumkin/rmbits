@@ -1,0 +1,60 @@
+\documentclass[8pt]{article}
+\usepackage{titlesec}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage[cm]{fullpage}
+\usepackage{supertabular}
+\usepackage{longtable}
+\usepackage{color}
+\usepackage{array}
+\usepackage{ifpdf}
+\usepackage{graphicx}
+
+\oddsidemargin=0pt
+\evensidemargin=0pt
+\marginparsep=0pt
+\marginparwidth=0pt
+\hoffset=-45pt
+\setcounter{secnumdepth}{-1} 
+
+\begin{document}
+\thispagestyle{empty}
+
+\renewcommand\arraystretch{0.9}
+
+\noindent
+\Large RMP forecast follow-up \normalsize
+
+\vspace{10pt}
+\noindent
+Report generated: {{dt}}
+
+\noindent
+\begin{longtable}{c|p{0.2cm}|{% for m in months %}p{1cm}{% endfor %}}
+ \scriptsize & \scriptsize 
+{% for m in months %}
+ & \scriptsize {{m}}
+{% endfor %}
+\\
+\hline
+
+{% for d in data %}
+\multirow{2}{*}{\scriptsize \bf {{d.0}}-{{d.1}} } & \scriptsize C   {% for e in d.2 %} &\scriptsize {{e.0}}$\pm${{e.2}}{% endfor %} \\ 
+                                              & \scriptsize U {% for e in d.2 %} &\scriptsize {{e.1}}$\pm${{e.2}}{% endfor %} \\
+\hline
+{% endfor %}
+\end{longtable}
+
+\noindent
+\large NOTES \normalsize
+\begin{enumerate}
+ \item C and U above mean constrained and unconstrained forecasts for demand correspondingly. 
+ In PROS terms constrained forecast is constrained final demand and unconstrained one is achievable final demand.
+ \item Note that constrained and unconstrained forecast has the same standart error. Error term makes sense only 
+ for the unconstrained value, for constrained one it is just copy-paste.
+\end{enumerate}
+
+\noindent
+
+
+\end{document}

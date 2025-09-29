@@ -1,0 +1,276 @@
+\documentclass{beamer}
+\usepackage{graphics}
+\usepackage{color}
+\usepackage{eurosym}
+\usepackage{amsmath}
+\usepackage{listings}
+
+\xdefinecolor{ay_struct_color}{rgb}{0.09,0.17,0.41}
+\xdefinecolor{ay_norm_color}{rgb}{0.3,0.3,0.3}
+\usetheme{boxes}
+
+\setbeamercolor{structure}{fg=ay_struct_color}
+\setbeamercolor{normal text}{fg=ay_norm_color}
+\logo{\includegraphics[width=100px]{logo.jpg}}
+
+\author{Fedor Nikitin, Antti Tolvanen}
+\title{Measuring RM efficiency}
+
+\begin{document}
+  \maketitle
+
+  \frame{
+    \frametitle{Questions}
+    \begin{itemize}
+      \item How to understand that revenue management done well?
+      \item How to measure it?
+      \item How to follow market movements?
+      \item How to separate market performance and revenue management performance on top of the market.
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{Caution}
+    \begin{itemize}
+      \item It is about optimization not forecasting.
+      \item Forecast is main input.
+      \item BUT forecasting and it's issues are not discussed here.
+      \item Extensions over basic framework are welcome.
+      \item Everything is done already by others. 
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{Classic static leg-based RM model. Notations.}
+    \begin{itemize}
+      \item Classes $C_1, C_2,\ldots C_n$ from higher to lower.
+      \item Prices $f_1 > f_2 > \ldots > f_n$.
+      \item Demand $d_1, d_2, \ldots d_n$
+      $$
+      d_i \sim \mathcal{N}(\mu_i,\sigma_i),\ \ \ i = 1,\ldots,n. 
+      $$
+      \item Bookings $b_1, b_2, \ldots b_n$
+      $$
+      b_1 + \ldots + b_n \leq cap \ \ \ \text{(no overbooking)},
+      $$
+      where $cap$ is capacity.
+      \item $p_1,\ldots,p_n$ classes allocations (kinda protections).
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{Classic static leg-based RM model. Task.}
+    Revenue  
+    $$
+    Rev(\omega,p_1,\ldots,p_n) = \sum_{i=1}^{n} f_i \min\{ d_i(\omega), p_i \}
+    $$
+    depends on strategy/control/policy/plan $\{p_i\}$ and is indeed
+    random variable with some p.d.f.
+
+    \vspace{10pt}
+    Revenue optimization
+    $$
+    E[Rev(\omega,p_1,\ldots,p_n)] \rightarrow \max,
+    $$
+    $$
+    p_1 + \ldots + p_n \leq cap,
+    $$
+    $$
+    p_i \geq 0,\ \ \forall i 
+    $$
+    P5 knows how to solve it, you don't.
+  }
+
+  \frame{
+    \frametitle{PODS measure}
+
+    \begin{center}
+    Stochastic (Greek) = Probabilistic (English)
+    \end{center}
+
+    \begin{center}
+    Greedy = optimization is done by greedy algorithm.
+    \end{center}
+
+    $Rev_{upper}$ --- greedy maximum revenue.
+
+    \vspace{10pt}
+    $Rev_{lower}$ --- greedy minimum revenue.
+
+    \vspace{10pt}
+    $Rev = \sum_{i=1}^n f_i * b_i$ --- actual revenue.
+
+    $$
+    REM = \frac{Rev_{upper} - Rev}{Rev_{upper} - Rev_{lower}}
+    $$
+  }
+
+  \frame{
+    \frametitle{Interpretation. Deterministic case.}
+
+    $Rev_{lower}$ --- no RM done (accept all).
+
+    \vspace{10pt}
+    $Rev_{upper}$ --- optimal revenue indeed (greedy is optimal strategy).
+
+    \vspace{10pt}
+    $REM$ measures how close(in some scaled sense) to optimal revenue you are.
+
+    \vspace{10pt}
+    $Rev_{lower}$ and $Rev_{upper}$ are indeed lower and upper bounds on revenue.
+
+    \vspace{10pt}
+    Makes sense.
+
+    \vspace{10pt}
+    When demand $<$ capacity it gets undefined.
+
+    \vspace{10pt}
+    It is OK in deterministic case, because RM is not needed.
+  }
+
+  \frame{
+    \frametitle{Interpretation. Stochastic case.}
+
+    $Rev_{lower}$ and $Rev_{upper}$ are not lower and upper bounds anymore.
+
+    \vspace{10pt}
+    Actual bounds $[0,f_1*cap]$.
+
+    \vspace{10pt}
+    Optimal revenue is hard to find (Bellman, EMSR).
+
+    \vspace{10pt}
+    Same issue with low demand flights (measure is undefined).
+
+    \vspace{10pt}
+    BUT RM is needed. Accept all is not optimal strategy anymore.
+
+    \vspace{10pt}
+    In high demand flights it measures something, but we do not know what.
+  }
+
+  \frame{
+    \frametitle{Issues sum up}
+    \begin{itemize}
+      \item No interpretation.
+      \item Undefined for low demand flights.
+      \item Does not take into account risks (variances).
+      \item Does not take into account dependency in demand structure (Big case for AY).
+      \item Generalization on network level?
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{Yet another measure}
+    \begin{itemize}
+      \item It has interpetation.
+      \item Defined always (low and high demand flights).
+      \item Accounts for statistical properties of demand (variance and class correlations).
+      \item Potentially could be generalized on network level (?).
+      \item Could provide other interesting RM measures (e.g. VaR).
+      \item Computationally not hard $O(nm)$.
+      \item It is indeed framework, not measure.
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{Mixed strategies}
+
+    Revenue with pure RM strategy
+    $$
+    Rev_p(\omega) = \sum_{i=1}^n f_i \min\{ d_i(\omega), p_i \}.
+    $$
+
+    Mixed RM strategy is probability measure (distribution) on the set of pure strategies.
+
+    \vspace{10pt}
+    $\{p_i(\omega)\}$ is mixed RM strategy/policy/control/plan.
+
+    \vspace{10pt}
+    Revenue with mixed RM strategy
+    $$
+    Rev_m(\omega) = \sum_{i=1}^n f_i \min\{ d_i(\omega), p_i(\omega) \}.
+    $$
+    $$
+    \max_{p_i}E[Rev_p(\omega)] = \max_{p_i(\omega)}E[Rev_m(\omega)]\ \ \ \text{(fact!)}
+    $$
+  }
+
+  \frame{
+    \frametitle{Market characteristics}
+    Suppose $\{p^*_i(\omega)\}$ is blind mixed strategy, 
+    i.e. not utilizing any knowledge of the market.
+
+    \vspace{5pt}
+    Blind revenue is $Rev_b(\omega) = Rev_m(\omega,p^*_1(\omega),\ldots,p^*_n(\omega))$.
+    
+    \vspace{5pt}
+    Random variable $Rev_b(\omega)$ characterizes the market,
+  
+    \vspace{5pt}
+    \bf Market performance \rm 
+    $$
+    MP = E[Rev_b(\omega)].
+    $$
+    \bf Market volatility \rm 
+    $$
+    MV = \sqrt{Var[Rev_b(\omega)]}.
+    $$
+    Other statistical properties of $Rev_b(\omega)$ could be interpreted and utilized as well. 
+  }
+  
+  \frame{
+    \frametitle{Efficiency measure}
+    Actual revenue
+    $$
+    Rev = f_1 b_1 + \ldots + f_n b_n,
+    $$
+    where $f_i$ is price and $b_i$ is number of bookings.
+
+    \vspace{5pt}
+    \bf Efficiency \rm
+    $$
+    Eff = \frac{Rev - MP}{MV}
+    $$
+
+    \vspace{5pt}
+    $Eff = 0$ nothing is added on top of market.
+   
+    \vspace{5pt}
+    $Eff > 0$ RM outperforms the market.
+
+    \vspace{5pt}
+    $Eff < 0$ something goes bad...
+  }
+
+  \frame{
+    \frametitle{Implementation}
+    \begin{itemize}
+      \item Done through Monte Carlo simulation.
+      \item All inputs could be taken from P5 (means,deviations,covariances).
+      \item Less than 20 SLOC.
+      \item Runs in seconds for 10000 simulation runs.
+    \end{itemize}
+  }
+
+  \frame{
+    \frametitle{20 SLOC}
+    \lstdefinestyle{customasm}{
+      basicstyle=\footnotesize\ttfamily
+    }
+    \lstinputlisting[language=Python, style=customasm]{code.py}
+  }
+
+  \frame{
+    \frametitle{Extensions}
+    \begin{itemize}
+      \item When OD forecast available applied to the network.
+      \item Could be applied to find optimal RM strategy.
+      \item Could be applied to separate P5 and Revenue Managers performance (?).
+    \end{itemize} 
+  }
+
+\end{document}
+
+

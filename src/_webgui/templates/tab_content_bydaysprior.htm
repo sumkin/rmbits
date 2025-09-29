@@ -1,0 +1,132 @@
+<br />
+<input type='checkbox' id='mean_err_chckbox' value='' checked />Mean of error <br />
+<input type='checkbox' id='lbpval_chckbox' value='' />Ljung-Box p-value <br />
+
+ <div id='tabs-1' align='center'>
+ <br />
+ <div id='fl_obj_mean_err_div'>
+    <center> 
+    <div id='mean_err_resize' style='width: 90% height: 200px padding: 10px'>
+    {{ fl_obj_htm_cons_err|safe }}
+    </div>
+    <br /><br />
+    </center>
+ </div>
+ <div id='fl_obj_lbpval_div'>
+    <center>
+     <div id='lbpval_resize' style='width: 90% height: 200px padding: 10px'>
+     {{ fl_obj_htm_cons_lbpval|safe }}
+     </div>
+    </center>
+ </div>
+    <br />
+    <br />
+    <br />
+    <br />
+    </div>
+   <script type='text/javascript'>
+        $('#ae_tag').css({   'border': '1px solid #000', 'cursor': 'pointer', 'color': '#000' });
+        $('#re_tag').css({   'border': '1px solid #ccc', 'cursor': 'pointer', 'color': '#ccc' });
+
+
+        $('#ae_tag').mouseover(function()
+                               {
+                                   alert('Yes!');
+                                   if (err_tag_clicked['ae'] == 0)
+                                   {
+                                       err_tag_chng_bright('ae');
+                                   }
+                               });
+        $('#ae_tag').mouseout(function()
+                              {
+                                  if (err_tag_clicked['ae'] == 0)
+                                  {
+                                      err_tag_chng_dull('ae');
+                                  }
+                              });
+        $('#re_tag').mouseover(function()
+                               {
+                                   if (err_tag_clicked['re'] == 0)
+                                   {
+                                       err_tag_chng_bright('re');
+                                   }
+                               });
+        $('#re_tag').mouseout(function()
+                              {
+                                  if (err_tag_clicked['re'] == 0)
+                                  {
+                                      err_tag_chng_dull('re');
+                                  }
+                              }); 
+        $('#ae_tag').click(function()
+                           {
+                               if (err_tag_clicked['ae'] == 0)
+                               {
+                                   err_tag_clicked['ae'] = 1;
+                               }
+                               else
+                               {
+                                   err_tag_clicked['ae'] = 0;
+                               }
+                               err_tag_clicked['re'] = 0;
+                               err_tag_clicked['mape'] = 0;
+                               err_tag_chng_dull('re');
+                               err_tag_chng_dull('mape');
+                                             
+                               var old_url = get_urls_in_flash();
+                               var new_url = change_error_type_url(old_url,'ae');
+                               reload_tab_content(new_url); 
+                               update_tabs_href(); 
+                           });
+        $('#re_tag').click(function()
+                           {
+                               if (err_tag_clicked['re'] == 0)
+                               {
+                                   err_tag_clicked['re'] = 1;
+                               }
+                               else
+                               {
+                                   err_tag_clicked['re'] = 0;
+                               }
+                               err_tag_clicked['ae'] = 0;
+                               err_tag_clicked['mape'] = 0;
+                               err_tag_chng_dull('ae');
+                               err_tag_chng_dull('mape');
+
+                               var old_url = get_urls_in_flash();
+                               var new_url = change_error_type_url(old_url,'re');
+                               reload_tab_content(new_url);
+                               update_tabs_href();
+                           });
+        $('#mean_err_chckbox').change(function()
+                                      {
+                                          if ( $('#mean_err_chckbox').is(':checked') )
+                                          {
+                                              $('#fl_obj_mean_err_div').show();
+                                          }
+                                          else
+                                          {
+                                              $('#fl_obj_mean_err_div').hide();
+                                          }
+                                      });  
+        $('#lbpval_chckbox').change(function()
+                                    {
+                                        if ( $('#lbpval_chckbox').is(':checked') )
+                                        {
+                                            $('#fl_obj_lbpval_div').show();
+                                        }
+                                        else
+                                        {
+                                            $('#fl_obj_lbpval_div').hide();
+                                        }
+                                   });
+        // hide lbpval at initialization 
+        $('#fl_obj_lbpval_div').hide();
+
+        $(document).ready(function()
+                          {
+                              $('#mean_err_resize').resizable();
+                              $('#lbpval_resize').resizable();
+                          });
+    </script> 
+ 

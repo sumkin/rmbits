@@ -1,0 +1,79 @@
+<html>
+  <head>
+  </head>
+  <body>
+  <link type="text/css" href="/media/css/ui-lightness/jquery-ui-1.8.14.custom.css" rel="Stylesheet" />
+  <script type="text/javascript" src="/media/js/jquery-1.5.1.min.js"></script>
+  <script type="text/javascript" src="/media/js/jquery-ui-1.8.14.custom.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+        $('#orgn').autocomplete({ source: '/fa/ajax/orgn',
+                                  change: function(event, ui)
+                                          {
+                                              var orgn = $('#orgn').val();
+                                              $('#dstn').autocomplete('option','source', '/fa/ajax/dstn'+val);
+                                          } 
+                                });
+        $('#dstn').autocomplete({ source: '/fa/ajax/dstn',
+                                  change: function(even,ui)
+                                          {
+                                              var orgn = $('#orgn').val();
+                                              var dstn = $('#dstn').val();
+                                          }
+                                });
+        $('#dstn').focus(function()
+                         {
+                             var orgn = $('#orgn').val();
+                             $('#dstn').autocomplete('option', 'source', '/fa/ajax/dstn/'+orgn);
+                         });
+        $('#fltnum').focus(function()
+                           {
+                               var orgn = $('#orgn').val();
+                               var dstn = $('#dstn').val();
+                               var url = '/fa/ajax/fltnum/'+orgn+'/'+dstn;
+
+                               $('#fltnum').load(url);
+                               $('#submit').removeAttr('disabled');
+                           });   
+        $('#submit').click(function()
+                           {
+                               var orgn = $('#orgn').val();
+                               var dstn = $('#dstn').val();
+                               var fltnum = $('#fltnum').val();
+
+                               var action = '/fa/main/'+orgn+'/'+dstn+'/'+fltnum;
+                               $('#form').attr('action', action);
+                               $('#form').submit();
+                           }); 
+    });
+  </script>   
+
+    <center>
+      <form id='form'>
+        <table height='100%' border='0'>
+          <tr>
+            <td>
+              <input id='orgn' size='3' class='ui-widget' />
+            </td>
+            <td>
+              <input id='dstn' size='3' class='ui-widget' />
+            </td>
+            <td>
+              <select id='fltnum' class='ui-widget' />
+                <option>-----</option>
+              </select>
+            </td>
+            <td>
+              <input id='submit' type='submit' value="Go!" class='ui-widget' disabled />
+            </td>
+          </tr>
+        </table>
+      </form>
+    </center>
+  </body>
+</html>
+
+
+
+
+

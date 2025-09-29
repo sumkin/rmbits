@@ -1,0 +1,14 @@
+<html>
+  <head>
+    <script type='text/javascript' src='/media/js/dygraph-combined.js'></script>
+  </head>
+<body>
+<div id='book_graph' style='width: 1000px; height: 300px'>Show</div>
+<script type='text/javascript'>
+
+  g = new Dygraph(document.getElementById('book_graph'),
+                  '/csv/book/{{orgn}}/{{dstn}}/{{fltnum}}');
+
+</script>
+</body>
+</html>

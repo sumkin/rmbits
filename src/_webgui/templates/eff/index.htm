@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang='en'>
+ <head>
+  <title>RM efficiency</title>
+  
+  <link href='/static/bootstrap/css/bootstrap.css' rel='stylesheet' media='screen'>
+  <link href='/static/bootstrap/css/bootstrap-select.min.css' rel='stylesheet'>
+
+  <script src='http://code.jquery.com/jquery-latest.js'></script>
+  <script src='/static/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/static/bootstrap/js/bootstrap-select.min.js'></script>
+  <script src='/static/js/dygraph-combined.js'></script>
+
+  <style>
+    body {
+     padding-top: 60px;
+    }
+  </style>
+ </head>
+ <body>
+  <div class='navbar navbar-inverse navbar-fixed-top'>
+    <div class='navbar-inner'>
+      <div class='container' style='position:absolute; left: 0'>
+        <form class='form-horizontal'>
+          {% csrf_token %}
+          <fieldset>
+            <div class='control-group'>
+              <div class='controls'>
+                <select id='leg' class='selectpicker' onchange='reload()'>
+                  <option value='ALL'>ALL</option>
+                  {% for leg in legs %}
+                  <option value='{{leg}}'>{{leg}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class='container'>
+    <legend class=''>Actual and blind revenue</legend>
+    <div id='ab_rev' style='width: 900px; height: 200px'></div>
+  </div>
+ 
+  <div class='container'>
+    <legend class=''>Efficiency</legend>
+    <div id='eff' style='width: 900px; height: 200px'></div>
+  </div>
+
+  <div class='container'>
+    <legend class=''>Market volatility</legend>
+    <div id='mv' style='width: 900px; height: 200px'></div>
+  </div>
+
+  <br /><br /><br /><br />
+
+  </body>
+</html>
+
+<script type='text/javascript'>
+  g_ab_rev = new Dygraph(document.getElementById('ab_rev'),
+    '/eff/csv/ab_rev/ALL',
+    { colors: ['#669900','#3399FF'],
+      highlightCallback: function(e,x,pts,row) {
+        var sel = g_ab_rev.getSelection();
+        g_eff.setSelection(sel);
+        g_mv.setSelection(sel);  
+      },
+      unhighlightCallback: function(e,x,pts,row) {
+        g_ab_rev.clearSelection();
+        g_eff.clearSelection();
+        g_mv.clearSelection();
+      }
+    });
+  g_eff = new Dygraph(document.getElementById('eff'),
+    '/eff/csv/eff/ALL',
+    { colors: ['#C80000'],
+      highlightCallback: function(e,x,pts,row) {
+        var sel = g_eff.getSelection();
+        g_ab_rev.setSelection(sel);
+        g_mv.setSelection(sel);
+      },
+      unhighlightCallback: function(e,x,pts,row) {
+        g_ab_rev.clearSelection();
+        g_eff.clearSelection();
+        g_mv.clearSelection();
+      }
+    });
+  g_mv = new Dygraph(document.getElementById('mv'),
+    '/eff/csv/mv/ALL',
+    { colors: ['#CC6600'],
+      highlightCallback: function(e,x,pts,row) {
+        var sel = g_mv.getSelection();
+        g_ab_rev.setSelection(sel);
+        g_eff.setSelection(sel);
+      },
+      unhighlightCallback: function(e,x,pts,row) {
+        g_ab_rev.clearSelection();
+        g_eff.clearSelection();
+        g_mv.clearSelection();
+      }
+    });
+
+  $(document).ready(function() {
+    $('select').selectpicker();
+  });
+
+  function reload()
+  {
+    var leg = $('#leg').val();
+    var url_ab_rev = '/eff/csv/ab_rev/'+leg
+    var url_eff = '/eff/csv/eff/'+leg
+    var url_mv = '/eff/csv/mv/'+leg
+
+    g_ab_rev.updateOptions({file: url_ab_rev});
+    g_eff.updateOptions({file: url_eff});
+    g_mv.updateOptions({file: url_mv});
+  }
+</script>
+
+
+
+
