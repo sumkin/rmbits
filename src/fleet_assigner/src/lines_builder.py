@@ -72,7 +72,6 @@ class LinesBuilder:
         """
         Builds the lines.
         """
-        #self.optimization_status_handler.update_status(self.uuid, "Building lines...")
         # Build subnetwork for each aircraft type.
         self.lines = {}
         for k in range(len(self.fleet_types)):
@@ -93,7 +92,7 @@ class LinesBuilder:
             csv_writer = csv.writer(f)
             csv_writer.writerow(["ORGN", "DSTN", "FLTNUM", "DEPDT", "ARRDT", "DEPTM",
                                  "ARRTM", "AC_TYPE", "AIRCRAFT_ID", "LINE", "COSTS", "J_CAP", "W_CAP", "Y_CAP",
-                                 "GROUND_TIME", "DUTY_ID"])
+                                 "GROUND_TIME", "DUTY_ID", "CC"])
             ac_type2num = {}
             for k in range(len(self.fleet_types)):
                 ac_type = self.fleet_types[k]
@@ -157,7 +156,7 @@ class LinesBuilder:
                     "",                                                     # Y_CAP
                     "",                                                     # GROUND_TIME
                     0,                                                      # DUTY_ID,
-                    r["cc"]                                               # CC
+                    r["cc"]                                                 # CC
                 ]
                 csv_writer.writerow(row)
 
