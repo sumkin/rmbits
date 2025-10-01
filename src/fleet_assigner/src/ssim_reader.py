@@ -22,8 +22,8 @@ class SSIMReader:
                 assert len(line) == 200
                 code = line[0]
                 carrier = line[2:4]
-                fltnum = line[5:8]
-                _ = line[9:13]
+                fltnum = line[6:9]
+                _ = line[10:13]
                 dates = line[14:28]
                 dow = line[28:36]
                 start = line[36:52]
