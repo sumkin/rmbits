@@ -22,7 +22,7 @@ class SSIMReader:
                 assert len(line) == 200
                 code = line[0]
                 carrier = line[2:4]
-                fltnum = line[6:9]
+                fltnum = line[5:9].strip()
                 _ = line[10:13]
                 dates = line[14:28]
                 dow = line[28:36]
