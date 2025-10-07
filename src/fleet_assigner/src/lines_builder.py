@@ -36,6 +36,7 @@ class LinesBuilder:
         self.dr = dr
         self.output_writer = output_writer
         self.optimization_status_handler = optimization_status_handler
+        #self.leg_id2from_to_mins_original = {}
 
     def get_subnetwork(self, ac_type):
         """
@@ -55,12 +56,13 @@ class LinesBuilder:
             leg = ["HEL", "HEL", r["fltnum"],
                    datetime.strftime(datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=r["from_mins"]), "%Y%m%d"),
                    datetime.strftime(datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=r["to_mins"]), "%Y%m%d"),
-                   r["from_mins"],
-                   r["to_mins"],
+                   r["from_mins_original"],
+                   r["to_mins_original"],
                    r["actype"]]
             if ac_type == r["actype"]:
                 self.legs.append(leg)
                 leg_id = len(self.legs) - 1
+                #self.leg_id2from_to_mins_original[leg_id] = [r["from_mins_original"], r["to_mins_original"]]
                 self.duties.append([leg_id])
                 duty_id = len(self.duties) - 1
                 self.leg2duty[leg_id] = duty_id
@@ -113,11 +115,13 @@ class LinesBuilder:
                         duty_id = self.leg2duty[leg_id]
                         num_legs = len(self.duties[duty_id])
                         row = copy.deepcopy(self.legs[leg_id])
-                        leg_dep_mins = row[5]
-                        leg_arr_mins = row[6]
-                        row[5] = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=row[5])
+                        #if leg_id in self.leg_id2from_to_mins_original:
+                        #    leg_dep_mins, leg_arr_mins = self.leg_id2from_to_mins_original[leg_id]
+                        #else:
+                        leg_dep_mins, leg_arr_mins = row[5], row[6]
+                        row[5] = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_dep_mins)
                         row[5] = datetime.strftime(row[5], "%H:%M")
-                        row[6] = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=row[6])
+                        row[6] = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_arr_mins)
                         row[6] = datetime.strftime(row[6], "%H:%M")
                         if duty_id < self.num_regular_duties:
                             costs = self.dr.get_duty_costs(duty_id, k)

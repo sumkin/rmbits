@@ -326,18 +326,7 @@ class DataReader:
                 for t in range(1, len(self.ts)):
                     t0, t1 = self.ts[t-1], self.ts[t]
                     if max(min_t, t0) <= min(max_t, t1 - 1):
-                        if d == 1557 and t == 28 and k == 0:
-                            print("min_t, max_t = {}, {}".format(min_t, max_t))
-                            print("t0, t1 = {}, {}".format(t0, t1))
-                            assert False
                         self.alphas[(d, t, k)] = 1
-                        """
-                        if d == 1557 and t == 28 and k == 0:
-                            print("min_t, max_t = {}, {}".format(min_t, max_t))
-                            print("t0, t1 = {}, {}".format(t0, t1))
-                            print(self.alphas[(d, t, k)])
-                            assert False
-                        """
 
         sys.stdout.write("\b\b\b\b\b\b")
         sys.stdout.write("\n")

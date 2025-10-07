@@ -52,6 +52,8 @@ class AircraftRouter:
                 tt = self.turnaround_time
                 if len(self.duties[d]) == 1 or len(self.duties[other_d]) == 1:
                     tt = 0
+                #if len(self.duties[other_d]) == 1:
+                #    tt = 0
 
                 if duty_arrtime1 + tt <= duty_deptime2:
                     self.duties_graph.add_edge(d, other_d)

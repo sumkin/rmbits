@@ -63,6 +63,8 @@ class MaintenanceReader(SSIMReader):
         df = pd.DataFrame(data=data).drop_duplicates()
         df = df[["carrier", "orgn", "dstn", "fltnum", "from_mins", "to_mins", "actype"]]
         df = pd.merge(df, self.turnaround_times_df, how="left", left_on="actype", right_on="Subfleet")
+        df["from_mins_original"] = df["from_mins"]
+        df["to_mins_original"] = df["to_mins"]
         df["to_mins"] = df["to_mins"] - df["Turnaround"]
 
         return df
