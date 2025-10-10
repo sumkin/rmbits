@@ -30,7 +30,7 @@ class DutiesBuilder2:
         self.duty2at = {}
 
     def read_parent_child_pairs(self):
-        df = pd.read_excel(self.pairings_file, sheet_name="OTP_Fedor")
+        df = pd.read_excel(self.pairings_file, sheet_name="Data")
         for i, r in df.iterrows():
             if r["A/C"] == "73Z" or r["A/C"] == "32V":
                 # This is wetlease. Should be ignored.
@@ -86,7 +86,8 @@ class DutiesBuilder2:
         while True:
             merged = False
             n = len(self.sequences)
-            print("n = {}".format(n))
+            if n % 100 == 0:
+                print("n = {}".format(n))
             for i in range(n):
                 e1 = self.sequences[i]
                 for j in range(i + 1, n):
@@ -131,6 +132,8 @@ class DutiesBuilder2:
         self.num_wetlease_sequences = 0
 
         for sequence in self.sequences:
+            if len(sequence) == 0:
+                continue
             cc = sequence[0][:2]
             if cc != "AY":
                 self.num_wetlease_sequences += 1

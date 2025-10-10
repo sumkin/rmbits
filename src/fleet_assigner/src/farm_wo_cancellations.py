@@ -578,8 +578,6 @@ class FARMWoCancellations:
                     for i, duty in enumerate(duties):
                         duty = [[l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7]] for l in duty]
                         print("\t{}, {}".format(duty, self.dr.duties2startend[ds[i]]))
-                    print("\t{} {}".format(self.dr.ts[605], self.dr.ts[606]))
-                    print("\t{} {}".format(self.dr.ts[606], self.dr.ts[607]))
                     print(self.dr.maint_df[self.dr.maint_df["actype"] == "A7A"].head(10))
                     print("")
                     assert False
@@ -713,8 +711,8 @@ class FARMWoCancellations:
 
 
 if __name__ == "__main__":
-    fcstdate = "20250619"
-    month = "september2025"
+    fcstdate = "20251006"
+    month = "february2026"
     opt_id = uuid.uuid4()
 
     excel_fname = "fa_{}_{}_{}.xlsx".format(fcstdate, month, opt_id)
@@ -723,21 +721,20 @@ if __name__ == "__main__":
     optimization_status_handler = None #OptimizationStatusHandler()
 
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
-    depdates = ["20250831",
-                "20250901", "20250902", "20250903", "20250904", "20250905", "20250906", "20250907",
-                "20250908", "20250909", "20250910", "20250911", "20250912", "20250913", "20250914",
-                "20250915", "20250916", "20250917", "20250918", "20250919", "20250920", "20250921",
-                "20250922", "20250923", "20250924", "20250925", "20250926", "20250927", "20250928",
-                "20250929", "20250930",
-                "20251001"]
+    depdates = ["20260131",
+                "20260201", "20260202", "20260203", "20260204", "20260205", "20260206", "20260207",
+                "20260208", "20260209", "20260210", "20260211", "20260212", "20260213", "20260214",
+                "20260215", "20260216", "20260217", "20260218", "20260219", "20260220", "20260221",
+                "20260222", "20260223", "20260224", "20260225", "20260226", "20260227", "20260228",
+                "20260301"]
     costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
     fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_SEP_19JUN.ssim"
+    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_FEB26_07OCT.ssim"
     airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/SEP_Data.xlsx"
+    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/FEB26_DATA.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
 
     dill_fwoc_fname = "../cache/fwoc_{}_{}.dill".format(month, fcstdate)
