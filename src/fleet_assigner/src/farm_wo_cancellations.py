@@ -716,7 +716,6 @@ if __name__ == "__main__":
     excel_fname = "fa_{}_{}_{}.xlsx".format(fcstdate, month, opt_id)
     excel_output_writer = ExcelOutputWriter("../output/{}".format(excel_fname))
     debug_info_writer = DebugInfoWriter("../output/")
-    optimization_status_handler = None #OptimizationStatusHandler()
 
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
     depdates = ["20260131",
