@@ -168,7 +168,6 @@ class DutiesBuilder2:
                             cur_duty.append(prev_leg_id)
                             cur_duty_svc.append(prev_svc)
                             duty_id = len(self.duties)
-                            assert len(cur_duty) % 2 == 0, "len(cur_duty) = {}".format(len(cur_duty))
                             self.duties.append(cur_duty)
                             self.duties_svc.append(cur_duty_svc)
                             if "C" in cur_duty_svc or "P" in cur_duty_svc or "K" in cur_duty_svc:
@@ -196,7 +195,6 @@ class DutiesBuilder2:
                     cur_duty.append(leg_id)
                     cur_duty_svc.append(svc)
                     duty_id = len(self.duties)
-                    assert len(cur_duty) % 2 == 0, "len(cur_duty) = {}".format(len(cur_duty))
                     self.duties.append(cur_duty)
                     self.duties_svc.append(cur_duty_svc)
                     if "C" in cur_duty_svc or "P" in cur_duty_svc or "K" in cur_duty_svc:

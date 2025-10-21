@@ -13,7 +13,6 @@ from utils import time_now
 from data_reader import DataReader
 from excel_output_writer import ExcelOutputWriter
 from debug_info_writer import DebugInfoWriter
-from optimization_status_handler import OptimizationStatusHandler
 from s3utils import s3copy
 from farm_helpers import *
 from lines_builder import LinesBuilder
@@ -113,7 +112,7 @@ class FARMWoCancellations:
                 z_ub[j] = self.dr.get_demand(j)
         self.z_vars = self.model.addMVar(num_products, lb=z_lb, ub=z_ub, vtype=GRB.CONTINUOUS, name="z")
 
-        # Swap variables.
+        # Change variables.
         self.s_vars = self.model.addMVar((num_duties, num_fleet_types), vtype=GRB.BINARY, name="s")
 
         if self.min_extra_planes:
@@ -398,7 +397,7 @@ class FARMWoCancellations:
                 name = "s_y_rel_4_{}_{}".format(d, k)
                 self.model.addConstr(constr <= 0, name=name)
 
-    def set_max_num_swaps_constr(self, max_num_swaps):
+    def set_max_num_changes_constr(self, max_num_changes):
         """
         Sets maximum number of swaps constraints.
         """
@@ -406,7 +405,7 @@ class FARMWoCancellations:
         for d in range(self.dr.get_num_duties()):
             for k in range(self.dr.get_num_fleet_types()):
                 constr += self.s_vars[(d, k)]
-        self.model.addConstr(constr <= 2 * max_num_swaps, name="max_num_swaps")
+        self.model.addConstr(constr <= max_num_changes, name="max_num_changes")
 
     def set_fixed_duties_constr(self):
         """
@@ -417,7 +416,7 @@ class FARMWoCancellations:
             k = self.dr.fleet_types.index(ac)
             self.fix_y_var(d, k, 1, "fixed_duties")
 
-    def set_constraints(self, max_num_swaps=None):
+    def set_constraints(self, max_num_changes=None):
         """
         Sets constraints.
         """
@@ -449,9 +448,9 @@ class FARMWoCancellations:
         print("\t", time_now(), "Setting y and s variables relation constraints...")
         self.set_y_s_rel_constr()
 
-        if max_num_swaps is not None:
+        if max_num_changes is not None:
             print("\t", time_now(), "Setting maximum number of swaps constraints...")
-            self.set_max_num_swaps_constr(max_num_swaps)
+            self.set_max_num_changes_constr(max_num_changes)
 
         print("\t", time_now(), "Setting fixed duites constraints...")
         self.set_fixed_duties_constr()
@@ -501,9 +500,8 @@ class FARMWoCancellations:
             self.constr_name2id[name] = self.num_constrs
             self.num_constrs += 1
 
-    def build_model(self, max_num_swaps=None, min_extra_planes=False):
-        #self.optimization_status_handler.update_status(self.uuid, "Building model...")
-        self.max_num_swaps = max_num_swaps
+    def build_model(self, max_num_changes=None, min_extra_planes=False):
+        self.max_num_changes = max_num_changes
         self.min_extra_planes = min_extra_planes
 
         # Create model.
@@ -522,7 +520,7 @@ class FARMWoCancellations:
         # Set constraints.
         #self.optimization_status_handler.update_status(self.uuid, "Setting constraints...")
         print(time_now(), "Setting constraints...")
-        self.set_constraints(max_num_swaps)
+        self.set_constraints(max_num_changes)
 
     def make_feasible(self):
         y = {}
@@ -683,7 +681,7 @@ class FARMWoCancellations:
                     if self.sol_y[d] == k:
                         costs += self.dr.get_duty_costs(d, k)
 
-        # Calculate number of swaps.
+        # Calculate number of changes.
         duties_changed_ac = 0
         for d in range(D):
             for k in range(K):
@@ -786,7 +784,7 @@ if __name__ == "__main__":
                                    excel_output_writer,
                                    debug_info_writer)
         fwoc.load_data()
-        fwoc.build_model()
+        fwoc.build_model(max_num_changes=100000)
         fwoc.model.write(mps_fname)
 
         model = fwoc.model

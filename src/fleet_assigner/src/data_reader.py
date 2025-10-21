@@ -125,7 +125,7 @@ class DataReader:
 
     def load_costs_df(self):
         self.costs_df = pd.read_csv(self.costs_file)
-        self.costs_df.columns = ["ORGN", "DSTN", "DEPDT", "AIRCRAFT", "COSTS"]
+        self.costs_df.columns = ["DEPDT", "ORGN", "DSTN", "AIRCRAFT", "COSTS"]
         self.costs_df["ORGN"] = self.costs_df["ORGN"].astype("category")
         self.costs_df["DSTN"] = self.costs_df["DSTN"].astype("category")
         self.costs_df["DEPDT"] = self.costs_df["DEPDT"].astype("category")
