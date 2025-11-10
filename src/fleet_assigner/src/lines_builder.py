@@ -16,7 +16,6 @@ class LinesBuilder:
                  fleet_type2fleet_ids,
                  leg2duty,
                  dr,
-                 optimization_status_handler,
                  output_writer):
         """
         @arg legs                 --- the list of legs.
@@ -35,8 +34,6 @@ class LinesBuilder:
         self.leg2duty = leg2duty
         self.dr = dr
         self.output_writer = output_writer
-        self.optimization_status_handler = optimization_status_handler
-        #self.leg_id2from_to_mins_original = {}
 
     def get_subnetwork(self, ac_type):
         """

@@ -125,7 +125,7 @@ class DataReader:
 
     def load_costs_df(self):
         self.costs_df = pd.read_csv(self.costs_file)
-        self.costs_df.columns = ["DEPDT", "ORGN", "DSTN", "AIRCRAFT", "COSTS"]
+        self.costs_df.columns = ["DEPDT", "ORGN", "DSTN", "AIRCRAFT", "PCI_COSTS", "PCII_COSTS", "MARGINAL_COSTS"]
         self.costs_df["ORGN"] = self.costs_df["ORGN"].astype("category")
         self.costs_df["DSTN"] = self.costs_df["DSTN"].astype("category")
         self.costs_df["DEPDT"] = self.costs_df["DEPDT"].astype("category")
@@ -425,7 +425,7 @@ class DataReader:
                 (self.costs_df["DSTN"] == dstn) &
                 (self.costs_df["DEPDT"] == depdt) &
                 (self.costs_df["AIRCRAFT"] == t_ac_type)
-            ]["COSTS"]
+            ]["PCI_COSTS"]
             if costs_df.shape[0] == 1:
                 res += costs_df.iloc[0]
             else:
@@ -445,7 +445,7 @@ class DataReader:
                 if costs_df.shape[0] < 1:
                     print("orgn, dstn, t_ac_type = {}, {}, {}".format(orgn, dstn, t_ac_type))
                 if costs_df.shape[0] >= 1:
-                    res += costs_df["COSTS"].mean()
+                    res += costs_df["PCI_COSTS"].mean()
                 else:
                     res += 0.0
         return res

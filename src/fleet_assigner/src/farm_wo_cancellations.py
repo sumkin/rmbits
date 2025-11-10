@@ -37,7 +37,6 @@ class FARMWoCancellations:
                  airport_allowance_file,
                  leg_pairings_file,
                  turnaround_times_file,
-                 optimization_status_handler,
                  excel_output_writer,
                  debug_info_writer):
         self.fcstdate = fcstdate
@@ -729,9 +728,9 @@ if __name__ == "__main__":
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_FEB26_07OCT.ssim"
+    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_FEB2days.ssim"
     airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/FEB26_DATA.xlsx"
+    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/FEB_Report.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
 
     dill_fwoc_fname = "../cache/fwoc_{}_{}.dill".format(month, fcstdate)
@@ -779,7 +778,6 @@ if __name__ == "__main__":
                                    airport_allowance_file,
                                    leg_pairings_file,
                                    turnaround_times_file,
-                                   optimization_status_handler,
                                    excel_output_writer,
                                    debug_info_writer)
         fwoc.load_data()
@@ -828,7 +826,6 @@ if __name__ == "__main__":
                       fwoc.dr.fleet_type2fleet_ids,
                       fwoc.dr.leg2duty,
                       fwoc.dr,
-                      optimization_status_handler,
                       excel_output_writer)
     lb.build()
     lb.write_csv("../output/lines.csv")
