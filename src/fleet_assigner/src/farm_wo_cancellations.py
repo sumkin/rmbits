@@ -37,6 +37,7 @@ class FARMWoCancellations:
                  airport_allowance_file,
                  leg_pairings_file,
                  turnaround_times_file,
+                 restrictions_file,
                  excel_output_writer,
                  debug_info_writer):
         self.fcstdate = fcstdate
@@ -47,6 +48,7 @@ class FARMWoCancellations:
         self.cap_file = cap_file
         self.leg_distance_file = leg_distance_file
         self.turnaround_times_file = turnaround_times_file
+        self.restrictions_file = restrictions_file
         self.subfleet_ranges_file = subfleet_ranges_file
         self.maintenance_file = maintenance_file
         self.airport_allowance_file = airport_allowance_file
@@ -82,6 +84,7 @@ class FARMWoCancellations:
                             self.airport_allowance_file,
                             self.leg_pairings_file,
                             self.turnaround_times_file,
+                            self.restrictions_file,
                             self.excel_output_writer)
             dr.read()
             with open(pkl_dr_fname, "wb") as f:
@@ -415,6 +418,46 @@ class FARMWoCancellations:
             k = self.dr.fleet_types.index(ac)
             self.fix_y_var(d, k, 1, "fixed_duties")
 
+    def set_restrictions_constr(self):
+        """
+        Sets restrictions constraints.
+        """
+        #print(self.dr.restrictions_df.head(5))
+        for _, r in self.dr.restrictions_df.iterrows():
+            type = str(r["Type"]).strip()
+            fltnum = str(r["Flight number"]).strip()
+            orgn = str(r["Origin"]).strip()
+            dstn = str(r["Destination"]).strip()
+            effdate = str(r["Effective Date"]).strip()
+            discdate = str(r["Discontinuing Date"]).strip()
+            dow = str(r["DOW"]).strip()
+            sfgroup = str(r["Subfleet group"]).strip()
+            #print(type, fltnum, orgn, dstn, effdate, discdate, dow, sfgroup)
+            effdate = datetime.strptime(effdate, "%Y%m%d")
+            discdate = datetime.strptime(discdate, "%Y%m%d")
+            curdate = effdate
+            while curdate <= discdate:
+                if str(curdate.isoweekday()) == dow:
+                    curdt = curdate.strftime("%Y%m%d")
+                    k = orgn + "-" + dstn + "-" + str(fltnum).zfill(4) + "-" + curdt
+                    if k in self.dr.orgn_dstn_fltnum_depdt2leg_id.keys():
+                        leg_id = self.dr.orgn_dstn_fltnum_depdt2leg_id[k]
+                        if leg_id in self.dr.leg2duty.keys():
+                            duty_id = self.dr.leg2duty[leg_id]
+                            at = self.dr.duty2at[duty_id]
+                            assert at in self.dr.fleet_types
+                            if type == "Freeze":
+                                kk = self.dr.fleet_types.index(at)
+                                self.fix_y_var(duty_id, kk, 1, "freeze_restrictions")
+                            elif type == "Limit subfleet":
+                                allowed_ats = sfgroup.split(",")
+                                allowed_ats = [e.strip() for e in allowed_ats]
+                                for at in self.dr.fleet_types:
+                                    if at not in allowed_ats:
+                                        kk = self.dr.fleet_types.index(at)
+                                        self.fix_y_var(duty_id, kk, 0, "limit_subfleet_restrictions")
+                curdate += timedelta(days=1)
+
     def set_constraints(self, max_num_changes=None):
         """
         Sets constraints.
@@ -453,6 +496,9 @@ class FARMWoCancellations:
 
         print("\t", time_now(), "Setting fixed duites constraints...")
         self.set_fixed_duties_constr()
+
+        print("\t", time_now(), "Setting restrictions constraints...")
+        self.set_restrictions_constr()
 
     def fix_y_var(self, d, k, val, reason=""):
         """
@@ -732,6 +778,7 @@ if __name__ == "__main__":
     airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
     leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/FEB_Report.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
+    restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
 
     dill_fwoc_fname = "../cache/fwoc_{}_{}.dill".format(month, fcstdate)
     mps_fname = "../cache/model_{}_{}.mps".format(month, fcstdate)
@@ -778,6 +825,7 @@ if __name__ == "__main__":
                                    airport_allowance_file,
                                    leg_pairings_file,
                                    turnaround_times_file,
+                                   restrictions_file,
                                    excel_output_writer,
                                    debug_info_writer)
         fwoc.load_data()

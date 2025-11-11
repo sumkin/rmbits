@@ -30,6 +30,7 @@ class DataReader:
         airport_allowance_file,
         leg_pairings_file,
         turnaround_times_file,
+        restrictions_file,
         output_writer
     ):
         self.fcstdate = fcstdate 
@@ -43,6 +44,7 @@ class DataReader:
         self.airport_allowance_file = airport_allowance_file
         self.leg_pairings_file = leg_pairings_file
         self.turnaround_times_file = turnaround_times_file
+        self.restrictions_file = restrictions_file
         self.output_writer = output_writer
 
         self.legs = []
@@ -57,6 +59,9 @@ class DataReader:
 
         print(time_now() + " Loading turnaround times..")
         self.load_turnaround_times()
+
+        print(time_now() + " Loading restrictions...")
+        self.load_restrictions()
 
         print(time_now() + " Loading fleet dataframe...")
         self.load_fleet_df()
@@ -285,6 +290,9 @@ class DataReader:
 
     def load_turnaround_times(self):
         self.turnaround_times_df = pd.read_csv(self.turnaround_times_file)
+
+    def load_restrictions(self):
+        self.restrictions_df = pd.read_csv(self.restrictions_file)
 
     def build_time_indices(self):
         # Duties.
@@ -601,6 +609,7 @@ if __name__ == "__main__":
     airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
     leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/leg_pairings.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
+    restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
 
     dr = DataReader(fcstdate,
                     depdates,
@@ -613,6 +622,7 @@ if __name__ == "__main__":
                     airport_allowance_file,
                     leg_pairings_file,
                     turnaround_times_file,
+                    restrictions_file,
                     excel_output_writer)
     dr.read()
     print(dr.fleet_types)
