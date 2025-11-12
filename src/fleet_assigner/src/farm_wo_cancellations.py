@@ -458,6 +458,18 @@ class FARMWoCancellations:
                                         self.fix_y_var(duty_id, kk, 0, "limit_subfleet_restrictions")
                 curdate += timedelta(days=1)
 
+    def set_330_350_rule_constraints(self):
+        """
+        Sets 330 and 350s rule.
+        """
+        for duty_id in range(len(self.dr.duties)):
+            at = self.dr.duty2at[duty_id]
+            assert at in self.dr.fleet_types
+            if at == "33S":
+                if not self.dr.duty_contains(duty_id, "AMS"):
+                    k = self.dr.fleet_types.index(at)
+                    self.fix_y_var(duty_id, k, 1, "330_350_rule")
+
     def set_constraints(self, max_num_changes=None):
         """
         Sets constraints.
@@ -499,6 +511,9 @@ class FARMWoCancellations:
 
         print("\t", time_now(), "Setting restrictions constraints...")
         self.set_restrictions_constr()
+
+        print("\t", time_now(), "Setting 330_350 rule constraints...")
+        self.set_330_350_rule_constraints()
 
     def fix_y_var(self, d, k, val, reason=""):
         """

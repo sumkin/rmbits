@@ -589,6 +589,14 @@ class DataReader:
         ]["Turnaround"].iloc[0]
         return res
 
+    def duty_contains(self, duty_id, ap):
+        for leg_id in self.duties[duty_id]:
+            leg = self.legs[leg_id]
+            orgn, dstn = leg[0], leg[1]
+            if orgn == ap or dstn == ap:
+                return True
+        return False
+
 if __name__ == "__main__":
     excel_output_writer = ExcelOutputWriter("../output/fleet_assigner.xlsx")
 
