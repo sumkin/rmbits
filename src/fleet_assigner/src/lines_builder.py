@@ -7,7 +7,6 @@ from aircraft_router import AircraftRouter
 class LinesBuilder:
 
     def __init__(self,
-                 uuid,
                  depdates,
                  legs,
                  duties,
@@ -23,7 +22,6 @@ class LinesBuilder:
         @arg fleet_types          --- list of fleet types.
         @arg fleet_type2fleet_ids --- mapping from fleet type to list of fleet ids.
         """
-        self.uuid = uuid
         self.depdates = depdates
         self.legs = legs
         self.duties = copy.deepcopy(duties)

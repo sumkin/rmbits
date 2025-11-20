@@ -24,7 +24,6 @@ class FARMWoCancellations:
     """
 
     def __init__(self,
-                 uuid,
                  fcstdate,
                  month,
                  depdates,
@@ -64,10 +63,7 @@ class FARMWoCancellations:
         self.constr_name2id = {}
         self.fixed_y_vars = {}
 
-        self.uuid = uuid
-
     def load_data(self):
-        #self.optimization_status_handler.update_status(self.uuid, "Loading data...")
         pkl_dr_fname = "../cache/dr_{}_{}.pkl".format(self.month, self.fcstdate)
         if os.path.exists(pkl_dr_fname):
             with open(pkl_dr_fname, "rb") as f:
@@ -568,17 +564,14 @@ class FARMWoCancellations:
         self.model = Model("farm_wo_cancellations")
 
         # Create variables.
-        #self.optimization_status_handler.update_status(self.uuid, "Creating variables...")
         print(time_now(), "Creating variables...")
         self.create_variables()
 
         # Set objective.
-        #self.optimization_status_handler.update_status(self.uuid, "Setting objective...")
         print(time_now(), "Setting objective...")
         self.set_objective()
 
         # Set constraints.
-        #self.optimization_status_handler.update_status(self.uuid, "Setting constraints...")
         print(time_now(), "Setting constraints...")
         self.set_constraints(max_num_changes)
 
@@ -759,8 +752,8 @@ class FARMWoCancellations:
         }
         return res
 
-    def write_output_excel(self, sol):
-        self.excel_output_writer.write_info(sol)
+    def write_output_excel(self, sol_y_fixed, sol):
+        self.excel_output_writer.write_info(sol_y_fixed, sol)
         self.excel_output_writer.write_inv_df(self.dr.inv_df)
         self.excel_output_writer.write_costs_df(self.dr.costs_df)
         self.excel_output_writer.write_leg_distance_df(self.dr.leg_distance_df)
@@ -771,9 +764,8 @@ class FARMWoCancellations:
 if __name__ == "__main__":
     fcstdate = "20251006"
     month = "february2026"
-    opt_id = uuid.uuid4()
 
-    excel_fname = "fa_{}_{}_{}.xlsx".format(fcstdate, month, opt_id)
+    excel_fname = "fa_{}_{}.xlsx".format(fcstdate, month)
     excel_output_writer = ExcelOutputWriter("../output/{}".format(excel_fname))
     debug_info_writer = DebugInfoWriter("../output/")
 
@@ -827,8 +819,7 @@ if __name__ == "__main__":
             fwoc.s_vars[(d, k)] = s_var
         fwoc.obj = fwoc.model.getObjective()
     else:
-        fwoc = FARMWoCancellations(opt_id,
-                                   fcstdate,
+        fwoc = FARMWoCancellations(fcstdate,
                                    month,
                                    depdates,
                                    costs_file,
@@ -880,8 +871,7 @@ if __name__ == "__main__":
     print("Profit = {}".format(sol["rev"] - sol["costs"]))
     print("Number of duties with changed aircraft = {}".format(sol["duties_changed_ac"]))
 
-    lb = LinesBuilder(opt_id,
-                      depdates,
+    lb = LinesBuilder(depdates,
                       fwoc.dr.legs,
                       fwoc.dr.duties,
                       fwoc.sol_y,
