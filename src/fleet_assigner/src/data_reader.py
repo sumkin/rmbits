@@ -372,23 +372,19 @@ class DataReader:
         assert j >= 0 and j <= self.get_num_products()
         return self.rm_model["f"][j]
 
-    def get_duty_costs(self, d, k):
-        assert d >= 0 and d <= self.get_num_duties()
-        assert k >= 0 and k <= self.get_num_fleet_types()
+    def get_leg_costs(self, orgn, dstn, depdt, ac_type):
 
-        ac_type = self.fleet_types[k]
-        
         def transform_ac_type(ac_type):
             if ac_type == "29A":
-                ac_type = None 
+                ac_type = None
             elif ac_type == "319":
-                pass 
+                pass
             elif ac_type == "320":
-                pass 
+                pass
             elif ac_type == "321":
                 pass
             elif ac_type == "32B":
-                ac_type = "320" 
+                ac_type = "320"
             elif ac_type == "32G":
                 ac_type = "320"
             elif ac_type == "32I":
@@ -412,7 +408,7 @@ class DataReader:
             elif ac_type == "A7A":
                 ac_type = "AT7"
             elif ac_type == "DH4":
-                ac_type = None 
+                ac_type = None
             elif ac_type == "E90":
                 pass
             else:
@@ -424,38 +420,47 @@ class DataReader:
             print(f"ac_type = {ac_type}")
             assert False
 
-        res = 0
-        for leg_id in self.duties[d]:
-            orgn, dstn, _, depdt, _, _, _, _ = self.legs[leg_id]
-            depdt = depdt[:4] + "-" + depdt[4:6] + "-" + depdt[6:8]
+        res = 0.0
+        depdt = depdt[:4] + "-" + depdt[4:6] + "-" + depdt[6:8]
+        costs_df = self.costs_df[
+            (self.costs_df["ORGN"] == orgn) &
+            (self.costs_df["DSTN"] == dstn) &
+            (self.costs_df["DEPDT"] == depdt) &
+            (self.costs_df["AIRCRAFT"] == t_ac_type)
+            ]["PCI_COSTS"]
+        if costs_df.shape[0] == 1:
+            res += costs_df.iloc[0]
+        else:
+            # Skip flight number and take average.
             costs_df = self.costs_df[
                 (self.costs_df["ORGN"] == orgn) &
                 (self.costs_df["DSTN"] == dstn) &
                 (self.costs_df["DEPDT"] == depdt) &
                 (self.costs_df["AIRCRAFT"] == t_ac_type)
-            ]["PCI_COSTS"]
-            if costs_df.shape[0] == 1:
-                res += costs_df.iloc[0]
-            else:
-                # Skip flight number and take average.
+                ]
+            if costs_df.shape[0] < 1:
                 costs_df = self.costs_df[
                     (self.costs_df["ORGN"] == orgn) &
                     (self.costs_df["DSTN"] == dstn) &
-                    (self.costs_df["DEPDT"] == depdt) &
                     (self.costs_df["AIRCRAFT"] == t_ac_type)
-                ]
-                if costs_df.shape[0] < 1:
-                    costs_df = self.costs_df[
-                        (self.costs_df["ORGN"] == orgn) &
-                        (self.costs_df["DSTN"] == dstn) &
-                        (self.costs_df["AIRCRAFT"] == t_ac_type)
                     ]
-                if costs_df.shape[0] < 1:
-                    print("orgn, dstn, t_ac_type = {}, {}, {}".format(orgn, dstn, t_ac_type))
-                if costs_df.shape[0] >= 1:
-                    res += costs_df["PCI_COSTS"].mean()
-                else:
-                    res += 0.0
+            if costs_df.shape[0] < 1:
+                print("orgn, dstn, t_ac_type = {}, {}, {}".format(orgn, dstn, t_ac_type))
+            if costs_df.shape[0] >= 1:
+                res += costs_df["PCI_COSTS"].mean()
+            else:
+                res += 0.0
+        return res
+
+    def get_duty_costs(self, d, k):
+        assert d >= 0 and d <= self.get_num_duties()
+        assert k >= 0 and k <= self.get_num_fleet_types()
+        ac_type = self.fleet_types[k]
+
+        res = 0.0
+        for leg_id in self.duties[d]:
+            orgn, dstn, _, depdt, _, _, _, _ = self.legs[leg_id]
+            res += self.get_leg_costs(orgn, dstn, depdt, ac_type)
         return res
 
     def get_leg_id_by_rsrc_name(self, rsrc_name):

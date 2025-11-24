@@ -752,9 +752,9 @@ class FARMWoCancellations:
         }
         return res
 
-    def write_output_excel(self, sol_y_fixed, sol):
+    def write_output_excel(self, sol_y_fixed, sol, dr):
         self.excel_output_writer.write_info(sol_y_fixed, sol)
-        self.excel_output_writer.write_inv_df(self.dr.inv_df)
+        self.excel_output_writer.write_inv_df(self.dr.inv_df, sol_y_fixed, sol, dr)
         self.excel_output_writer.write_costs_df(self.dr.costs_df)
         self.excel_output_writer.write_leg_distance_df(self.dr.leg_distance_df)
         self.excel_output_writer.write_subfleet_range_df(self.dr.subfleet_range_df)

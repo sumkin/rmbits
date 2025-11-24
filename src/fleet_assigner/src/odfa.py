@@ -19,12 +19,15 @@ if __name__ == "__main__":
     debug_info_writer = DebugInfoWriter("../output/")
 
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
+    """
     depdates = ["20260131",
                 "20260201", "20260202", "20260203", "20260204", "20260205", "20260206", "20260207",
                 "20260208", "20260209", "20260210", "20260211", "20260212", "20260213", "20260214",
                 "20260215", "20260216", "20260217", "20260218", "20260219", "20260220", "20260221",
                 "20260222", "20260223", "20260224", "20260225", "20260226", "20260227", "20260228",
                 "20260301"]
+    """
+    depdates = ["20260215"]
     costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
     fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
@@ -118,21 +121,9 @@ if __name__ == "__main__":
     sol_y_fixed = fwoc.get_solution()
 
     debug_info_writer.write_fa_diagram(month, fwoc.dr, sol["y"], sol["m"])
-    fwoc.write_output_excel(sol_y_fixed, sol)
+    fwoc.write_output_excel(sol_y_fixed, sol, fwoc.dr)
 
-    """
-    sol = fwoc.get_solution()
-
-    debug_info_writer.write_fa_diagram(month, fwoc.dr, sol["y"], sol["m"])
-    fwoc.write_output_excel(sol)
-    print("Revenue = {}".format(sol["rev"]))
-    print("Booked revenue = {}".format(sol["booked_rev"]))
-    print("Costs = {}".format(sol["costs"]))
-    print("Profit = {}".format(sol["rev"] - sol["costs"]))
-    print("Number of duties with changed aircraft = {}".format(sol["duties_changed_ac"]))
-
-    lb = LinesBuilder(opt_id,
-                      depdates,
+    lb = LinesBuilder(depdates,
                       fwoc.dr.legs,
                       fwoc.dr.duties,
                       fwoc.sol_y,
@@ -150,4 +141,3 @@ if __name__ == "__main__":
     s3copy("../output/lines.ssim", "s3://ay-emr-job/fleet_assigner/{}/output/lines.ssim".format(month))
 
     s3copy("../output/{}".format(excel_fname), "s3://ay-emr-job/fleet_assigner/{}/output/{}".format(month, excel_fname))
-    """

@@ -38,7 +38,55 @@ class ExcelOutputWriter:
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
             df.to_excel(writer, header=False, index=False, sheet_name="info")
 
-    def write_inv_df(self, inv_df):
+    def write_inv_df(self, inv_df, sol_y_fixed, sol, dr):
+        before_at_vals = []
+        after_at_vals = []
+        at_change_vals = []
+        before_costs = []
+        after_costs = []
+        for k, r in inv_df.iterrows():
+            orgn = r["ORGN"]
+            dstn = r["DSTN"]
+            fltnum = r["FLTNUM"]
+            depdt = r["DEPDT_UTC"]
+
+            before_at = None
+            after_at = None
+
+            leg_id = dr.get_leg_id(orgn, dstn, fltnum, depdt)
+            duty_id = dr.get_duty_id_by_leg_id(leg_id)
+
+            if duty_id is not None:
+                before_at = dr.duty2at[duty_id]
+                after_at = None
+                for kk in range(len(dr.fleet_types)):
+                    if sol["y"][(duty_id, kk)] == 1:
+                        after_at = dr.fleet_types[kk]
+                        break
+            before_at_vals.append(before_at)
+            after_at_vals.append(after_at)
+            if before_at != after_at:
+                at_change_vals.append(True)
+            else:
+                at_change_vals.append(False)
+
+            if before_at is None:
+                before_costs.append(0.0)
+            else:
+                before_costs.append(dr.get_leg_costs(orgn, dstn, depdt, before_at))
+
+            if after_at is None:
+                after_costs.append(0.0)
+            else:
+                after_costs.append(dr.get_leg_costs(orgn, dstn, depdt, after_at))
+
+        inv_df["A/C before"] = before_at_vals
+        inv_df["A/C after"] = after_at_vals
+        inv_df["A/C change"] = at_change_vals
+        inv_df["Costs before"] = before_costs
+        inv_df["Costs after"] = after_costs
+        inv_df = inv_df.drop("AIRCRAFT_TYPE", axis=1)
+
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
             inv_df.to_excel(writer, index=False, sheet_name="inv_df")
 
