@@ -2,9 +2,10 @@ import numpy as np
 import gzip
 import pickle
 import time
+import pandas as pd
 import multiprocessing as mp 
 
-
+from pyairport.airport import Airport
 from lpmodelloader import LPModelLoader
 from s3utils import *
 
@@ -115,8 +116,59 @@ class LPModelMultiLoader:
         res["fcap"] = res_fcap 
         res["v_flowsh2idx"] = res_v_flowsh2idx
         res["v_idx2flowsh"] = res_v_idx2flowsh
-        res["rownumd"] = res_rownumd 
+        res["rownumd"] = res_rownumd
 
+        # Build A distance matrix.
+        od_dist_cache = {}
+        dist_df = pd.read_csv("s3://ay-emr-job/fleet_assigner/input/od_distances.csv") # File should be specified in odfa.py
+        dist_df["ap1"] = dist_df["ap1"].astype("category")
+        dist_df["ap2"] = dist_df["ap2"].astype("category")
+        assert len(res_Ai) == len(res_Aj) == len(res_Adata)
+
+        res_Adistratio = []
+        n = len(res_Ai)
+        print("n = {}".format(n))
+        for k in range(n):
+            if k % 1000 == 0:
+              print("k = {}".format(k))
+            i = res_Ai[k]
+            j = res_Aj[k]
+            resource = res_rsrc_names[i]
+            product = res_prdt_names[j]
+            leg_ap1 = resource[2:5]
+            leg_ap2 = resource[5:8]
+            od_ap1 = product[:3]
+            if len(product) > 60: # FIXME: why not equal to some number?
+                od_ap2 = product[31:34]
+            else:
+                od_ap2 = product[3:6]
+            if (leg_ap1, leg_ap2) in od_dist_cache:
+                leg_dist = od_dist_cache[(leg_ap1, leg_ap2)]
+            else:
+                try:
+                    leg_dist = dist_df[(dist_df["ap1"] == leg_ap1) & (dist_df["ap2"] == leg_ap2)]["dist"].iloc[0]
+                except:
+                    try:
+                        leg_dist = Airport(leg_ap1).distance(Airport(leg_ap2))
+                    except:
+                        print("leg_ap1, leg_ap2 = {}, {}".format(leg_ap1, leg_ap2))
+                        assert False
+                od_dist_cache[(leg_ap1, leg_ap2)] = leg_dist
+            if (od_ap1, od_ap2) in od_dist_cache:
+                od_dist = od_dist_cache[(od_ap1, od_ap2)]
+            else:
+                try:
+                    od_dist = dist_df[(dist_df["ap1"] == od_ap1) & (dist_df["ap2"] == od_ap2)]["dist"].iloc[0]
+                except:
+                    try:
+                        od_dist = Airport(od_ap1).distance(Airport(od_ap2))
+                    except:
+                        print("od_ap1, od_ap2 = {}, {}".format(od_ap1, od_ap2))
+                        assert False
+                od_dist_cache[(od_ap1, od_ap2)] = od_dist
+            v = leg_dist / od_dist
+            res_Adistratio.append(v)
+        res["res_Adistratio"] = res_Adistratio
         return res
 
 
