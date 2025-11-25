@@ -24,15 +24,16 @@ class ExcelOutputWriter:
 
     def write_info(self, sol_y_fixed, sol):
         data = [
-            ["Created", self.created_dt, ""],
-            ["", "", ""],
-            ["", "Before optimization", "After optimization"],
-            ["Pax", sol_y_fixed["pax"], sol["pax"]],
-            ["Booked pax", sol_y_fixed["booked_pax"], sol["booked_pax"]],
-            ["Revenue", sol_y_fixed["rev"], sol["rev"]],
-            ["Booked revenue", sol_y_fixed["booked_rev"], sol["booked_rev"]],
-            ["Costs", sol_y_fixed["costs"], sol["costs"]],
-            ["Duties changed aircraft", sol_y_fixed["duties_changed_ac"], sol["duties_changed_ac"]]
+            ["Created", self.created_dt, "", ""],
+            ["", "", "", ""],
+            ["", "Before optimization", "After optimization", "Difference"],
+            ["Pax", sol_y_fixed["pax"], sol["pax"], sol["pax"] - sol_y_fixed["pax"]],
+            ["Booked pax", sol_y_fixed["booked_pax"], sol["booked_pax"], sol["booked_pax"] - sol_y_fixed["booked_pax"]],
+            ["Revenue", sol_y_fixed["rev"], sol["rev"], sol["rev"] - sol_y_fixed["rev"]],
+            ["Booked revenue", sol_y_fixed["booked_rev"], sol["booked_rev"], sol["booked_rev"] - sol_y_fixed["booked_rev"]],
+            ["Costs", sol_y_fixed["costs"], sol["costs"], sol["costs"] - sol_y_fixed["costs"]],
+            ["Profit", sol_y_fixed["rev"] + sol_y_fixed["booked_rev"] - sol_y_fixed["costs"], sol["rev"] + sol["booked_rev"] - sol["costs"], sol["rev"] + sol["booked_rev"] - sol["costs"] - sol_y_fixed["rev"] - sol_y_fixed["booked_rev"] + sol_y_fixed["costs"]],
+            ["Duties changed aircraft", sol_y_fixed["duties_changed_ac"], sol["duties_changed_ac"], sol["duties_changed_ac"] - sol_y_fixed["duties_changed_ac"]]
         ]
         df = pd.DataFrame(data)
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
