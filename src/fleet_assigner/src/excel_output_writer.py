@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from datetime import datetime
-
+from scipy.sparse import csc_matrix
 
 class ExcelOutputWriter:
 
@@ -39,11 +39,29 @@ class ExcelOutputWriter:
             df.to_excel(writer, header=False, index=False, sheet_name="info")
 
     def write_inv_df(self, inv_df, sol_y_fixed, sol, dr):
+        before_paxes_vals = []
+        after_paxes_vals = []
+        before_rev_vals = []
+        after_rev_vals = []
         before_at_vals = []
         after_at_vals = []
         at_change_vals = []
         before_costs = []
         after_costs = []
+
+        # Calculate pax before and after.
+        Ai_fixed, Aj_fixed, Adata_fixed = sol_y_fixed["Ai"], sol_y_fixed["Aj"], sol_y_fixed["Adata"]
+        Ai, Aj, Adata = sol["Ai"], sol["Aj"], sol["Adata"]
+
+        A_fixed = csc_matrix((Adata_fixed, (Ai_fixed, Aj_fixed)), shape=(sol_y_fixed["M"], sol_y_fixed["N"]))
+        A = csc_matrix((Adata, (Ai, Aj)), shape=(sol["M"], sol["N"]))
+
+        paxes_fixed = A_fixed.dot(sol_y_fixed["z"])
+        paxes = A.dot(sol["z"])
+
+        rev_fixed = A_fixed.dot(sol_y_fixed["f"] * sol_y_fixed["z"])
+        rev = A.dot(sol["f"] * sol["z"])
+
         for k, r in inv_df.iterrows():
             orgn = r["ORGN"]
             dstn = r["DSTN"]
@@ -54,6 +72,26 @@ class ExcelOutputWriter:
             after_at = None
 
             leg_id = dr.get_leg_id(orgn, dstn, fltnum, depdt)
+            if leg_id is None:
+                before_paxes_vals.append(0.0)
+                after_paxes_vals.append(0.0)
+                before_rev_vals.append(0.0)
+                after_rev_vals.append(0.0)
+            else:
+                rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg_id(leg_id)
+
+                before_paxes = round(sum([paxes_fixed[i] for i in range(len(paxes_fixed)) if i in rsrc_name_idxs]))
+                after_paxes = round(sum([paxes[i] for i in range(len(paxes)) if i in rsrc_name_idxs]))
+
+                before_rev = sum([rev_fixed[i] for i in range(len(rev_fixed)) if i in rsrc_name_idxs])
+                after_rev = sum([rev[i] for i in range(len(rev)) if i in rsrc_name_idxs])
+
+                before_paxes_vals.append(before_paxes)
+                after_paxes_vals.append(after_paxes)
+
+                before_rev_vals.append(before_rev)
+                after_rev_vals.append(after_rev)
+
             duty_id = dr.get_duty_id_by_leg_id(leg_id)
 
             if duty_id is not None:
@@ -85,6 +123,10 @@ class ExcelOutputWriter:
         inv_df["A/C change"] = at_change_vals
         inv_df["Costs before"] = before_costs
         inv_df["Costs after"] = after_costs
+        inv_df["Pax before"] = before_paxes_vals
+        inv_df["Pax after"] = after_paxes_vals
+        inv_df["Revenue before"] = before_rev_vals
+        inv_df["Revenue after"] = after_rev_vals
         inv_df = inv_df.drop("AIRCRAFT_TYPE", axis=1)
 
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:

@@ -9,6 +9,7 @@ from pyairport.airport import Airport
 from lpmodelloader import LPModelLoader
 from s3utils import *
 
+EPS = 0.000001
 
 def get_model(arg):
     fcstdate = arg[0]
@@ -125,7 +126,7 @@ class LPModelMultiLoader:
         dist_df["ap2"] = dist_df["ap2"].astype("category")
         assert len(res_Ai) == len(res_Aj) == len(res_Adata)
 
-        res_Adistratio = []
+        res_Adistratio_data = []
         n = len(res_Ai)
         print("n = {}".format(n))
         for k in range(n):
@@ -166,9 +167,12 @@ class LPModelMultiLoader:
                         print("od_ap1, od_ap2 = {}, {}".format(od_ap1, od_ap2))
                         assert False
                 od_dist_cache[(od_ap1, od_ap2)] = od_dist
-            v = leg_dist / od_dist
-            res_Adistratio.append(v)
-        res["res_Adistratio"] = res_Adistratio
+            if od_dist < EPS:
+                v = 0.0
+            else:
+                v = leg_dist / od_dist
+            res_Adistratio_data.append(v)
+        res["res_Adistratiodata"] = res_Adistratio_data
         return res
 
 

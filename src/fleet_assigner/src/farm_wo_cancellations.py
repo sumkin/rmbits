@@ -683,6 +683,7 @@ class FARMWoCancellations:
         """
         D = self.dr.get_num_duties()
         K = self.dr.get_num_fleet_types()
+        M = self.dr.get_num_resources()
         N = self.dr.get_num_products()
         T = self.dr.get_num_time_indices()
 
@@ -695,6 +696,13 @@ class FARMWoCancellations:
                     assert d not in self.sol_y.keys()
                     self.sol_y[d] = k
                     y[(d, k)] = val
+
+        z = np.zeros(N)
+        self.sol_z = {}
+        for n in range(N):
+            val = self.z_vars[n].getAttr("x")
+            self.sol_z[n] = val
+            z[n] = val
 
         m = np.zeros((K, T))
         self.sol_m = {}
@@ -747,8 +755,17 @@ class FARMWoCancellations:
             "booked_rev": booked_rev,
             "costs": costs,
             "duties_changed_ac": duties_changed_ac,
+            "rsrc_names": self.dr.rm_model["rsrc_names"],
+            "M": M,
+            "N": N,
             "y": y,
-            "m": m
+            "z": z,
+            "m": m,
+            "f": self.dr.rm_model["f"],
+            "Ai": self.dr.rm_model["Ai"],
+            "Aj": self.dr.rm_model["Aj"],
+            "Adata": self.dr.rm_model["Adata"],
+            "Adistratiodata": self.dr.rm_model["res_Adistratiodata"]
         }
         return res
 

@@ -479,6 +479,19 @@ class DataReader:
         else:
             return None
 
+    def get_rsrc_name_indices_by_leg_id(self, leg_id):
+        res = []
+        orgn, dstn, fltnum, depdt, _, _, _, _ = self.legs[leg_id]
+        for idx in range(len(self.rm_model["rsrc_names"])):
+            rsrc_name = self.rm_model["rsrc_names"][idx]
+            r_orgn = rsrc_name[2:5]
+            r_dstn = rsrc_name[5:8]
+            r_fltnum = rsrc_name[8:12]
+            r_depdt = rsrc_name[13:21]
+            if orgn == r_orgn and dstn == r_dstn and int(fltnum) == int(r_fltnum) and int(depdt) == int(r_depdt):
+                res.append(idx)
+        return res
+
     def get_leg_id(self, orgn, dstn, fltnum, depdt):
         """
         Returns index in the list of self.legs resource.
