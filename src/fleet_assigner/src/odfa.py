@@ -25,7 +25,7 @@ if __name__ == "__main__":
                 "20260215", "20260216", "20260217", "20260218", "20260219", "20260220", "20260221",
                 "20260222", "20260223", "20260224", "20260225", "20260226", "20260227", "20260228",
                 "20260301"]
-    #depdates = ["20260215"]
+    #depdates = ["20260214", "20260215", "20260216"]
     costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
     fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"

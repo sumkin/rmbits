@@ -40,10 +40,14 @@ class ExcelOutputWriter:
             df.to_excel(writer, header=False, index=False, sheet_name="info")
 
     def write_inv_df(self, inv_df, sol_y_fixed, sol, dr):
+        leg_id_vals = []
+        duty_id_vals = []
         before_paxes_vals = []
         after_paxes_vals = []
+        booked_paxes_vals = []
         before_rev_vals = []
         after_rev_vals = []
+        booked_rev_vals = []
         before_at_vals = []
         after_at_vals = []
         at_change_vals = []
@@ -59,41 +63,57 @@ class ExcelOutputWriter:
 
         paxes_fixed = A_fixed.dot(sol_y_fixed["z"])
         paxes = A.dot(sol["z"])
+        b_paxes = A.dot(sol["b"])
 
         rev_fixed = A_fixed.dot(sol_y_fixed["f"] * sol_y_fixed["z"])
         rev = A.dot(sol["f"] * sol["z"])
+        b_rev = A.dot(sol["f"] * sol["b"])
+
 
         for k, r in inv_df.iterrows():
             orgn = r["ORGN"]
             dstn = r["DSTN"]
             fltnum = r["FLTNUM"]
-            depdt = r["DEPDT_UTC"]
+            depdt = r["DEPDT"]
+            depdt_utc = r["DEPDT_UTC"]
 
             before_at = None
             after_at = None
 
-            leg_id = dr.get_leg_id(orgn, dstn, fltnum, depdt)
+            leg_id = dr.get_leg_id(orgn, dstn, fltnum, depdt_utc)
             if leg_id is None:
+                leg_id_vals.append(None)
+
                 before_paxes_vals.append(0.0)
                 after_paxes_vals.append(0.0)
+                booked_paxes_vals.append(0.0)
+
                 before_rev_vals.append(0.0)
                 after_rev_vals.append(0.0)
+                booked_rev_vals.append(0.0)
             else:
-                rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg_id(leg_id)
+                rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt)
 
                 before_paxes = round(sum([paxes_fixed[i] for i in range(len(paxes_fixed)) if i in rsrc_name_idxs]))
                 after_paxes = round(sum([paxes[i] for i in range(len(paxes)) if i in rsrc_name_idxs]))
+                booked_paxes = round(sum([b_paxes[i] for i in range(len(b_paxes)) if i in rsrc_name_idxs]))
 
                 before_rev = sum([rev_fixed[i] for i in range(len(rev_fixed)) if i in rsrc_name_idxs])
                 after_rev = sum([rev[i] for i in range(len(rev)) if i in rsrc_name_idxs])
+                booked_rev = sum([b_rev[i] for i in range(len(b_rev)) if i in rsrc_name_idxs])
+
+                leg_id_vals.append(leg_id)
 
                 before_paxes_vals.append(before_paxes)
                 after_paxes_vals.append(after_paxes)
+                booked_paxes_vals.append(booked_paxes)
 
                 before_rev_vals.append(before_rev)
                 after_rev_vals.append(after_rev)
+                booked_rev_vals.append(booked_rev)
 
             duty_id = dr.get_duty_id_by_leg_id(leg_id)
+            duty_id_vals.append(duty_id)
 
             if duty_id is not None:
                 before_at = dr.duty2at[duty_id]
@@ -112,23 +132,46 @@ class ExcelOutputWriter:
             if before_at is None:
                 before_costs.append(0.0)
             else:
-                before_costs.append(dr.get_leg_costs(orgn, dstn, depdt, before_at))
+                before_costs.append(dr.get_leg_costs(orgn, dstn, depdt_utc, before_at))
 
             if after_at is None:
                 after_costs.append(0.0)
             else:
-                after_costs.append(dr.get_leg_costs(orgn, dstn, depdt, after_at))
+                after_costs.append(dr.get_leg_costs(orgn, dstn, depdt_utc, after_at))
 
+        inv_df["LEG_ID"] = leg_id_vals
+        inv_df["DUTY_ID"] = duty_id_vals
         inv_df["A/C before"] = before_at_vals
         inv_df["A/C after"] = after_at_vals
         inv_df["A/C change"] = at_change_vals
         inv_df["Costs before"] = before_costs
         inv_df["Costs after"] = after_costs
+        inv_df["Booked pax"] = booked_paxes_vals
         inv_df["Pax before"] = before_paxes_vals
         inv_df["Pax after"] = after_paxes_vals
+        inv_df["Booked revenue"] = booked_rev_vals
         inv_df["Revenue before"] = before_rev_vals
         inv_df["Revenue after"] = after_rev_vals
+        inv_df["Booked profit before"] = [a - b for a, b in zip(booked_rev_vals, before_costs)]
+        inv_df["Booked profit after"] = [a - b for a, b in zip(booked_rev_vals, after_costs)]
+        inv_df["Profit before"] = [a - b for a, b in zip(before_rev_vals, before_costs)]
+        inv_df["Profit after"] = [a - b for a, b in zip(after_rev_vals, after_costs)]
+        inv_df["Total pax before"] = [a + b for a, b in zip(booked_paxes_vals, before_paxes_vals)]
+        inv_df["Total pax after"] = [a + b for a, b in zip(booked_paxes_vals, after_paxes_vals)]
+        inv_df["Total revenue before"] = [a + b for a, b in zip(booked_rev_vals, before_rev_vals)]
+        inv_df["Total revenue after"] = [a + b for a, b in zip(booked_rev_vals, after_rev_vals)]
+        inv_df["Total profit before"] = [a + b - c for a, b, c in zip(booked_rev_vals, before_rev_vals, before_costs)]
+        inv_df["Total profit after"] = [a + b - c for a, b, c in zip(booked_rev_vals, after_rev_vals, after_costs)]
+
         inv_df = inv_df.drop("AIRCRAFT_TYPE", axis=1)
+        inv_df = inv_df[["CC", "FLTNUM", "ORGN", "DSTN", "DEPDT", "DEPTM", "ARRTM", "LEG_ID", "DUTY_ID",
+            "A/C before", "A/C after", "A/C change", "Costs before", "Costs after",
+            "Booked pax", "Pax before", "Pax after",
+            "Booked revenue", "Revenue before", "Revenue after",
+            "Booked profit before", "Booked profit after", "Profit before", "Profit after",
+            "Total pax before", "Total pax after", "Total revenue before", "Total revenue after",
+            "Total profit before", "Total profit after"]]
+        inv_df = inv_df.drop_duplicates()
 
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
             inv_df.to_excel(writer, index=False, sheet_name="inv_df")

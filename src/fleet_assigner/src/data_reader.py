@@ -479,9 +479,8 @@ class DataReader:
         else:
             return None
 
-    def get_rsrc_name_indices_by_leg_id(self, leg_id):
+    def get_rsrc_name_indices_by_leg(self, orgn, dstn, fltnum, depdt):
         res = []
-        orgn, dstn, fltnum, depdt, _, _, _, _ = self.legs[leg_id]
         for idx in range(len(self.rm_model["rsrc_names"])):
             rsrc_name = self.rm_model["rsrc_names"][idx]
             r_orgn = rsrc_name[2:5]
