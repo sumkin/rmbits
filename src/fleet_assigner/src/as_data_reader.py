@@ -2,7 +2,6 @@ import sys
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import warnings
 
 from utils import time_now
 
@@ -10,33 +9,21 @@ class ASDataReader:
 
     def __init__(
         self,
-        fcstdate,
         depdates,
+        inv_file,
         costs_file,
         fleet_file,
         cap_file,
-        leg_distance_file,
-        subfleet_ranges_file,
         maintenance_file,
-        airport_allowance_file,
         leg_pairings_file,
-        turnaround_times_file,
-        restrictions_file,
-        output_writer
+        turnaround_times_file
     ):
-        self.fcstdate = fcstdate 
         self.depdates = depdates
+        self.inv_file = inv_file
         self.costs_file = costs_file
         self.fleet_file = fleet_file
         self.cap_file = cap_file
-        self.leg_distance_file = leg_distance_file
-        self.subfleet_ranges_file = subfleet_ranges_file
-        self.maintenance_file = maintenance_file
-        self.airport_allowance_file = airport_allowance_file
-        self.leg_pairings_file = leg_pairings_file
         self.turnaround_times_file = turnaround_times_file
-        self.restrictions_file = restrictions_file
-        self.output_writer = output_writer
 
         self.legs = []
         self.orgn_dstn_fltnum_depdt2leg_id = {}  # Map to speed-up querying for leg id.
@@ -51,17 +38,8 @@ class ASDataReader:
         print(time_now() + " Loading turnaround times..")
         self.load_turnaround_times()
 
-        print(time_now() + " Loading restrictions...")
-        self.load_restrictions()
-
         print(time_now() + " Loading fleet dataframe...")
         self.load_fleet_df()
-
-        print(time_now() + " Loading leg distance dataframe...")
-        self.load_leg_distance_df()
-
-        print(time_now() + " Loading subfleet range dataframe...")
-        self.load_subfleet_range_df()
 
         print(time_now() + " Creating cabin dataframe...")
         self.create_cabin_df()
@@ -74,12 +52,6 @@ class ASDataReader:
 
         print(time_now() + " Loading bookings...")
         self.load_bookings()
-
-        print(time_now() + " Loading maintenance...")
-        self.load_maintenance()
-
-        print(time_now() + " Loading airport allowance...")
-        self.load_airport_allowance()
 
         print(time_now() + " Buidling duties...")
         self.build_duties2()
@@ -520,7 +492,6 @@ class ASDataReader:
         t0_min, t1_min = self.ts[t-1], self.ts[t]
         t0 = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=t0_min)
         t1 = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=t1_min-1)
-        debug = False
         return self.fr.get_num_aircrafts(ac_type, t0_min, t1_min, t0, t1, self.wetlease_sequences)
 
     def get_solution_from_inv_df(self):
@@ -581,44 +552,26 @@ class ASDataReader:
         return False
 
 if __name__ == "__main__":
-    excel_output_writer = ExcelOutputWriter("../output/fleet_assigner.xlsx")
-
-    fcstdate = "20250421"
-    month = "august2025"
-    fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
     depdates = ["20250801", "20250802", "20250803", "20250804", "20250805", "20250806", "20250807",
                 "20250808", "20250809", "20250810", "20250811", "20250812", "20250813", "20250814",
                 "20250815", "20250816", "20250817", "20250818", "20250819", "20250820", "20250821",
                 "20250822", "20250823", "20250824", "20250825", "20250826", "20250827", "20250828",
                 "20250829", "20250830", "20250831"]
-    costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
+    inv_file = "/home/sumkin/rmbits/fleet_assigner/as_data/inv.csv"
+    costs_file = "/home/sumkin/rmbits/fleet_assigner/as_data/costs.csv"
     fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
-    leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
-    subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/AUG.ssim"
-    airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
     leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/leg_pairings.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
-    restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
 
-    dr = DataReader(fcstdate,
-                    depdates,
+    dr = DataReader(depdates,
+                    inv_file,
                     costs_file,
                     fleet_file,
                     cap_file,
-                    leg_distance_file,
-                    subfleet_ranges_file,
-                    maintenance_file,
-                    airport_allowance_file,
                     leg_pairings_file,
-                    turnaround_times_file,
-                    restrictions_file,
-                    excel_output_writer)
+                    turnaround_times_file)
     dr.read()
-    print(dr.fleet_types)
-    print(dr.get_duty_costs(20, 4))
-    print(dr.get_duty_costs(21, 4))
 
 
 
