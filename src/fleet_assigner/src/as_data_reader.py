@@ -30,40 +30,42 @@ class ASDataReader:
 
     def read(self):
         print(time_now() + " Loading inventory dataframe...")
-        self.load_inv_df()
+        #self.load_inv_df()
 
         print(time_now() + " Loading costs dataframe...")
         self.load_costs_df()
 
         print(time_now() + " Loading turnaround times..")
-        self.load_turnaround_times()
+        #self.load_turnaround_times()
 
         print(time_now() + " Loading fleet dataframe...")
-        self.load_fleet_df()
+        #self.load_fleet_df()
 
         print(time_now() + " Creating cabin dataframe...")
-        self.create_cabin_df()
+        #self.create_cabin_df()
 
         print(time_now() + " Creating capacities map...")
-        self.create_capacities_map()
+        #self.create_capacities_map()
 
         print(time_now() + " Loading RM model...")
-        self.load_rm_model()
+        #self.load_rm_model()
 
         print(time_now() + " Loading bookings...")
-        self.load_bookings()
+        #self.load_bookings()
 
         print(time_now() + " Buidling duties...")
-        self.build_duties2()
+        #self.build_duties2()
 
         print(time_now() + " Building time indices...")
-        self.build_time_indices()
+        #self.build_time_indices()
 
         print(time_now() + " Calculating alphas...")
-        self.calculate_alphas()
+        #self.calculate_alphas()
 
     def load_inv_df(self):
-        fcstyear, fcstmonth = self.fcstdate[:4], self.fcstdate[4:6]
+        self.inv_df = pd.read_csv(self.inv_file)
+        print(self.inv_df.head(5))
+        """
         self.inv_df = pd.read_csv("s3://ay-emr-job/nrm/bif/{}/{}/INV_{}.csv.gz".format(fcstyear, fcstmonth, self.fcstdate),
                                    dtype={"ARRDT": str, "DEPTM": str, "ARRTM": str}
         )
@@ -90,10 +92,15 @@ class ASDataReader:
                                    "DEPDT_UTC", "DEPTM_UTC", "ARRDT_UTC",
                                    "ARRTM_UTC", "AIRCRAFT_TYPE"]]
         self.inv_df = self.inv_df.drop_duplicates()
+        """
+        assert False
 
     def load_costs_df(self):
-        self.costs_df = pd.read_csv(self.costs_file)
-        self.costs_df.columns = ["DEPDT", "ORGN", "DSTN", "AIRCRAFT", "PCI_COSTS", "PCII_COSTS", "MARGINAL_COSTS"]
+        self.costs_df = pd.read_csv(self.costs_file, sep=";")
+        self.costs_df = self.costs_df[["departure_period", "aircraft_type", "orgn", "dstn", "cost_per_pax", "exp_1_item_flt_damper"]]
+        self.costs_df.columns = ["DEPDT", "AIRCRAFT", "ORGN", "DSTN", "MARGINAL_COSTS", "PCI_COSTS"]
+        self.costs_df["DEPDT"] = pd.to_datetime(self.costs_df["DEPDT"], format="%d.%m.%Y").dt.strftime("%Y%m%d")
+        self.costs_df = self.costs_df[["DEPDT", "ORGN", "DSTN", "AIRCRAFT", "PCI_COSTS", "MARGINAL_COSTS"]]
         self.costs_df["ORGN"] = self.costs_df["ORGN"].astype("category")
         self.costs_df["DSTN"] = self.costs_df["DSTN"].astype("category")
         self.costs_df["DEPDT"] = self.costs_df["DEPDT"].astype("category")
@@ -552,26 +559,24 @@ class ASDataReader:
         return False
 
 if __name__ == "__main__":
-    depdates = ["20250801", "20250802", "20250803", "20250804", "20250805", "20250806", "20250807",
-                "20250808", "20250809", "20250810", "20250811", "20250812", "20250813", "20250814",
-                "20250815", "20250816", "20250817", "20250818", "20250819", "20250820", "20250821",
-                "20250822", "20250823", "20250824", "20250825", "20250826", "20250827", "20250828",
-                "20250829", "20250830", "20250831"]
-    inv_file = "/home/sumkin/rmbits/fleet_assigner/as_data/inv.csv"
-    costs_file = "/home/sumkin/rmbits/fleet_assigner/as_data/costs.csv"
+    depdates = ["20251219", "20251220"]
+    inv_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/inv2.csv"
+    costs_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/costs.csv"
     fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
+    maintenance_file = ""
     leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/leg_pairings.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
 
-    dr = DataReader(depdates,
-                    inv_file,
-                    costs_file,
-                    fleet_file,
-                    cap_file,
-                    leg_pairings_file,
-                    turnaround_times_file)
-    dr.read()
+    asdr = ASDataReader(depdates,
+                        inv_file,
+                        costs_file,
+                        fleet_file,
+                        cap_file,
+                        maintenance_file,
+                        leg_pairings_file,
+                        turnaround_times_file)
+    asdr.read()
 
 
 
