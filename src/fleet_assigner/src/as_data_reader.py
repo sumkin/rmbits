@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta
 
 from utils import time_now
+from as_fleet_reader import ASFleetReader
 
 class ASDataReader:
 
@@ -39,13 +40,13 @@ class ASDataReader:
         #self.load_turnaround_times()
 
         print(time_now() + " Loading fleet dataframe...")
-        #self.load_fleet_df()
+        self.load_fleet_df()
 
         print(time_now() + " Creating cabin dataframe...")
-        #self.create_cabin_df()
+        self.create_cabin_df()
 
         print(time_now() + " Creating capacities map...")
-        #self.create_capacities_map()
+        self.create_capacities_map()
 
         print(time_now() + " Loading RM model...")
         #self.load_rm_model()
@@ -107,39 +108,36 @@ class ASDataReader:
         self.costs_df["AIRCRAFT"] = self.costs_df["AIRCRAFT"].astype("category")
 
     def load_fleet_df(self):
-        self.fr = FleetReader(self.depdates,
-                              self.fleet_file,
-                              self.cap_file,
-                              self.maintenance_file,
-                              self.turnaround_times_df)
-        self.fr.read()
-        self.fleet_types = self.fr.get_fleet_types()
-        self.fleet_type2fleet_ids = self.fr.get_fleet_type2fleet_ids()
+        self.asfr = ASFleetReader(self.depdates, self.fleet_file)
+        self.asfr.read()
+        self.fleet_types = self.asfr.get_fleet_types()
+        self.fleet_type2fleet_ids = self.asfr.get_fleet_type2fleet_ids()
 
     def create_cabin_df(self):
         df = pd.read_csv(self.cap_file)
+        df = df.fillna(0)
+        df = df[["aircraft_code", "cabin_c", "cabin_w", "cabin_y"]]
+        df.columns = ["A/C", "C", "W", "Y"]
+        class_columns = ["C", "W", "Y"]
         self.cabin_df = pd.DataFrame(columns=["CABIN", "A/C"])
-        class_columns = []
-        for column in df.columns:
-            if len(column) == 1: # Class column has one symbol.
-                class_columns.append(column)
-        for r in df["Subfleet"].unique():
+        for r in df["A/C"].unique():
             for cmpt in class_columns:
-                if pd.notna(df.loc[df["Subfleet"] == r][cmpt].iloc[0]):
-                    i = self.cabin_df.shape[0]
-                    self.cabin_df.loc[i] = [cmpt, r]
+                i = self.cabin_df.shape[0]
+                self.cabin_df.loc[i] = [cmpt, r]
 
     def create_capacities_map(self):
         self.capacities = {}
         self.compartments = []
 
         config_df = pd.read_csv(self.cap_file)
+        config_df = config_df.fillna(0)
+        config_df = config_df[["aircraft_code", "cabin_c", "cabin_w", "cabin_y"]]
+        config_df.columns = ["A/C", "C", "W", "Y"]
         for ac_type in self.fleet_types:
             self.capacities[ac_type] = {}
-
             cabins = self.cabin_df.loc[self.cabin_df["A/C"] == ac_type]["CABIN"].unique()
             for cabin in cabins:
-                self.capacities[ac_type][cabin] = config_df.loc[config_df["Subfleet"] == ac_type][cabin].iloc[0]
+                self.capacities[ac_type][cabin] = int(config_df.loc[config_df["A/C"] == ac_type][cabin].iloc[0])
                 if cabin not in self.compartments:
                     self.compartments.append(cabin)
 
@@ -562,8 +560,8 @@ if __name__ == "__main__":
     depdates = ["20251219", "20251220"]
     inv_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/inv2.csv"
     costs_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/costs.csv"
-    fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
-    cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
+    fleet_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/aircraft_inventory.csv"
+    cap_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/capacities.csv"
     maintenance_file = ""
     leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/leg_pairings.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
