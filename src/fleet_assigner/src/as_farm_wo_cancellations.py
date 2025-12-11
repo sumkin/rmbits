@@ -1,17 +1,15 @@
 import os
 import uuid
-import dill
 import pickle
 import numpy as np
 from scipy import sparse
-from gurobipy import *
 import warnings
 from datetime import datetime, timedelta
+from pyscipopt import Model, quicksum
 
 from defs import *
 from utils import time_now
 from as_data_reader import ASDataReader
-from s3utils import s3copy
 from farm_helpers import *
 from as_lines_builder import ASLinesBuilder
 
@@ -53,7 +51,7 @@ class ASFARMWoCancellations:
                             self.cap_file,
                             self.maintenance_file,
                             self.leg_pairings_file,
-                            self.turnaround_times_file):
+                            self.turnaround_times_file)
         asdr.read()
         self.asdr = asdr
 
@@ -61,106 +59,121 @@ class ASFARMWoCancellations:
         """
         Creates variables for the model.
         """
-        num_duties = self.dr.get_num_duties()
-        num_fleet_types = self.dr.get_num_fleet_types()
-        num_products = self.dr.get_num_products()
-        num_time_indices = self.dr.get_num_time_indices()
+        num_duties = self.asdr.get_num_duties()
+        num_fleet_types = self.asdr.get_num_fleet_types()
+        num_products = self.asdr.get_num_products()
+        num_time_indices = self.asdr.get_num_time_indices()
 
-        # Assignment variables.
-        self.y_vars = self.model.addMVar((num_duties, num_fleet_types), vtype=GRB.BINARY, name="y")
+        # Assignment variables - binary matrix.
+        self.y_vars = {}
+        for d in range(num_duties):
+            for k in range(num_fleet_types):
+                var_name = f"y_{d}_{k}"
+                self.y_vars[(d, k)] = self.model.addVar(vtype="B", name=var_name)
 
-        # Revenue variables.
-        z_lb = np.zeros(num_products)
-        z_ub = np.zeros(num_products)
+        # Revenue variables - continuous.
+        self.z_vars = []
         for j in range(num_products):
-            d = self.dr.get_demand(j)
+            d = self.asdr.get_demand(j)
             if d <= EPS:
-                z_ub[j] = 0
+                z_ub = 0
             else:
-                z_ub[j] = self.dr.get_demand(j)
-        self.z_vars = self.model.addMVar(num_products, lb=z_lb, ub=z_ub, vtype=GRB.CONTINUOUS, name="z")
+                z_ub = self.asdr.get_demand(j)
+            var_name = f"z_{j}"
+            self.z_vars.append(self.model.addVar(lb=0, ub=z_ub, vtype="C", name=var_name))
 
-        # Change variables.
-        self.s_vars = self.model.addMVar((num_duties, num_fleet_types), vtype=GRB.BINARY, name="s")
+        # Change variables - binary matrix.
+        self.s_vars = {}
+        for d in range(num_duties):
+            for k in range(num_fleet_types):
+                var_name = f"s_{d}_{k}"
+                self.s_vars[(d, k)] = self.model.addVar(vtype="B", name=var_name)
 
         if self.min_extra_planes:
-            m_lb = np.zeros((num_fleet_types, num_time_indices))
-            self.m_vars = self.model.addMVar((num_fleet_types, num_time_indices),
-                                             lb=m_lb,
-                                             vtype=GRB.INTEGER,
-                                             name="m")
-            m_max_lb = np.zeros(num_fleet_types)
-            self.m_max_vars = self.model.addMVar(num_fleet_types, lb=m_max_lb, vtype=GRB.INTEGER, name="m_max")
+            self.m_vars = {}
+            for k in range(num_fleet_types):
+                for t in range(num_time_indices):
+                    var_name = f"m_{k}_{t}"
+                    self.m_vars[(k, t)] = self.model.addVar(lb=0, vtype="I", name=var_name)
+
+            self.m_max_vars = []
+            for k in range(num_fleet_types):
+                var_name = f"m_max_{k}"
+                self.m_max_vars.append(self.model.addVar(lb=0, vtype="I", name=var_name))
 
     def set_objective(self):
         """
         Sets the objective of optimization.
         """
         if self.min_extra_planes:
-            K = self.dr.get_num_fleet_types()
-            self.obj = 0
-            for k in range(K):
-                self.obj += self.m_max_vars[k]
-            self.model.setObjective(self.obj, GRB.MINIMIZE)
+            K = self.asdr.get_num_fleet_types()
+            obj_expr = quicksum(self.m_max_vars[k] for k in range(K))
+            self.model.setObjective(obj_expr, "minimize")
         else:
-            num_products = self.dr.get_num_products()
-            fares = np.array([self.dr.get_fare(j) for j in range(num_products)])
-            self.obj = fares @ self.z_vars
+            num_products = self.asdr.get_num_products()
+            num_duties = self.asdr.get_num_duties()
+            num_fleet_types = self.asdr.get_num_fleet_types()
 
-            num_duties = self.dr.get_num_duties()
-            num_fleet_types = self.dr.get_num_fleet_types()
-            costs = np.array([
-                self.dr.get_duty_costs(d, k)
+            # Revenue part
+            revenue_expr = quicksum(
+                self.asdr.get_fare(j) * self.z_vars[j]
+                for j in range(num_products)
+            )
+
+            # Cost part
+            cost_expr = quicksum(
+                self.asdr.get_duty_costs(d, k) * self.y_vars[(d, k)]
                 for d in range(num_duties)
                 for k in range(num_fleet_types)
-            ]).reshape((num_duties, num_fleet_types))
-            self.obj -= sum(sum(costs * self.y_vars))
-            self.model.setObjective(self.obj, GRB.MAXIMIZE)
+            )
+
+            # Profit = Revenue - Costs
+            self.model.setObjective(revenue_expr - cost_expr, "maximize")
 
     def set_leg_capacities_constr(self):
         """
         Sets leg capacities constraints.
         """
-        A = getA(self.dr)
-        fcap = self.dr.rm_model["fcap"]
-        cap = self.dr.rm_model["cap"]
+        A = getA(self.asdr)
+        fcap = self.asdr.rm_model["fcap"]
+        cap = self.asdr.rm_model["cap"]
         assert len(cap) == len(fcap)
 
         b = fcap - cap  # Bookings.
 
         nrows = len(cap)
-        assert len(self.dr.rm_model["rsrc_names"]) == nrows
+        assert len(self.asdr.rm_model["rsrc_names"]) == nrows
 
         # Right-hand side constraints.
         rhs = [0] * len(fcap)
         for nrow in range(nrows):
-            rsrc_name = self.dr.rm_model["rsrc_names"][nrow]
-            i = self.dr.get_leg_id_by_rsrc_name(rsrc_name)
-            d = self.dr.get_duty_id_by_leg_id(i)
-            l = self.dr.get_cmpt_id(rsrc_name)
+            rsrc_name = self.asdr.rm_model["rsrc_names"][nrow]
+            i = self.asdr.get_leg_id_by_rsrc_name(rsrc_name)
+            d = self.asdr.get_duty_id_by_leg_id(i)
+            l = self.asdr.get_cmpt_id(rsrc_name)
 
-            if d is None:
-                pass
-            else:
-                for k in range(self.dr.get_num_fleet_types()):
+            # Build LHS: sum of z variables for this resource
+            lhs_expr = quicksum(
+                A[nrow, j] * self.z_vars[j]
+                for j in range(len(self.z_vars))
+                if abs(A[nrow, j]) > 1e-10
+            )
+
+            # Build RHS: capacity based on aircraft assignment
+            rhs_expr = 0
+            if d is not None:
+                rhs_terms = []
+                for k in range(self.asdr.get_num_fleet_types()):
                     assert b[nrow] >= 0
-                    c = self.dr.get_capacity(k, l)
-                    if c < b[nrow]:
-                        # Current number of bookings is more than
-                        # capacity of aircraft.
-                        # Set corresponding variables to zero.
-                        # TODO: how to handle overbooking. This may
-                        # contraditcs to other constraints,
-                        # e.g. subfleet optimization.
-                        pass
-                    else:
-                        rhs[nrow] += (c - b[nrow]) * self.y_vars[(d, k)]
+                    c = self.asdr.get_capacity(k, l)
+                    if c >= b[nrow]:
+                        rhs_terms.append((c - b[nrow]) * self.y_vars[(d, k)])
 
-        lhs = (A @ self.z_vars)
-        for nrow in range(nrows):
-            name = "leg_capacities_{}".format(nrow)
-            self.model.addConstr(lhs[nrow] <= rhs[nrow], name=name)
-            assert name not in self.constr_name2id
+                if rhs_terms:
+                    rhs_expr = quicksum(rhs_terms)
+
+            name = f"leg_capacities_{nrow}"
+            self.model.addCons(lhs_expr <= rhs_expr, name=name)
             self.constr_name2id[name] = self.num_constrs
             self.num_constrs += 1
 
@@ -168,14 +181,14 @@ class ASFARMWoCancellations:
         """
         Sets duty coverage constraints.
         """
-        for d in range(self.dr.get_num_duties()):
-            constr = -1
-            constr += sum([
-                self.y_vars[(d, k)] for k in range(self.dr.get_num_fleet_types())
-            ])
-            name = "duty_coverage_{}".format(d)
-            self.model.addConstr(constr == 0, name=name)
-            assert name not in self.constr_name2id
+        for d in range(self.asdr.get_num_duties()):
+            constr_expr = quicksum(
+                self.y_vars[(d, k)]
+                for k in range(self.asdr.get_num_fleet_types())
+            )
+
+            name = f"duty_coverage_{d}"
+            self.model.addCons(constr_expr == 1, name=name)
             self.constr_name2id[name] = self.num_constrs
             self.num_constrs += 1
 
@@ -183,45 +196,52 @@ class ASFARMWoCancellations:
         """
         Sets fleet limit constraints.
         """
-        T = self.dr.get_num_time_indices()
-        K = self.dr.get_num_fleet_types()
-        D = self.dr.get_num_duties()
+        T = self.asdr.get_num_time_indices()
+        K = self.asdr.get_num_fleet_types()
+        D = self.asdr.get_num_duties()
 
         for k in range(K):
             Alpha = sparse.lil_matrix((D, T))
             for d in range(D):
                 for t in range(1, T):
-                    alpha = self.dr.get_alpha(d, t, k)
+                    alpha = self.asdr.get_alpha(d, t, k)
                     if abs(alpha) > 0.000001:
                         Alpha[(d, t)] = alpha
             Alpha = Alpha.tocsr()
 
             M = np.zeros(T)
             for t in range(1, T):
-                M[t] = self.dr.get_num_aircrafts(k, t)
+                M[t] = self.asdr.get_num_aircrafts(k, t)
 
-            name = "aircraft_types_constraints_{}".format(k)
-            LHS = Alpha.T.dot(self.y_vars[:, k])
-            if self.min_extra_planes:
-                self.model.addConstr(LHS <= M.T + self.m_vars.transpose(), name=name)
-            else:
-                self.model.addConstr(LHS <= M.T, name=name)
+            # For each time period
+            for t in range(1, T):
+                lhs_terms = []
+                for d in range(D):
+                    if abs(Alpha[d, t]) > 1e-10:
+                        lhs_terms.append(Alpha[d, t] * self.y_vars[(d, k)])
 
-            assert name not in self.constr_name2id
-            self.constr_name2id[name] = self.num_constrs
-            self.num_constrs += 1
+                if lhs_terms:
+                    lhs_expr = quicksum(lhs_terms)
+                    name = f"aircraft_types_constraints_{k}_{t}"
+
+                    if self.min_extra_planes:
+                        self.model.addCons(lhs_expr <= M[t] + self.m_vars[(k, t)], name=name)
+                    else:
+                        self.model.addCons(lhs_expr <= M[t], name=name)
+
+                    self.constr_name2id[name] = self.num_constrs
+                    self.num_constrs += 1
 
     def set_m_max_constr(self):
         """
         Sets constraints.
         """
-        K = self.dr.get_num_fleet_types()
-        T = self.dr.get_num_time_indices()
+        K = self.asdr.get_num_fleet_types()
+        T = self.asdr.get_num_time_indices()
         for k in range(K):
             for t in range(T):
-                name = "m_max_constr_{}_{}".format(k, t)
-                self.model.addConstr(self.m_vars[(k, t)] <= self.m_max_vars[k], name=name)
-                assert name not in self.constr_name2id
+                name = f"m_max_constr_{k}_{t}"
+                self.model.addCons(self.m_vars[(k, t)] <= self.m_max_vars[k], name=name)
                 self.constr_name2id[name] = self.num_constrs
                 self.num_constrs += 1
 
@@ -229,44 +249,45 @@ class ASFARMWoCancellations:
         """
         Sets constraints which relates y and s variables.
         """
-        for d in range(self.dr.get_num_duties()):
-            for k in range(self.dr.get_num_fleet_types()):
-                at = self.dr.fleet_types[k]
-                y_bar = (1 if self.dr.duty2at[d] == at else 0)
+        for d in range(self.asdr.get_num_duties()):
+            for k in range(self.asdr.get_num_fleet_types()):
+                at = self.asdr.fleet_types[k]
+                y_bar = (1 if self.asdr.duty2at[d] == at else 0)
 
-                constr = self.s_vars[(d, k)] - y_bar - self.y_vars[(d, k)]
-                name = "s_y_rel_1_{}_{}".format(d, k)
-                self.model.addConstr(constr <= 0, name=name)
+                # s >= y_bar - y
+                name = f"s_y_rel_1_{d}_{k}"
+                self.model.addCons(self.s_vars[(d, k)] >= y_bar - self.y_vars[(d, k)], name=name)
 
-                constr = self.s_vars[(d, k)] - y_bar + self.y_vars[(d, k)]
-                name = "s_y_rel_2_{}_{}".format(d, k)
-                self.model.addConstr(constr >= 0, name=name)
-                
-                constr = self.s_vars[(d, k)] - self.y_vars[(d, k)] + y_bar 
-                name = "s_y_rel_3_{}_{}".format(d, k)
-                self.model.addConstr(constr >= 0, name=name)
+                # s >= y - y_bar
+                name = f"s_y_rel_2_{d}_{k}"
+                self.model.addCons(self.s_vars[(d, k)] >= self.y_vars[(d, k)] - y_bar, name=name)
 
-                constr = self.s_vars[(d, k)] - 2 + y_bar + self.y_vars[(d, k)]
-                name = "s_y_rel_4_{}_{}".format(d, k)
-                self.model.addConstr(constr <= 0, name=name)
+                # s <= 1 - y_bar + y
+                name = f"s_y_rel_3_{d}_{k}"
+                self.model.addCons(self.s_vars[(d, k)] <= 1 - y_bar + self.y_vars[(d, k)], name=name)
+
+                # s <= y_bar + 1 - y
+                name = f"s_y_rel_4_{d}_{k}"
+                self.model.addCons(self.s_vars[(d, k)] <= y_bar + 1 - self.y_vars[(d, k)], name=name)
 
     def set_max_num_changes_constr(self, max_num_changes):
         """
         Sets maximum number of swaps constraints.
         """
-        constr = 0
-        for d in range(self.dr.get_num_duties()):
-            for k in range(self.dr.get_num_fleet_types()):
-                constr += self.s_vars[(d, k)]
-        self.model.addConstr(constr <= max_num_changes, name="max_num_changes")
+        constr_expr = quicksum(
+            self.s_vars[(d, k)]
+            for d in range(self.asdr.get_num_duties())
+            for k in range(self.asdr.get_num_fleet_types())
+        )
+        self.model.addCons(constr_expr <= max_num_changes, name="max_num_changes")
 
     def set_fixed_duties_constr(self):
         """
         Sets fixed duties constraints.
         """
-        for d in self.dr.fixed_duties:
-            ac = self.dr.fixed_duties[d]
-            k = self.dr.fleet_types.index(ac)
+        for d in self.asdr.fixed_duties:
+            ac = self.asdr.fixed_duties[d]
+            k = self.asdr.fleet_types.index(ac)
             self.fix_y_var(d, k, 1, "fixed_duties")
 
     def set_constraints(self, max_num_changes=None):
@@ -301,45 +322,37 @@ class ASFARMWoCancellations:
         Fixes y variable, i.e. sets it to zero or one.
         """
         assert val == 0 or val == 1
-        name = "fixed_variable_y_{}_{}_{}".format(d, k, reason)
+        name = f"fixed_variable_y_{d}_{k}_{reason}"
 
-        set = True
+        set_constraint = True
         if (d, k) in self.fixed_y_vars:
             old_val, old_reason = self.fixed_y_vars[(d, k)]
             if old_val != val:
-                if val == 1 and reason == "solve_with_y_fixed" and old_val == 0 and old_reason == "max_distance_range":
-                    # Current solution violates maximum distance range. Overwrite constraint.
-
-                    # Remove old constraint.
-                    self.model.update()  # Update before querying.
-                    c = self.model.getConstrByName(name)
-                    self.model.remove(c)
-                    del self.constr_name2id[name]
-                    self.num_constrs -= 1
-                elif val == 1 and reason == "solve_with_y_fixed" and old_val == 0 and old_reason == "airport_allowance":
-                    # Current solution violates airport allowance. Overwrite constraint.
-
-                    # Remove old constraint.
-                    self.model.update()  # Update before querying.
-                    c = self.model.getConstrByName(name)
-                    self.model.remove(c)
-                    del self.constr_name2id[name]
-                    self.num_constrs -= 1
+                if val == 1 and reason == "solve_with_y_fixed" and old_val == 0 and old_reason in ["max_distance_range",
+                                                                                                   "airport_allowance"]:
+                    # Remove old constraint
+                    old_name = f"fixed_variable_y_{d}_{k}_{old_reason}"
+                    cons = self.model.getConss()
+                    for c in cons:
+                        if c.name == old_name:
+                            self.model.delCons(c)
+                            del self.constr_name2id[old_name]
+                            self.num_constrs -= 1
+                            break
                 else:
-                    set = False
-                    print("old_val, old_reason = {}, {}".format(old_val, old_reason))
-                    print("val, reason = {}, {}".format(val, reason))
+                    set_constraint = False
+                    print(f"old_val, old_reason = {old_val}, {old_reason}")
+                    print(f"val, reason = {val}, {reason}")
                     assert False
             else:
-                # Same value. Only reason could be different.
-                set = False
-        if set:
+                set_constraint = False
+
+        if set_constraint:
             self.fixed_y_vars[(d, k)] = (val, reason)
-            constr = self.y_vars[(d, k)]
-            self.model.addConstr(constr == val, name=name)
-            assert name not in self.constr_name2id
+            self.model.addCons(self.y_vars[(d, k)] == val, name=name)
             self.constr_name2id[name] = self.num_constrs
             self.num_constrs += 1
+
 
     def build_model(self, max_num_changes=None, min_extra_planes=False):
         self.max_num_changes = max_num_changes
@@ -362,13 +375,14 @@ class ASFARMWoCancellations:
 
     def make_feasible(self):
         y = {}
-        for d in range(self.dr.get_num_duties()):
-            for k in range(self.dr.get_num_fleet_types()):
-                if self.dr.duty2at[d] == self.dr.fleet_types[k]:
+        for d in range(self.asdr.get_num_duties()):
+            for k in range(self.asdr.get_num_fleet_types()):
+                if self.asdr.duty2at[d] == self.asdr.fleet_types[k]:
                     y[(d, k)] = 1
                 else:
                     y[(d, k)] = 0
 
+        """
         for constr in self.model.getConstrs():
             name = constr.ConstrName
             sense = constr.Sense
@@ -439,99 +453,105 @@ class ASFARMWoCancellations:
             else:
                 print(lhs, sense, rhs, name)
                 assert False
+        """
 
     def solve_with_y_fixed(self):
-        for d in range(self.dr.get_num_duties()):
+        """
+        Solves with y variables fixed to baseline.
+        """
+        for d in range(self.asdr.get_num_duties()):
             sm = 0  # Sum of ones in values of y variables.
-            for k in range(self.dr.get_num_fleet_types()):
-                if self.dr.duty2at[d] == self.dr.fleet_types[k]:
+            for k in range(self.asdr.get_num_fleet_types()):
+                if self.asdr.duty2at[d] == self.asdr.fleet_types[k]:
                     self.fix_y_var(d, k, 1, "solve_with_y_fixed")
                     sm += 1
                 else:
                     self.fix_y_var(d, k, 0, "solve_with_y_fixed")
             assert sm == 1, "sm = {}".format(sm)
-        self.model.setParam("Presolve", 2)
-        self.model.setParam("MIPGap", 0.05)
-        self.model.setParam("MIPFocus", 2)
+
+        # Set SCIP parameters
+        self.model.setParam("presolving/maxrounds", -1)  # Aggressive presolving
+        self.model.setParam("limits/gap", 0.05)  # 5% MIP gap
+        self.model.setParam("emphasis/optimality", True)
         self.model.optimize()
 
     def solve(self):
-        self.model.setParam("Presolve", 2)
-        self.model.setParam("MIPGap", 0.05)
-        self.model.setParam("MIPFocus", 2)
-        self.model.setParam("Heuristics", 0.95)
+        """
+        Solves the optimization problem.
+        """
+        # Set SCIP parameters (equivalents to Gurobi params)
+        self.model.setParam("presolving/maxrounds", -1)  # Aggressive presolving
+        self.model.setParam("limits/gap", 0.05)  # 5% MIP gap
+        self.model.setParam("emphasis/optimality", True)
+        self.model.setParam("heuristics/emphasis", "aggressive")
+
         self.model.optimize()
 
     def get_solution(self):
         """
         Retrieves the solution.
         """
-        D = self.dr.get_num_duties()
-        K = self.dr.get_num_fleet_types()
-        M = self.dr.get_num_resources()
-        N = self.dr.get_num_products()
-        T = self.dr.get_num_time_indices()
+        D = self.asdr.get_num_duties()
+        K = self.asdr.get_num_fleet_types()
+        M = self.asdr.get_num_resources()
+        N = self.asdr.get_num_products()
+        T = self.asdr.get_num_time_indices()
 
+        # Get best solution.
+        sol = self.model.getBestSol()
+
+        # Extract y variables.
         y = np.zeros((D, K))
         self.sol_y = {}
         for d in range(D):
             for k in range(K):
-                val = self.y_vars[(d, k)].getAttr("x")
-                if val == 1:
+                val = self.model.getSolVal(sol, self.y_vars[(d, k)])
+                if val > 0.5:  # Binary variable threshold
                     assert d not in self.sol_y.keys()
                     self.sol_y[d] = k
-                    y[(d, k)] = val
+                    y[(d, k)] = 1
 
+        # Extract z variables.
         z = np.zeros(N)
-        self.sol_z = {}
+        self.sol_z = []
         for n in range(N):
-            val = self.z_vars[n].getAttr("x")
-            self.sol_z[n] = val
+            val = self.model.getSolVal(sol, self.z_vars[n])
+            self.sol_z.append(val)
             z[n] = val
 
+        # Extract m variables if applicable.
         m = np.zeros((K, T))
         self.sol_m = {}
         if self.min_extra_planes:
             for k in range(K):
                 for t in range(T):
-                    val = self.m_vars[(k, t)].getAttr("x")
+                    val = self.model.getSolVal(sol, self.m_vars[(k, t)])
                     self.sol_m[(k, t)] = val
                     m[(k, t)] = val
 
-        self.sol_z = []
-        for j in range(N):
-            val = self.z_vars[j].getAttr("x")
-            self.sol_z.append(val)
-
         # Calculate pax.
-        pax = 0.0
-        for j in range(N):
-            pax += self.sol_z[j]
+        pax = sum(self.sol_z)
 
         # Calculate revenue.
-        rev = 0.0
-        for j in range(N):
-            rev += self.dr.get_fare(j) * self.sol_z[j]
+        rev = sum(self.asdr.get_fare(j) * self.sol_z[j] for j in range(N))
 
-        # Booked revenue.
-        booked_rev = self.dr.get_booked_revenue()
-
-        # Booked pax.
-        booked_pax = self.dr.get_booked_pax()
+        # Booked revenue and pax.
+        booked_rev = self.asdr.get_booked_revenue()
+        booked_pax = self.asdr.get_booked_pax()
 
         # Calculate costs.
         costs = 0.0
         for d in range(D):
-            for k in range(K):
-                if d in self.sol_y.keys():
-                    if self.sol_y[d] == k:
-                        costs += self.dr.get_duty_costs(d, k)
+            if d in self.sol_y:
+                k = self.sol_y[d]
+                costs += self.asdr.get_duty_costs(d, k)
 
         # Calculate number of changes.
         duties_changed_ac = 0
         for d in range(D):
             for k in range(K):
-                duties_changed_ac += self.s_vars[(d, k)].getAttr("x")
+                val = self.model.getSolVal(sol, self.s_vars[(d, k)])
+                duties_changed_ac += val
 
         res = {
             "pax": pax,
@@ -546,32 +566,24 @@ class ASFARMWoCancellations:
             "y": y,
             "z": z,
             "m": m,
-            "b": self.dr.rm_model["b"],
-            "f": self.dr.rm_model["f"],
-            "Ai": self.dr.rm_model["Ai"],
-            "Aj": self.dr.rm_model["Aj"],
-            "Adata": self.dr.rm_model["Adata"],
-            "Adistratiodata": self.dr.rm_model["res_Adistratiodata"]
+            "b": self.asdr.rm_model["b"],
+            "f": self.asdr.rm_model["f"],
+            "Ai": self.asdr.rm_model["Ai"],
+            "Aj": self.asdr.rm_model["Aj"],
+            "Adata": self.asdr.rm_model["Adata"],
+            "Adistratiodata": self.asdr.rm_model["res_Adistratiodata"]
         }
         return res
 
 if __name__ == "__main__":
-    depdates = ["20260131",
-                "20260201", "20260202", "20260203", "20260204", "20260205", "20260206", "20260207",
-                "20260208", "20260209", "20260210", "20260211", "20260212", "20260213", "20260214",
-                "20260215", "20260216", "20260217", "20260218", "20260219", "20260220", "20260221",
-                "20260222", "20260223", "20260224", "20260225", "20260226", "20260227", "20260228",
-                "20260301"]
-    costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
-    fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
-    cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
-    leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
-    subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_FEB2days.ssim"
-    airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/FEB_Report.xlsx"
-    turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
-    restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
+    depdates = ["20251219", "20251220"]
+    inv_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/inv2.csv"
+    costs_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/costs.csv"
+    fleet_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/aircraft_inventory.csv"
+    cap_file = "/home/sumkin/rmbits/src/fleet_assigner/as_data/capacities.csv"
+    maintenance_file = ""
+    leg_pairings_file = ""
+    turnaround_times_file = ""
 
     asfwoc = ASFARMWoCancellations(depdates,
                                    inv_file,

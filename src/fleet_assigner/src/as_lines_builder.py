@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from aircraft_router import AircraftRouter
 
-class LinesBuilder:
+class ASLinesBuilder:
 
     def __init__(self,
                  depdates,
@@ -57,7 +57,6 @@ class LinesBuilder:
             if ac_type == r["actype"]:
                 self.legs.append(leg)
                 leg_id = len(self.legs) - 1
-                #self.leg_id2from_to_mins_original[leg_id] = [r["from_mins_original"], r["to_mins_original"]]
                 self.duties.append([leg_id])
                 duty_id = len(self.duties) - 1
                 self.leg2duty[leg_id] = duty_id
