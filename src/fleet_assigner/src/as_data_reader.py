@@ -31,16 +31,16 @@ class ASDataReader:
 
     def read(self):
         print(time_now() + " Loading inventory dataframe...")
-        #self.load_inv_df()
+        self.load_inv_df()
 
         print(time_now() + " Loading costs dataframe...")
         self.load_costs_df()
 
-        print(time_now() + " Loading turnaround times..")
-        #self.load_turnaround_times()
-
         print(time_now() + " Loading fleet dataframe...")
         self.load_fleet_df()
+
+        print(time_now() + " Loading turnaround times..")
+        self.load_turnaround_times()
 
         print(time_now() + " Creating cabin dataframe...")
         self.create_cabin_df()
@@ -64,37 +64,27 @@ class ASDataReader:
         #self.calculate_alphas()
 
     def load_inv_df(self):
-        self.inv_df = pd.read_csv(self.inv_file)
-        print(self.inv_df.head(5))
-        """
-        self.inv_df = pd.read_csv("s3://ay-emr-job/nrm/bif/{}/{}/INV_{}.csv.gz".format(fcstyear, fcstmonth, self.fcstdate),
-                                   dtype={"ARRDT": str, "DEPTM": str, "ARRTM": str}
-        )
-        self.next_depdate = datetime.strptime(self.depdates[len(self.depdates) - 1], "%Y%m%d") + timedelta(days=1)
-        self.next_depdate = datetime.strftime(self.next_depdate, "%Y%m%d")
-        self.inv_df["DEPDT"] = self.inv_df["DEPDT"].astype(str)
-        self.inv_df = self.inv_df.loc[self.inv_df["DEPDT"].isin(self.depdates + [self.next_depdate])]
-        self.inv_df = self.inv_df[["CC", "FLTNUM", "ORGN", "DSTN", "CABIN",
+        self.inv_df = pd.read_csv(self.inv_file, sep=";")
+        self.inv_df["CC"] = self.inv_df["cc"]
+        self.inv_df["FLTNUM"] = self.inv_df["fltnum"]
+        self.inv_df["ORGN"] = self.inv_df["orgn"]
+        self.inv_df["DSTN"] = self.inv_df["dstn"]
+        self.inv_df["DEPDT"] = pd.to_datetime(self.inv_df["dep_time_lt"]).dt.strftime("%Y%m%d")
+        self.inv_df["DEPTM"] = pd.to_datetime(self.inv_df["dep_time_lt"]).dt.strftime("%H%M")
+        self.inv_df["ARRDT"] = pd.to_datetime(self.inv_df["arr_time_lt"]).dt.strftime("%Y%m%d")
+        self.inv_df["ARRTM"] = pd.to_datetime(self.inv_df["arr_time_lt"]).dt.strftime("%H%M")
+        self.inv_df["DEPDT_UTC"] = pd.to_datetime(self.inv_df["dep_time_utc"]).dt.strftime("%Y%m%d")
+        self.inv_df["DEPTM_UTC"] = pd.to_datetime(self.inv_df["dep_time_utc"]).dt.strftime("%H%M")
+        self.inv_df["ARRDT_UTC"] = pd.to_datetime(self.inv_df["arr_time_utc"]).dt.strftime("%Y%m%d")
+        self.inv_df["ARRTM_UTC"] = pd.to_datetime(self.inv_df["arr_time_utc"]).dt.strftime("%H%M")
+        self.inv_df["AIRCRAFT_TYPE"] = self.inv_df["aircraft_type"]
+        self.inv_df = self.inv_df.fillna(0)
+        self.inv_df["DUTY_ID"] = self.inv_df["id_pair"].astype(int)
+        self.inv_df["NUM_IN_DUTY"] = self.inv_df["num_in_pair"].astype(int)
+        self.inv_df = self.inv_df[["CC", "FLTNUM", "ORGN", "DSTN",
                                    "DEPDT", "DEPTM", "ARRDT", "ARRTM",
-                                   "DEPDT_UTC", "DEPTM_UTC", "ARRDT_UTC", "ARRTM_UTC", "AIRCRAFT_TYPE"]]
-        self.inv_df = self.inv_df.drop_duplicates()
-
-        self.inv_df["DEPDT"] = self.inv_df["DEPDT"].astype(str)
-        self.inv_df["DEPTM"] = self.inv_df["DEPTM"].astype(str)
-        self.inv_df["ARRDT"] = self.inv_df["ARRDT"].astype(str)
-        self.inv_df["ARRTM"] = self.inv_df["ARRTM"].astype(str)
-
-        self.inv_df["DEPDT_UTC"] = self.inv_df["DEPDT_UTC"].astype(str)
-        self.inv_df["DEPTM_UTC"] = self.inv_df["DEPTM_UTC"].astype(str)
-        self.inv_df["ARRDT_UTC"] = self.inv_df["ARRDT_UTC"].astype(str)
-        self.inv_df["ARRTM_UTC"] = self.inv_df["ARRTM_UTC"].astype(str)
-        self.inv_df = self.inv_df[["CC", "FLTNUM", "ORGN", "DSTN", "CABIN",
-                                   "DEPDT", "DEPTM", "ARRDT", "ARRTM",
-                                   "DEPDT_UTC", "DEPTM_UTC", "ARRDT_UTC",
-                                   "ARRTM_UTC", "AIRCRAFT_TYPE"]]
-        self.inv_df = self.inv_df.drop_duplicates()
-        """
-        assert False
+                                   "DEPDT_UTC", "DEPTM_UTC", "ARRDT_UTC", "ARRTM_UTC",
+                                   "AIRCRAFT_TYPE", "DUTY_ID", "NUM_IN_DUTY"]]
 
     def load_costs_df(self):
         self.costs_df = pd.read_csv(self.costs_file, sep=";")
@@ -239,7 +229,10 @@ class ASDataReader:
         assert len(self.duties) == len(self.duties_svc) == len(self.duties2startend), "{}, {}, {}".format(len(self.duties), len(self.duties_svc), len(self.duties2startend))
 
     def load_turnaround_times(self):
-        self.turnaround_times_df = pd.read_csv(self.turnaround_times_file)
+        data = []
+        for fleet_type in self.fleet_types:
+            data.append({"Subfleet": fleet_type, "Turnaround": 30})
+        self.turnaround_times_df = pd.DataFrame(data)
 
     def build_time_indices(self):
         # Duties.
