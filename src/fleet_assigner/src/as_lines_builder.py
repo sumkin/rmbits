@@ -92,7 +92,7 @@ class ASLinesBuilder:
             csv_writer = csv.writer(f)
             csv_writer.writerow(["ORGN", "DSTN", "FLTNUM", "DEPDT", "ARRDT", "DEPTM",
                                  "ARRTM", "AC_TYPE", "AIRCRAFT_ID", "LINE", "COSTS", "C_CAP", "W_CAP", "Y_CAP",
-                                 "GROUND_TIME", "DUTY_ID", "CC"])
+                                 "GROUND_TIME", "DUTY_ID", "CC", "OLD A/C"])
             ac_type2num = {}
             for k in range(len(self.fleet_types)):
                 ac_type = self.fleet_types[k]
@@ -139,6 +139,7 @@ class ASLinesBuilder:
 
                         row = row[:7] + [ac_type, line_num, ac_type + "/" + str(line_num), costs / num_legs]
                         row += [capacities["C"], capacities["W"], capacities["Y"], ground_time, duty_id, "SU"]
+                        row += [self.dr.duty2at[duty_id]]
                         csv_writer.writerow(row)
 
                         prev_leg_arr_mins = leg_arr_mins
