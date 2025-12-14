@@ -128,10 +128,10 @@ class ASLinesBuilder:
                         row[5] = datetime.strftime(row[5], "%H:%M")
                         row[6] = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_arr_mins)
                         row[6] = datetime.strftime(row[6], "%H:%M")
-                        #if duty_id < self.num_regular_duties:
-                        #    costs = self.dr.get_duty_costs(self.dr.duty_ids.index(duty_id), k)
-                        #else:
-                        costs = 0
+                        if duty_id < self.num_regular_duties:
+                            costs = self.dr.get_duty_costs(duty_id, k)
+                        else:
+                            costs = 0
                         if prev_leg_arr_mins is None:
                             ground_time = None
                         else:
