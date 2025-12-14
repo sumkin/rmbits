@@ -24,18 +24,19 @@ if __name__ == "__main__":
                                    turnaround_times_file)
     asfwoc.load_data()
     asfwoc.build_model(max_num_changes=100000)
-    asfwoc.model.write(mps_fname)
+    #asfwoc.model.write(mps_fname)
     asfwoc.make_feasible()
     asfwoc.solve()
     sol = asfwoc.get_solution()
 
     aslb = ASLinesBuilder(depdates,
-                          asfwoc.dr.legs,
-                          asfwoc.dr.duties,
+                          asfwoc.asdr.legs,
+                          asfwoc.asdr.duty_ids,
+                          asfwoc.asdr.duties,
                           asfwoc.sol_y,
-                          asfwoc.dr.fleet_types,
-                          asfwoc.dr.fleet_type2fleet_ids,
-                          asfwoc.dr.leg2duty,
-                          asfwoc.dr)
+                          asfwoc.asdr.fleet_types,
+                          asfwoc.asdr.fleet_type2fleet_ids,
+                          asfwoc.asdr.leg_id2duty_id,
+                          asfwoc.asdr)
     aslb.build()
     aslb.write_csv("../output/lines.csv")

@@ -2,20 +2,20 @@ import csv
 import copy
 from datetime import datetime, timedelta
 
-from aircraft_router import AircraftRouter
+from as_aircraft_router import ASAircraftRouter
 
 class ASLinesBuilder:
 
     def __init__(self,
                  depdates,
                  legs,
+                 duty_ids,
                  duties,
                  sol,
                  fleet_types,
                  fleet_type2fleet_ids,
-                 leg2duty,
-                 dr,
-                 output_writer):
+                 leg_id2duty_id,
+                 dr):
         """
         @arg legs                 --- the list of legs.
         @arg sol                  --- solution, i.e. mapping leg index to fleet type index.
@@ -24,14 +24,14 @@ class ASLinesBuilder:
         """
         self.depdates = depdates
         self.legs = legs
+        self.duty_ids = copy.deepcopy(duty_ids)
         self.duties = copy.deepcopy(duties)
         self.num_regular_duties = len(self.duties)  # Non-regular duties are maintenance duties.
         self.sol = sol
         self.fleet_types = fleet_types
         self.fleet_type2fleet_ids = fleet_type2fleet_ids
-        self.leg2duty = leg2duty
+        self.leg_id2duty_id = leg_id2duty_id
         self.dr = dr
-        self.output_writer = output_writer
 
     def get_subnetwork(self, ac_type):
         """
@@ -43,8 +43,11 @@ class ASLinesBuilder:
         k = self.fleet_types.index(ac_type)
         for d in self.sol.keys():
             if self.sol[d] == k:
+                assert d < len(self.duty_ids)
                 subnetwork.append(d)
 
+
+        """
         # Add maintenance duties.
         df = self.dr.maint_df[self.dr.maint_df['from_mins'] > 0]
         for _, r in df.iterrows():
@@ -61,6 +64,7 @@ class ASLinesBuilder:
                 duty_id = len(self.duties) - 1
                 self.leg2duty[leg_id] = duty_id
                 subnetwork.append(duty_id)
+        """
 
         return subnetwork
 
@@ -77,7 +81,7 @@ class ASLinesBuilder:
                 continue 
             print("")
             print("fleet_type = {} ({})".format(self.fleet_types[k], len(self.fleet_type2fleet_ids[self.fleet_types[k]])))
-            ar = AircraftRouter(self.legs, self.duties, subnetwork, ac_type, self.fleet_type2fleet_ids[ac_type], self.dr)
+            ar = ASAircraftRouter(self.legs, self.duty_ids, self.duties, subnetwork, ac_type, self.fleet_type2fleet_ids[ac_type], self.dr)
             self.lines[k] = ar.solve()
 
     def write_csv(self, fname):
@@ -87,7 +91,7 @@ class ASLinesBuilder:
         with open(fname, "w") as f:
             csv_writer = csv.writer(f)
             csv_writer.writerow(["ORGN", "DSTN", "FLTNUM", "DEPDT", "ARRDT", "DEPTM",
-                                 "ARRTM", "AC_TYPE", "AIRCRAFT_ID", "LINE", "COSTS", "J_CAP", "W_CAP", "Y_CAP",
+                                 "ARRTM", "AC_TYPE", "AIRCRAFT_ID", "LINE", "COSTS", "C_CAP", "W_CAP", "Y_CAP",
                                  "GROUND_TIME", "DUTY_ID", "CC"])
             ac_type2num = {}
             for k in range(len(self.fleet_types)):
@@ -106,8 +110,15 @@ class ASLinesBuilder:
                     ac_type2num[ac_type] = line_num
                     prev_leg_arr_mins = None
                     for leg_id in line:
-                        duty_id = self.leg2duty[leg_id]
-                        num_legs = len(self.duties[duty_id])
+                        duty_id = self.leg_id2duty_id[leg_id]
+                        print("leg_id = {}".format(leg_id))
+                        print("duty_id = {}".format(duty_id))
+                        print("self.duty_ids = {}".format(self.duty_ids))
+                        print("self.duties = {}".format(self.duties))
+                        print("len(self.duties) = {}".format(len(self.duties)))
+                        print()
+                        assert duty_id in self.duty_ids
+                        num_legs = len(self.duties[self.duty_ids.index(duty_id)])
                         row = copy.deepcopy(self.legs[leg_id])
                         #if leg_id in self.leg_id2from_to_mins_original:
                         #    leg_dep_mins, leg_arr_mins = self.leg_id2from_to_mins_original[leg_id]
@@ -117,22 +128,23 @@ class ASLinesBuilder:
                         row[5] = datetime.strftime(row[5], "%H:%M")
                         row[6] = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_arr_mins)
                         row[6] = datetime.strftime(row[6], "%H:%M")
-                        if duty_id < self.num_regular_duties:
-                            costs = self.dr.get_duty_costs(duty_id, k)
-                        else:
-                            costs = 0
+                        #if duty_id < self.num_regular_duties:
+                        #    costs = self.dr.get_duty_costs(self.dr.duty_ids.index(duty_id), k)
+                        #else:
+                        costs = 0
                         if prev_leg_arr_mins is None:
                             ground_time = None
                         else:
                             ground_time = leg_dep_mins - prev_leg_arr_mins
 
                         row = row[:7] + [ac_type, line_num, ac_type + "/" + str(line_num), costs / num_legs]
-                        row += [capacities["J"], capacities["W"], capacities["Y"], ground_time, duty_id, "AY"]
+                        row += [capacities["C"], capacities["W"], capacities["Y"], ground_time, duty_id, "SU"]
                         csv_writer.writerow(row)
 
                         prev_leg_arr_mins = leg_arr_mins
                     line_num += 1
 
+            """
             # Add wetlease flights.
             for _, r in self.dr.wetlease_df.iterrows():
                 depdt = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=r["from_mins"])
@@ -157,4 +169,5 @@ class ASLinesBuilder:
                     r["cc"]                                                 # CC
                 ]
                 csv_writer.writerow(row)
+            """
 

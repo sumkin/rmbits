@@ -32,7 +32,7 @@ class ASFleetReader:
 
     def get_num_aircrafts(self, ac_type, _t0, _t1):
         assert _t0 <= _t1
-        res = df[df["aircraft_type"] == ac_type]["schedule"].sum()
+        res = self.fleet_df[self.fleet_df["aircraft_type"] == ac_type]["schedule"].sum()
         return res
 
 if __name__ == "__main__":

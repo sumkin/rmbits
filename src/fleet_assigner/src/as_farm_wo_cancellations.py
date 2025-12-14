@@ -66,7 +66,7 @@ class ASFARMWoCancellations:
 
         # Assignment variables - binary matrix.
         self.y_vars = {}
-        for d in range(num_duties):
+        for d in self.asdr.duty_ids:
             for k in range(num_fleet_types):
                 var_name = f"y_{d}_{k}"
                 self.y_vars[(d, k)] = self.model.addVar(vtype="B", name=var_name)
@@ -84,7 +84,7 @@ class ASFARMWoCancellations:
 
         # Change variables - binary matrix.
         self.s_vars = {}
-        for d in range(num_duties):
+        for d in self.asdr.duty_ids:
             for k in range(num_fleet_types):
                 var_name = f"s_{d}_{k}"
                 self.s_vars[(d, k)] = self.model.addVar(vtype="B", name=var_name)
@@ -115,15 +115,18 @@ class ASFARMWoCancellations:
             num_fleet_types = self.asdr.get_num_fleet_types()
 
             # Revenue part
-            revenue_expr = quicksum(
-                self.asdr.get_fare(j) * self.z_vars[j]
-                for j in range(num_products)
-            )
+            #revenue_expr = quicksum(
+            #    self.asdr.get_fare(j) * self.z_vars[j]
+            #    for j in range(num_products)
+            #)
+
+            revenue_terms = [self.asdr.get_fare(j) * self.z_vars[j] for j in range(num_products)]
+            revenue_expr = quicksum(revenue_terms)
 
             # Cost part
             cost_expr = quicksum(
                 self.asdr.get_duty_costs(d, k) * self.y_vars[(d, k)]
-                for d in range(num_duties)
+                for d in self.asdr.duty_ids
                 for k in range(num_fleet_types)
             )
 
@@ -134,7 +137,7 @@ class ASFARMWoCancellations:
         """
         Sets leg capacities constraints.
         """
-        A = getA(self.asdr)
+        A = getA(self.asdr).tocsr()
         fcap = self.asdr.rm_model["fcap"]
         cap = self.asdr.rm_model["cap"]
         assert len(cap) == len(fcap)
@@ -181,7 +184,7 @@ class ASFARMWoCancellations:
         """
         Sets duty coverage constraints.
         """
-        for d in range(self.asdr.get_num_duties()):
+        for d in self.asdr.duty_ids:
             constr_expr = quicksum(
                 self.y_vars[(d, k)]
                 for k in range(self.asdr.get_num_fleet_types())
@@ -198,13 +201,13 @@ class ASFARMWoCancellations:
         """
         T = self.asdr.get_num_time_indices()
         K = self.asdr.get_num_fleet_types()
-        D = self.asdr.get_num_duties()
+        D = len(self.asdr.duty_ids)
 
         for k in range(K):
             Alpha = sparse.lil_matrix((D, T))
             for d in range(D):
                 for t in range(1, T):
-                    alpha = self.asdr.get_alpha(d, t, k)
+                    alpha = self.asdr.get_alpha(self.asdr.duty_ids[d], t, k)
                     if abs(alpha) > 0.000001:
                         Alpha[(d, t)] = alpha
             Alpha = Alpha.tocsr()
@@ -218,7 +221,7 @@ class ASFARMWoCancellations:
                 lhs_terms = []
                 for d in range(D):
                     if abs(Alpha[d, t]) > 1e-10:
-                        lhs_terms.append(Alpha[d, t] * self.y_vars[(d, k)])
+                        lhs_terms.append(Alpha[d, t] * self.y_vars[(self.asdr.duty_ids[d], k)])
 
                 if lhs_terms:
                     lhs_expr = quicksum(lhs_terms)
@@ -249,7 +252,7 @@ class ASFARMWoCancellations:
         """
         Sets constraints which relates y and s variables.
         """
-        for d in range(self.asdr.get_num_duties()):
+        for d in self.asdr.duty_ids:
             for k in range(self.asdr.get_num_fleet_types()):
                 at = self.asdr.fleet_types[k]
                 y_bar = (1 if self.asdr.duty2at[d] == at else 0)
@@ -276,7 +279,7 @@ class ASFARMWoCancellations:
         """
         constr_expr = quicksum(
             self.s_vars[(d, k)]
-            for d in range(self.asdr.get_num_duties())
+            for d in self.asdr.duty_ids
             for k in range(self.asdr.get_num_fleet_types())
         )
         self.model.addCons(constr_expr <= max_num_changes, name="max_num_changes")
@@ -375,25 +378,27 @@ class ASFARMWoCancellations:
 
     def make_feasible(self):
         y = {}
-        for d in range(self.asdr.get_num_duties()):
+        for d in self.asdr.duty_ids:
             for k in range(self.asdr.get_num_fleet_types()):
                 if self.asdr.duty2at[d] == self.asdr.fleet_types[k]:
                     y[(d, k)] = 1
                 else:
                     y[(d, k)] = 0
 
-        """
-        for constr in self.model.getConstrs():
-            name = constr.ConstrName
-            sense = constr.Sense
-            rhs = constr.RHS
-            expr = self.model.getRow(constr)
+        for constr in self.model.getConss():
+            name = constr.name
 
-            # Ignore constraints containing other than y variables.
+            # Get constraint data
+            lhs_const = self.model.getLhs(constr)
+            rhs_const = self.model.getRhs(constr)
+
+            # Get variables and coefficients from the constraint
+            vars_dict = self.model.getValsLinear(constr)
+
+            # Ignore constraints containing other than y variables
             to_continue = False
-            for i in range(expr.size()):
-                var = expr.getVar(i)
-                if var.VarName[0] != "y":
+            for var in vars_dict.keys():
+                if var[0] != "y":
                     to_continue = True
                     break
             if to_continue:
@@ -401,39 +406,55 @@ class ASFARMWoCancellations:
 
             lhs = 0
             ds, ks = [], []
-            for i in range(expr.size()):
-                var = expr.getVar(i)
-                c = expr.getCoeff(i)
-                d, k = var.VarName.strip("y[").strip("]").split(",")
+
+            for var, coeff in vars_dict.items():
+                d, k = var.strip("y_").split("_")
                 d, k = int(d), int(k)
                 val = y[(d, k)]
+
                 if val != 0:
                     assert val == 1
                     ds.append(d)
                     ks.append(k)
-                lhs += c * val
-            ac_types = [self.dr.fleet_types[k] for k in ks]
-            duties = [[self.dr.legs[l] for l in self.dr.duties[d]] for d in ds]
+                lhs += coeff * val
+
+            ac_types = [self.asdr.fleet_types[k] for k in ks]
+            duties = [[self.asdr.legs[l] for l in self.asdr.duties[self.asdr.duty_ids.index(d)]] for d in ds]
             assert len(duties) == len(ds)
-            assert len(self.dr.duties) == len(self.dr.duties2startend), "{}, {}".format(len(self.dr.duties), len(self.dr.duties2startend))
-            if sense == "<":
-                if lhs > rhs:
-                    print("VIOLATION: {}: {} <= {}".format(name, lhs, rhs))
+            assert len(self.asdr.duties) == len(self.asdr.duties2startend), "{}, {}".format(
+                len(self.asdr.duties), len(self.asdr.duties2startend))
+
+            # Determine constraint sense and check violations
+            # SCIP uses -inf for <= constraints (no LHS bound) and inf for >= constraints (no RHS bound)
+            if rhs_const < self.model.infinity():  # Has upper bound (<=)
+                if lhs > rhs_const:
+                    print("VIOLATION: {}: {} <= {}".format(name, lhs, rhs_const))
                     print("ds = {}".format(ds))
-                    print("len(self.dr.duties) = {}".format(len(self.dr.duties)))
-                    print("len(self.dr.duties2startend) = {}".format(len(self.dr.duties2startend)))
+                    print("len(self.dr.duties) = {}".format(len(self.asdr.duties)))
+                    print("len(self.dr.duties2startend) = {}".format(len(self.asdr.duties2startend)))
                     print("ks = {}".format(ks))
                     print("ac_types = {}".format(ac_types))
                     print("duties")
                     for i, duty in enumerate(duties):
                         duty = [[l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7]] for l in duty]
-                        print("\t{}, {}".format(duty, self.dr.duties2startend[ds[i]]))
-                    print(self.dr.maint_df[self.dr.maint_df["actype"] == "A7A"].head(10))
+                        print("\t{}, {}".format(duty, self.asdr.duties2startend[self.asdr.duty_ids.index(ds[i])]))
+                    #print(self.asdr.maint_df[self.dr.maint_df["actype"] == "A7A"].head(10))
                     print("")
                     assert False
-            elif sense == "=":
-                if lhs != rhs:
-                    print("VIOLATION: {}: {} == {}".format(name, lhs, rhs))
+
+            if lhs_const > -self.model.infinity():  # Has lower bound (>=)
+                if lhs < lhs_const:
+                    print("VIOLATION: {}: {} >= {}".format(name, lhs, lhs_const))
+                    print("ds = {}".format(ds))
+                    print("ks = {}".format(ks))
+                    print("")
+
+            # Check for equality constraint (both bounds are equal and finite)
+            if (abs(lhs_const - rhs_const) < 1e-6 and
+                    lhs_const > -self.model.infinity() and
+                    rhs_const < self.model.infinity()):
+                if abs(lhs - rhs_const) > 1e-6:
+                    print("VIOLATION: {}: {} == {}".format(name, lhs, rhs_const))
                     print("ds = {}".format(ds))
                     print("ks = {}".format(ks))
                     print("ac_types = {}".format(ac_types))
@@ -441,19 +462,11 @@ class ASFARMWoCancellations:
                     for duty in duties:
                         duty = [[l[0], l[1], l[2], l[3], l[4],
                                  datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=l[5]),
-                                 datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=l[6]), l[7]] for l in duty]
+                                 datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=l[6]), l[7]] for l in
+                                duty]
                         print("\t{}".format(duty))
                     print("")
-            elif sense == ">":
-                if lhs < rhs:
-                    print("VIOLATION: {}: {} >= {}".format(name, lhs, rhs))
-                    print("ds = {}".format(ds))
-                    print("ks = {}".format(ks))
-                    print("")
-            else:
-                print(lhs, sense, rhs, name)
-                assert False
-        """
+
 
     def solve_with_y_fixed(self):
         """
@@ -480,10 +493,10 @@ class ASFARMWoCancellations:
         Solves the optimization problem.
         """
         # Set SCIP parameters (equivalents to Gurobi params)
-        self.model.setParam("presolving/maxrounds", -1)  # Aggressive presolving
-        self.model.setParam("limits/gap", 0.05)  # 5% MIP gap
-        self.model.setParam("emphasis/optimality", True)
-        self.model.setParam("heuristics/emphasis", "aggressive")
+        #self.model.setParam("presolving/maxrounds", -1)  # Aggressive presolving
+        #self.model.setParam("limits/gap", 0.05)  # 5% MIP gap
+        #self.model.setParam("emphasis/optimality", True)
+        #self.model.setParam("heuristics/emphasis", "aggressive")
 
         self.model.optimize()
 
@@ -491,7 +504,7 @@ class ASFARMWoCancellations:
         """
         Retrieves the solution.
         """
-        D = self.asdr.get_num_duties()
+        D = len(self.asdr.duty_ids)
         K = self.asdr.get_num_fleet_types()
         M = self.asdr.get_num_resources()
         N = self.asdr.get_num_products()
@@ -505,7 +518,7 @@ class ASFARMWoCancellations:
         self.sol_y = {}
         for d in range(D):
             for k in range(K):
-                val = self.model.getSolVal(sol, self.y_vars[(d, k)])
+                val = self.model.getSolVal(sol, self.y_vars[(self.asdr.duty_ids[d], k)])
                 if val > 0.5:  # Binary variable threshold
                     assert d not in self.sol_y.keys()
                     self.sol_y[d] = k
@@ -544,13 +557,13 @@ class ASFARMWoCancellations:
         for d in range(D):
             if d in self.sol_y:
                 k = self.sol_y[d]
-                costs += self.asdr.get_duty_costs(d, k)
+                costs += self.asdr.get_duty_costs(self.asdr.duty_ids[d], k)
 
         # Calculate number of changes.
         duties_changed_ac = 0
         for d in range(D):
             for k in range(K):
-                val = self.model.getSolVal(sol, self.s_vars[(d, k)])
+                val = self.model.getSolVal(sol, self.s_vars[(self.asdr.duty_ids[d], k)])
                 duties_changed_ac += val
 
         res = {
@@ -560,7 +573,7 @@ class ASFARMWoCancellations:
             "booked_rev": booked_rev,
             "costs": costs,
             "duties_changed_ac": duties_changed_ac,
-            "rsrc_names": self.dr.rm_model["rsrc_names"],
+            "rsrc_names": self.asdr.rm_model["rsrc_names"],
             "M": M,
             "N": N,
             "y": y,
@@ -607,13 +620,14 @@ if __name__ == "__main__":
     print("Number of duties with changed aircraft = {}".format(sol["duties_changed_ac"]))
 
     aslb = ASLinesBuilder(depdates,
-                          asfwoc.dr.legs,
-                          asfwoc.dr.duties,
+                          asfwoc.asdr.legs,
+                          asfwoc.asdr.duty_ids,
+                          asfwoc.asdr.duties,
                           asfwoc.sol_y,
-                          asfwoc.dr.fleet_types,
-                          asfwoc.dr.fleet_type2fleet_ids,
-                          asfwoc.dr.leg2duty,
-                          asfwoc.dr,
+                          asfwoc.asdr.fleet_types,
+                          asfwoc.asdr.fleet_type2fleet_ids,
+                          asfwoc.asdr.leg2duty,
+                          asfwoc.asdr,
                           excel_output_writer)
     aslb.build()
     aslb.write_csv("../output/lines.csv")

@@ -28,6 +28,8 @@ class ASDataReader:
 
         self.legs = []
         self.orgn_dstn_fltnum_depdt2leg_id = {}  # Map to speed-up querying for leg id.
+        self.leg_id2duty_id = {}
+        self.duty_id2leg_id = {}
 
     def read(self):
         print(time_now() + " Loading inventory dataframe...")
@@ -48,20 +50,20 @@ class ASDataReader:
         print(time_now() + " Creating capacities map...")
         self.create_capacities_map()
 
+        print(time_now() + " Buidling duties...")
+        self.build_duties2()
+
         print(time_now() + " Loading RM model...")
-        #self.load_rm_model()
+        self.load_rm_model()
 
         print(time_now() + " Loading bookings...")
-        #self.load_bookings()
-
-        print(time_now() + " Buidling duties...")
-        #self.build_duties2()
+        self.load_bookings()
 
         print(time_now() + " Building time indices...")
-        #self.build_time_indices()
+        self.build_time_indices()
 
         print(time_now() + " Calculating alphas...")
-        #self.calculate_alphas()
+        self.calculate_alphas()
 
     def load_inv_df(self):
         self.inv_df = pd.read_csv(self.inv_file, sep=";")
@@ -132,12 +134,76 @@ class ASDataReader:
                     self.compartments.append(cabin)
 
     def load_rm_model(self):
-        loader = LPModelMultiLoader(self.fcstdate, self.depdates)
-        self.rm_model = loader.get()
+        res = {}
+
+        prdt_names = []
+        d = []
+        f = []
+        cap = []
+        rsrc_names = []
+        bkgs = []
+
+        self.forecast_df = pd.read_csv("/home/sumkin/rmbits/src/fleet_assigner/as_data/forecast.csv")
+        self.forecast_df.columns = ["FLTNUM", "DEPDT", "ORGN", "DSTN", "AIRCRAFT", "CABIN", "BKG", "FCST", "SSP_BKG"]
+        self.forecast_df["DEPDT"] = pd.to_datetime(self.forecast_df['DEPDT']).dt.strftime('%Y%m%d')
+
+        self.revenue_df = pd.read_csv("/home/sumkin/rmbits/src/fleet_assigner/as_data/revenue.csv")
+        self.revenue_df.columns = ["FLTNUM", "DEPDT", "ORGN", "AIRCRAFT", "CABIN", "REVENUE", "CANDIDATE", "SDS"]
+        self.revenue_df["DEPDT"] = pd.to_datetime(self.revenue_df['DEPDT']).dt.strftime('%Y%m%d')
+        self.revenue_df = self.revenue_df[self.revenue_df["AIRCRAFT"] == self.revenue_df["CANDIDATE"]]
+
+        df = self.forecast_df.merge(self.revenue_df, how="inner", on=["FLTNUM", "DEPDT", "ORGN", "CABIN", "AIRCRAFT"])
+        df = df.dropna()
+        assert df.shape[0] == df[["ORGN", "DSTN", "FLTNUM", "DEPDT", "CABIN"]].drop_duplicates().shape[0]
+
+        for _, r in df.iterrows():
+            orgn, dstn, fltnum, depdt, cabin = r["ORGN"], r["DSTN"], r["FLTNUM"], r["DEPDT"], r["CABIN"]
+
+            # Product name.
+            prdt_name = orgn + dstn + "SU" + str(fltnum).zfill(4) + depdt + cabin
+            prdt_names.append(prdt_name)
+
+            # Forecast.
+            dmd = r["FCST"]
+            d.append(dmd)
+
+            # Fare.
+            fare = r["SDS"]
+            f.append(fare)
+
+            # Capacity.
+            cap.append(100)  # FIXME: fill correctly.
+
+            # Resource names.
+            rsrc_names.append(orgn + dstn + "SU" + str(fltnum).zfill(4) + depdt + cabin)
+
+            # Bookings.
+            bkgs.append(r["BKG"])
+
+        assert len(prdt_names) == len(d) == len(f)
+        res["prdt_names"] = prdt_names
+        res["d"] = d
+        res["f"] = f
+        res["cap"] = np.array(cap)
+        res["fcap"] = np.array(cap)
+        res["rsrc_names"] = rsrc_names
+        res["b"] = bkgs
+        res["res_Adistratiodata"] = [0] * len(bkgs)
+
+        # Matrix A.
+        Ai, Aj, Adata = [], [], []
+        for i in range(len(prdt_names)):
+            Ai.append(i)
+            Aj.append(i)
+            Adata.append(1)
+        res["Ai"] = Ai
+        res["Aj"] = Aj
+        res["Adata"] = Adata
+
+        self.rm_model = res
 
     def load_bookings(self):
-        self.bkg_df = pd.read_csv("s3://ay-emr-job/nrm/bof/{}/{}/BKG_OD_{}.csv.gz".format(self.fcstdate[:4], self.fcstdate[4:6], self.fcstdate), low_memory = False)
-        self.bkg_df = self.bkg_df[self.bkg_df["BASE_OD_DEPT_DATE"].isin([int(depdate) for depdate in self.depdates])]
+        self.bkg_df = pd.read_csv("/home/sumkin/rmbits/src/fleet_assigner/as_data/forecast.csv", sep=",")
 
     def _create_legs(self):
 
@@ -150,30 +216,8 @@ class ASDataReader:
 
         # Create list of legs.
         # Go over inventory and take all AY flights departing on given departure dates.
-        for depdate in self.depdates + [self.next_depdate]:
-            inv_df = self.inv_df[(self.inv_df["CC"] == "AY") &
-                                 (self.inv_df["DEPDT"] == depdate) &
-                                 (
-                                    (
-                                        self.inv_df["FLTNUM"] <= 1999
-                                    ) |
-                                    (
-                                        (self.inv_df["FLTNUM"] >= 7000) &
-                                        (self.inv_df["FLTNUM"] <= 7999)
-                                    ) |
-                                    (   # C flights
-                                        (self.inv_df["FLTNUM"] >= 2001) &
-                                        (self.inv_df["FLTNUM"] <= 2500)
-                                    ) |
-                                    (   # P flights.
-                                        (self.inv_df["FLTNUM"] >= 8881) &
-                                        (self.inv_df["FLTNUM"] <= 8996)
-                                    ) |
-                                    (   # K flights.
-                                        (self.inv_df["FLTNUM"] == 9971) |
-                                        (self.inv_df["FLTNUM"] == 9951)
-                                    )
-                                 )]
+        for depdate in self.depdates:
+            inv_df = self.inv_df[self.inv_df["DEPDT"] == depdate]
             for _, r in inv_df.iterrows():
                 orgn = r["ORGN"]
                 dstn = r["DSTN"]
@@ -183,22 +227,23 @@ class ASDataReader:
                 deptm = time2mins(r["DEPDT_UTC"], r["DEPTM_UTC"])
                 arrtm = time2mins(r["ARRDT_UTC"], r["ARRTM_UTC"])
                 at = r["AIRCRAFT_TYPE"]
+                duty_id = r["DUTY_ID"]
+                if duty_id == 0:
+                    continue
                 leg = [orgn, dstn, fltnum, depdt, arrdt, deptm, arrtm, at]
-                if at == "WF8":
-                    # This is DH4 aircraft. Skip it, because we do not manage it.
-                    continue
-                if at == "32I":
-                    # This is Iberia aircraft. Skip it, because we do no manage it.
-                    continue
-                # Check that leg is in costs dataframe.
-                if self.costs_df[
-                        (self.costs_df["ORGN"] == orgn) &
-                        (self.costs_df["DSTN"] == dstn)
-                   ].shape[0] == 0:
+                if self.costs_df[(self.costs_df["ORGN"] == orgn) &
+                                 (self.costs_df["DSTN"] == dstn)].shape[0] == 0:
                     print("WARNING: {}-{} not found in costs file.".format(orgn, dstn))
                     continue
                 if leg not in self.legs:
+                    leg_id = len(self.legs)
                     self.legs.append(leg)
+                    assert leg_id not in self.leg_id2duty_id.keys()
+                    self.leg_id2duty_id[leg_id] = duty_id
+                    if duty_id in self.duty_id2leg_id.keys():
+                        self.duty_id2leg_id[duty_id].append(leg_id)
+                    else:
+                        self.duty_id2leg_id[duty_id] = [leg_id]
         assert len(self.legs) != 0
 
         # Create mapping orgn, dstn, fltnum, depdt -> leg_id.
@@ -211,22 +256,47 @@ class ASDataReader:
     def build_duties2(self):
         self._create_legs()
 
-        db = DutiesBuilder2(self,
-                            self.leg_pairings_file,
-                            self.depdates,
-                            self.next_depdate,
-                            self.legs,
-                            self.fleet_types,
-                            self.output_writer)
-        (self.duties,
-         self.duties_svc,
-         self.duties2startend,
-         standalone,
-         self.leg2duty,
-         self.duty2at,
-         self.fixed_duties,
-         self.wetlease_sequences) = db.build()
-        assert len(self.duties) == len(self.duties_svc) == len(self.duties2startend), "{}, {}, {}".format(len(self.duties), len(self.duties_svc), len(self.duties2startend))
+        # Clean-up. Remove duties with just one leg and remove corresponding legs.
+        duty_ids = list(self.duty_id2leg_id.keys())
+        for duty_id in duty_ids:
+            if len(self.duty_id2leg_id[duty_id]) == 1:
+                leg_ids = self.duty_id2leg_id[duty_id]
+                for leg_id in leg_ids:
+                    del self.leg_id2duty_id[leg_id]
+                print("Deleting duty {}".format(duty_id))
+                del self.duty_id2leg_id[duty_id]
+
+        self.duty_ids, self.duties, self.duties_svc, self.duties2startend = [], [], [], []
+        self.fixed_duties = []
+        self.wetlease_sequences = []
+        self.duty2at = {}
+
+        for duty_id in self.duty_id2leg_id.keys():
+            assert len(self.duty_id2leg_id[duty_id]) == 2
+            leg_id1, leg_id2 = self.duty_id2leg_id[duty_id]
+            leg1 = self.legs[leg_id1]
+            leg2 = self.legs[leg_id2]
+            assert leg1[7] == leg2[7]
+
+            min_t = min(leg1[5], leg2[5])
+            max_t = max(leg1[6], leg2[6])
+
+            if leg1[0] == "SVO":
+                assert leg1[1] == leg2[0]
+                assert leg2[1] == "SVO"
+                self.duty_ids.append(duty_id)
+                self.duties.append([leg_id1, leg_id2])
+                self.duties_svc.append([])
+                self.duties2startend.append([min_t, max_t])
+                self.duty2at[duty_id] = leg1[7]
+            elif leg2[0] == "SVO":
+                assert leg2[1] == leg1[0]
+                assert leg1[1] == "SVO"
+                self.duty_ids.append(duty_id)
+                self.duties.append([leg_id2, leg_id1])
+                self.duties_svc.append([min_t, max_t])
+                self.duties2startend.append([min_t, max_t])
+                self.duty2at[duty_id] = leg2[7]
 
     def load_turnaround_times(self):
         data = []
@@ -270,7 +340,7 @@ class ASDataReader:
                 for t in range(1, len(self.ts)):
                     t0, t1 = self.ts[t-1], self.ts[t]
                     if max(min_t, t0) <= min(max_t, t1 - 1):
-                        self.alphas[(d, t, k)] = 1
+                        self.alphas[(self.duty_ids[d], t, k)] = 1
 
         sys.stdout.write("\b\b\b\b\b\b")
         sys.stdout.write("\n")
@@ -299,7 +369,7 @@ class ASDataReader:
         return self.rm_model["d"][j]
 
     def get_booked_revenue(self):
-        return self.bkg_df["YIELD"].sum()
+        return self.revenue_df["REVENUE"].sum()
 
     def get_booked_pax(self):
         return self.bkg_df.shape[0]
@@ -309,52 +379,7 @@ class ASDataReader:
         return self.rm_model["f"][j]
 
     def get_leg_costs(self, orgn, dstn, depdt, ac_type):
-
-        def transform_ac_type(ac_type):
-            if ac_type == "29A":
-                ac_type = None
-            elif ac_type == "319":
-                pass
-            elif ac_type == "320":
-                pass
-            elif ac_type == "321":
-                pass
-            elif ac_type == "32B":
-                ac_type = "320"
-            elif ac_type == "32G":
-                ac_type = "320"
-            elif ac_type == "32I":
-                ac_type = "320"
-            elif ac_type == "32L":
-                ac_type = "320"
-            elif ac_type == "33B":
-                ac_type = "333"
-            elif ac_type == "33S":
-                ac_type = "333"
-            elif ac_type == "35A":
-                ac_type = "359"
-            elif ac_type == "35B":
-                ac_type = "359"
-            elif ac_type == "35L":
-                ac_type = "359"
-            elif ac_type == "35S":
-                ac_type = "359"
-            elif ac_type == "A70":
-                ac_type = "AT7"
-            elif ac_type == "A7A":
-                ac_type = "AT7"
-            elif ac_type == "DH4":
-                ac_type = None
-            elif ac_type == "E90":
-                pass
-            else:
-                ac_type = None
-            return ac_type
-
-        t_ac_type = transform_ac_type(ac_type)
-        if t_ac_type is None:
-            print(f"ac_type = {ac_type}")
-            assert False
+        t_ac_type = ac_type
 
         res = 0.0
         depdt = depdt[:4] + "-" + depdt[4:6] + "-" + depdt[6:8]
@@ -389,12 +414,12 @@ class ASDataReader:
         return res
 
     def get_duty_costs(self, d, k):
-        assert d >= 0 and d <= self.get_num_duties()
+        assert d in self.duty_ids
         assert k >= 0 and k <= self.get_num_fleet_types()
         ac_type = self.fleet_types[k]
 
         res = 0.0
-        for leg_id in self.duties[d]:
+        for leg_id in self.duties[self.duty_ids.index(d)]:
             orgn, dstn, _, depdt, _, _, _, _ = self.legs[leg_id]
             res += self.get_leg_costs(orgn, dstn, depdt, ac_type)
         return res
@@ -451,17 +476,17 @@ class ASDataReader:
         assert idx < len(self.fleet_types)
         return self.fleet_types[idx]
 
-    def get_duty_id_by_leg_id(self, leg_idx):
+    def get_duty_id_by_leg_id(self, leg_id):
         """
         Find duty id for given leg id.
         """
-        if leg_idx in self.leg2duty.keys():
-            return self.leg2duty[leg_idx]
+        if leg_id in self.leg_id2duty_id.keys():
+            return self.leg_id2duty_id[leg_id]
         else:
             return None
 
     def get_cmpt_id(self, rsrc_name):
-        cmpt = rsrc_name[12]
+        cmpt = rsrc_name[20]
         return self.compartments.index(cmpt)
 
     def get_capacity(self, k, l):
@@ -488,9 +513,7 @@ class ASDataReader:
         assert t > 0  # Index defines time interval [T[t-1],T[t]].
         ac_type = self.fleet_types[k]
         t0_min, t1_min = self.ts[t-1], self.ts[t]
-        t0 = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=t0_min)
-        t1 = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=t1_min-1)
-        return self.fr.get_num_aircrafts(ac_type, t0_min, t1_min, t0, t1, self.wetlease_sequences)
+        return self.asfr.get_num_aircrafts(ac_type, t0_min, t1_min)
 
     def get_solution_from_inv_df(self):
         y = {}
