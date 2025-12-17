@@ -11,29 +11,29 @@ from lines_builder import LinesBuilder
 from CsvToSsimConverter import Converter
 
 if __name__ == "__main__":
-    fcstdate = "20251006"
-    month = "february2026"
+    fcstdate = "20251215"
+    month = "march2026"
 
     excel_fname = "fa_{}_{}.xlsx".format(fcstdate, month)
     excel_output_writer = ExcelOutputWriter("../output/{}".format(excel_fname))
     debug_info_writer = DebugInfoWriter("../output/")
 
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
-    depdates = ["20260131",
-                "20260201", "20260202", "20260203", "20260204", "20260205", "20260206", "20260207",
-                "20260208", "20260209", "20260210", "20260211", "20260212", "20260213", "20260214",
-                "20260215", "20260216", "20260217", "20260218", "20260219", "20260220", "20260221",
-                "20260222", "20260223", "20260224", "20260225", "20260226", "20260227", "20260228",
-                "20260301"]
+    depdates = ["20260228",
+                "20260301", "20260302", "20260303", "20260304", "20260305", "20260306", "20260307",
+                "20260308", "20260309", "20260310", "20260311", "20260312", "20260313", "20260314",
+                "20260315", "20260316", "20260317", "20260318", "20260319", "20260320", "20260321",
+                "20260322", "20260323", "20260324", "20260325", "20260326", "20260327", "20260328",
+                "20260329"]
     #depdates = ["20260214", "20260215", "20260216"]
     costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
     fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_FEB2days.ssim"
+    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_Fedor_withnolimits.ssim"
     airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/FEB_Report.xlsx"
+    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/Nolimits_report.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
     restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
 
@@ -69,6 +69,8 @@ if __name__ == "__main__":
             fwoc.s_vars[(d, k)] = s_var
         fwoc.obj = fwoc.model.getObjective()
     else:
+        #subfleets_to_fix = ["A7A", "A70", "33S"]
+        subfleets_to_fix = []
         fwoc = FARMWoCancellations(fcstdate,
                                    month,
                                    depdates,
@@ -83,7 +85,8 @@ if __name__ == "__main__":
                                    turnaround_times_file,
                                    restrictions_file,
                                    excel_output_writer,
-                                   debug_info_writer)
+                                   debug_info_writer,
+                                   subfleets_to_fix)
         fwoc.load_data()
         fwoc.build_model(max_num_changes=100000)
         fwoc.model.write(mps_fname)

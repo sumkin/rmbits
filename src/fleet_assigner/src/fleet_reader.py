@@ -72,6 +72,16 @@ class FleetReader:
 
         mdf = self.maint_df[self.maint_df.apply(lambda x: max(t0_min, x["from_mins"]) < min(t1_min - 1, x["to_mins"]), axis=1)]
         mres = mdf[mdf["actype"] == ac_type].drop_duplicates().shape[0]  # FIXME: drop_duplicates() should be done earlier.
+        """
+        This is shit.
+        froms, tos = [], []
+        for k, r in mdf.iterrows():
+            froms.append(r["from_mins"])
+            tos.append(r["to_mins"])
+            if max(froms) > min(tos) and mres == 2: # FIXME: this is special case. Probably should be done more generally.
+                # If maintenance blocks do not intersect then substract only one aircraft.
+                mres = 1
+        """
         wsres = 0
         for sequence in wetlease_sequences:
             ac = sequence[0][20:-1]
