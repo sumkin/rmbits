@@ -24,10 +24,20 @@ if __name__ == "__main__":
                                    turnaround_times_file)
     asfwoc.load_data()
     asfwoc.build_model(max_num_changes=100000)
-    #asfwoc.model.write(mps_fname)
     asfwoc.make_feasible()
     asfwoc.solve()
     sol = asfwoc.get_solution()
+    rev = sol["rev"]
+    costs = sol["costs"]
+    profit = rev - costs
+
+    '''
+    asfwoc.solve_with_y_fixed()
+    sol_y_fixed = asfwoc.get_solution()
+    fixed_rev = sol_y_fixed["rev"]
+    fixed_costs = sol_y_fixed["costs"]
+    fixed_profit = fixed_rev - fixed_costs
+    '''
 
     aslb = ASLinesBuilder(depdates,
                           asfwoc.asdr.legs,
@@ -40,3 +50,6 @@ if __name__ == "__main__":
                           asfwoc.asdr)
     aslb.build()
     aslb.write_csv("../output/lines.csv")
+
+    #print("Profit = {}".format(profit))
+    #print("Fixed proofit = {}".format(fixed_profit))

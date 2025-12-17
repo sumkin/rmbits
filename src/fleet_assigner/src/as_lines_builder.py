@@ -111,12 +111,6 @@ class ASLinesBuilder:
                     prev_leg_arr_mins = None
                     for leg_id in line:
                         duty_id = self.leg_id2duty_id[leg_id]
-                        print("leg_id = {}".format(leg_id))
-                        print("duty_id = {}".format(duty_id))
-                        print("self.duty_ids = {}".format(self.duty_ids))
-                        print("self.duties = {}".format(self.duties))
-                        print("len(self.duties) = {}".format(len(self.duties)))
-                        print()
                         assert duty_id in self.duty_ids
                         num_legs = len(self.duties[self.duty_ids.index(duty_id)])
                         row = copy.deepcopy(self.legs[leg_id])

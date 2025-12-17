@@ -59,10 +59,8 @@ class ASFARMWoCancellations:
         """
         Creates variables for the model.
         """
-        num_duties = self.asdr.get_num_duties()
         num_fleet_types = self.asdr.get_num_fleet_types()
         num_products = self.asdr.get_num_products()
-        num_time_indices = self.asdr.get_num_time_indices()
 
         # Assignment variables - binary matrix.
         self.y_vars = {}
@@ -82,56 +80,25 @@ class ASFARMWoCancellations:
             var_name = f"z_{j}"
             self.z_vars.append(self.model.addVar(lb=0, ub=z_ub, vtype="C", name=var_name))
 
-        # Change variables - binary matrix.
-        self.s_vars = {}
-        for d in self.asdr.duty_ids:
-            for k in range(num_fleet_types):
-                var_name = f"s_{d}_{k}"
-                self.s_vars[(d, k)] = self.model.addVar(vtype="B", name=var_name)
-
-        if self.min_extra_planes:
-            self.m_vars = {}
-            for k in range(num_fleet_types):
-                for t in range(num_time_indices):
-                    var_name = f"m_{k}_{t}"
-                    self.m_vars[(k, t)] = self.model.addVar(lb=0, vtype="I", name=var_name)
-
-            self.m_max_vars = []
-            for k in range(num_fleet_types):
-                var_name = f"m_max_{k}"
-                self.m_max_vars.append(self.model.addVar(lb=0, vtype="I", name=var_name))
-
     def set_objective(self):
         """
         Sets the objective of optimization.
         """
-        if self.min_extra_planes:
-            K = self.asdr.get_num_fleet_types()
-            obj_expr = quicksum(self.m_max_vars[k] for k in range(K))
-            self.model.setObjective(obj_expr, "minimize")
-        else:
-            num_products = self.asdr.get_num_products()
-            num_duties = self.asdr.get_num_duties()
-            num_fleet_types = self.asdr.get_num_fleet_types()
+        num_products = self.asdr.get_num_products()
+        num_fleet_types = self.asdr.get_num_fleet_types()
 
-            # Revenue part
-            #revenue_expr = quicksum(
-            #    self.asdr.get_fare(j) * self.z_vars[j]
-            #    for j in range(num_products)
-            #)
+        revenue_terms = [self.asdr.get_fare(j) * self.z_vars[j] for j in range(num_products)]
+        revenue_expr = quicksum(revenue_terms)
 
-            revenue_terms = [self.asdr.get_fare(j) * self.z_vars[j] for j in range(num_products)]
-            revenue_expr = quicksum(revenue_terms)
+        # Cost part
+        cost_expr = quicksum(
+            self.asdr.get_duty_costs(d, k) * self.y_vars[(d, k)]
+            for d in self.asdr.duty_ids
+            for k in range(num_fleet_types)
+        )
 
-            # Cost part
-            cost_expr = quicksum(
-                self.asdr.get_duty_costs(d, k) * self.y_vars[(d, k)]
-                for d in self.asdr.duty_ids
-                for k in range(num_fleet_types)
-            )
-
-            # Profit = Revenue - Costs
-            self.model.setObjective(revenue_expr - cost_expr, "maximize")
+        # Profit = Revenue - Costs
+        self.model.setObjective(revenue_expr - cost_expr, "maximize")
 
     def set_leg_capacities_constr(self):
         """
@@ -235,64 +202,6 @@ class ASFARMWoCancellations:
                     self.constr_name2id[name] = self.num_constrs
                     self.num_constrs += 1
 
-    def set_m_max_constr(self):
-        """
-        Sets constraints.
-        """
-        K = self.asdr.get_num_fleet_types()
-        T = self.asdr.get_num_time_indices()
-        for k in range(K):
-            for t in range(T):
-                name = f"m_max_constr_{k}_{t}"
-                self.model.addCons(self.m_vars[(k, t)] <= self.m_max_vars[k], name=name)
-                self.constr_name2id[name] = self.num_constrs
-                self.num_constrs += 1
-
-    def set_y_s_rel_constr(self):
-        """
-        Sets constraints which relates y and s variables.
-        """
-        for d in self.asdr.duty_ids:
-            for k in range(self.asdr.get_num_fleet_types()):
-                at = self.asdr.fleet_types[k]
-                y_bar = (1 if self.asdr.duty2at[d] == at else 0)
-
-                # s >= y_bar - y
-                name = f"s_y_rel_1_{d}_{k}"
-                self.model.addCons(self.s_vars[(d, k)] >= y_bar - self.y_vars[(d, k)], name=name)
-
-                # s >= y - y_bar
-                name = f"s_y_rel_2_{d}_{k}"
-                self.model.addCons(self.s_vars[(d, k)] >= self.y_vars[(d, k)] - y_bar, name=name)
-
-                # s <= 1 - y_bar + y
-                name = f"s_y_rel_3_{d}_{k}"
-                self.model.addCons(self.s_vars[(d, k)] <= 1 - y_bar + self.y_vars[(d, k)], name=name)
-
-                # s <= y_bar + 1 - y
-                name = f"s_y_rel_4_{d}_{k}"
-                self.model.addCons(self.s_vars[(d, k)] <= y_bar + 1 - self.y_vars[(d, k)], name=name)
-
-    def set_max_num_changes_constr(self, max_num_changes):
-        """
-        Sets maximum number of swaps constraints.
-        """
-        constr_expr = quicksum(
-            self.s_vars[(d, k)]
-            for d in self.asdr.duty_ids
-            for k in range(self.asdr.get_num_fleet_types())
-        )
-        self.model.addCons(constr_expr <= max_num_changes, name="max_num_changes")
-
-    def set_fixed_duties_constr(self):
-        """
-        Sets fixed duties constraints.
-        """
-        for d in self.asdr.fixed_duties:
-            ac = self.asdr.fixed_duties[d]
-            k = self.asdr.fleet_types.index(ac)
-            self.fix_y_var(d, k, 1, "fixed_duties")
-
     def set_constraints(self, max_num_changes=None):
         """
         Sets constraints.
@@ -305,20 +214,6 @@ class ASFARMWoCancellations:
 
         print("\t", time_now(), "Setting aircraft types constraints...")
         self.set_aircraft_types_constr()
-
-        if self.min_extra_planes:
-            print("\t", time_now(), "Setting m max constraints...")
-            self.set_m_max_constr()
-
-        print("\t", time_now(), "Setting y and s variables relation constraints...")
-        self.set_y_s_rel_constr()
-
-        if max_num_changes is not None:
-            print("\t", time_now(), "Setting maximum number of swaps constraints...")
-            self.set_max_num_changes_constr(max_num_changes)
-
-        print("\t", time_now(), "Setting fixed duites constraints...")
-        self.set_fixed_duties_constr()
 
     def fix_y_var(self, d, k, val, reason=""):
         """
@@ -355,7 +250,6 @@ class ASFARMWoCancellations:
             self.model.addCons(self.y_vars[(d, k)] == val, name=name)
             self.constr_name2id[name] = self.num_constrs
             self.num_constrs += 1
-
 
     def build_model(self, max_num_changes=None, min_extra_planes=False):
         self.max_num_changes = max_num_changes
@@ -467,12 +361,12 @@ class ASFARMWoCancellations:
                         print("\t{}".format(duty))
                     print("")
 
-
     def solve_with_y_fixed(self):
         """
         Solves with y variables fixed to baseline.
         """
-        for d in range(self.asdr.get_num_duties()):
+        self.model.freeTransform()
+        for d in self.asdr.duty_ids:
             sm = 0  # Sum of ones in values of y variables.
             for k in range(self.asdr.get_num_fleet_types()):
                 if self.asdr.duty2at[d] == self.asdr.fleet_types[k]:
@@ -483,21 +377,12 @@ class ASFARMWoCancellations:
             assert sm == 1, "sm = {}".format(sm)
 
         # Set SCIP parameters
-        self.model.setParam("presolving/maxrounds", -1)  # Aggressive presolving
-        self.model.setParam("limits/gap", 0.05)  # 5% MIP gap
-        self.model.setParam("emphasis/optimality", True)
         self.model.optimize()
 
     def solve(self):
         """
         Solves the optimization problem.
         """
-        # Set SCIP parameters (equivalents to Gurobi params)
-        #self.model.setParam("presolving/maxrounds", -1)  # Aggressive presolving
-        #self.model.setParam("limits/gap", 0.05)  # 5% MIP gap
-        #self.model.setParam("emphasis/optimality", True)
-        #self.model.setParam("heuristics/emphasis", "aggressive")
-
         self.model.optimize()
 
     def get_solution(self):
@@ -532,16 +417,6 @@ class ASFARMWoCancellations:
             self.sol_z.append(val)
             z[n] = val
 
-        # Extract m variables if applicable.
-        m = np.zeros((K, T))
-        self.sol_m = {}
-        if self.min_extra_planes:
-            for k in range(K):
-                for t in range(T):
-                    val = self.model.getSolVal(sol, self.m_vars[(k, t)])
-                    self.sol_m[(k, t)] = val
-                    m[(k, t)] = val
-
         # Calculate pax.
         pax = sum(self.sol_z)
 
@@ -559,26 +434,17 @@ class ASFARMWoCancellations:
                 k = self.sol_y[d]
                 costs += self.asdr.get_duty_costs(self.asdr.duty_ids[d], k)
 
-        # Calculate number of changes.
-        duties_changed_ac = 0
-        for d in range(D):
-            for k in range(K):
-                val = self.model.getSolVal(sol, self.s_vars[(self.asdr.duty_ids[d], k)])
-                duties_changed_ac += val
-
         res = {
             "pax": pax,
             "booked_pax": booked_pax,
             "rev": rev,
             "booked_rev": booked_rev,
             "costs": costs,
-            "duties_changed_ac": duties_changed_ac,
             "rsrc_names": self.asdr.rm_model["rsrc_names"],
             "M": M,
             "N": N,
             "y": y,
             "z": z,
-            "m": m,
             "b": self.asdr.rm_model["b"],
             "f": self.asdr.rm_model["f"],
             "Ai": self.asdr.rm_model["Ai"],
@@ -608,7 +474,7 @@ if __name__ == "__main__":
                                    turnaround_times_file)
     asfwoc.load_data()
     asfwoc.build_model(max_num_changes=100000)
-    asfwoc.model.write(mps_fname)
+    #asfwoc.model.write(mps_fname)
     asfwoc.make_feasible()
     asfwoc.solve()
     sol = asfwoc.get_solution()
