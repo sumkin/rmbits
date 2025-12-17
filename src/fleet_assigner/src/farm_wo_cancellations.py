@@ -38,7 +38,8 @@ class FARMWoCancellations:
                  turnaround_times_file,
                  restrictions_file,
                  excel_output_writer,
-                 debug_info_writer):
+                 debug_info_writer,
+                 subfleets_to_fix):
         self.fcstdate = fcstdate
         self.month = month
         self.depdates = depdates
@@ -55,6 +56,7 @@ class FARMWoCancellations:
         #self.optimization_status_handler = optimization_status_handler
         self.excel_output_writer = excel_output_writer
         self.debug_info_writer = debug_info_writer
+        self.subfleets_to_fix = subfleets_to_fix
 
         self.dr = None
         self.y_vars = None
@@ -466,6 +468,17 @@ class FARMWoCancellations:
                     k = self.dr.fleet_types.index(at)
                     self.fix_y_var(duty_id, k, 1, "330_350_rule")
 
+    def set_subfleets_to_fix_constraints(self):
+        """
+        Sets subfleets to fix constraints.
+        """
+        for subfleet in self.subfleets_to_fix:
+            for duty_id in range(len(self.dr.duties)):
+                if self.dr.duty2at[duty_id] == subfleet:
+                    k = self.dr.fleet_types.index(subfleet)
+                    self.fix_y_var(duty_id, k, 1, "subfleets_to_fix")
+                    print("Duty {} fixed for {}".format(duty_id, subfleet))
+
     def set_constraints(self, max_num_changes=None):
         """
         Sets constraints.
@@ -511,6 +524,9 @@ class FARMWoCancellations:
         print("\t", time_now(), "Setting 330_350 rule constraints...")
         self.set_330_350_rule_constraints()
 
+        print("\t", time_now(), "Setting subfleets to fix constraints...")
+        self.set_subfleets_to_fix_constraints()
+
     def fix_y_var(self, d, k, val, reason=""):
         """
         Fixes y variable, i.e. sets it to zero or one.
@@ -542,8 +558,13 @@ class FARMWoCancellations:
                     self.num_constrs -= 1
                 else:
                     set = False
+                    print("d = {}".format(d))
+                    print("k = {}".format(k))
+                    duty = self.dr.duties[d]
+                    print([self.dr.legs[l] for l in duty])
                     print("old_val, old_reason = {}, {}".format(old_val, old_reason))
                     print("val, reason = {}, {}".format(val, reason))
+
                     assert False
             else:
                 # Same value. Only reason could be different.
@@ -615,6 +636,7 @@ class FARMWoCancellations:
                 lhs += c * val
             ac_types = [self.dr.fleet_types[k] for k in ks]
             duties = [[self.dr.legs[l] for l in self.dr.duties[d]] for d in ds]
+            duties_ac_types = [self.dr.duty2at[d] for d in ds]
             assert len(duties) == len(ds)
             assert len(self.dr.duties) == len(self.dr.duties2startend), "{}, {}".format(len(self.dr.duties), len(self.dr.duties2startend))
             if sense == "<":
@@ -624,12 +646,18 @@ class FARMWoCancellations:
                     print("len(self.dr.duties) = {}".format(len(self.dr.duties)))
                     print("len(self.dr.duties2startend) = {}".format(len(self.dr.duties2startend)))
                     print("ks = {}".format(ks))
+                    print(self.dr.ts[1810], self.dr.ts[1811], self.dr.ts[1812])
                     print("ac_types = {}".format(ac_types))
+                    print("duties_ac_types = {}".format(duties_ac_types))
+                    print("fleet_types = {}".format(self.dr.fleet_types))
                     print("duties")
                     for i, duty in enumerate(duties):
                         duty = [[l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[7]] for l in duty]
-                        print("\t{}, {}".format(duty, self.dr.duties2startend[ds[i]]))
-                    print(self.dr.maint_df[self.dr.maint_df["actype"] == "A7A"].head(10))
+                        duty_start_mins, duty_end_mins = self.dr.duties2startend[ds[i]]
+                        duty_start_dt = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=duty_start_mins)
+                        duty_end_dt = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=duty_end_mins)
+                        print("\t{}, {} {}".format(duty, duty_start_dt.strftime("%Y-%m-%d %H:%M:%S"), duty_end_dt.strftime("%Y-%m-%d %H:%M:%S")))
+                    print(self.dr.maint_df[self.dr.maint_df["actype"] == ac_types[0]].head(20))
                     print("")
                     assert False
             elif sense == "=":
@@ -837,6 +865,7 @@ if __name__ == "__main__":
             fwoc.s_vars[(d, k)] = s_var
         fwoc.obj = fwoc.model.getObjective()
     else:
+        subfleets_to_fix = ["A7A", "A70", "33S"]
         fwoc = FARMWoCancellations(fcstdate,
                                    month,
                                    depdates,
@@ -851,7 +880,8 @@ if __name__ == "__main__":
                                    turnaround_times_file,
                                    restrictions_file,
                                    excel_output_writer,
-                                   debug_info_writer)
+                                   debug_info_writer,
+                                   subfleets_to_fix)
         fwoc.load_data()
         fwoc.build_model(max_num_changes=100000)
         fwoc.model.write(mps_fname)
