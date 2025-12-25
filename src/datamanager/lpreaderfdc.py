@@ -182,11 +182,11 @@ class LPReaderFDC:
             fltnum, cabin = row["FLTNUM"], row["CABIN"]
             self.fltnumdepdt2decompdt[str(fltnum) + str(row["DEPDT"])] = str(row["DECOMPOSITION_DT"])
             if str(row["DECOMPOSITION_DT"]) == self.decompdate and actcap > 0.0:
-                k = str(int(fltnum)) + cabin + str(row["DEPDT"])
+                k = str(int(fltnum)) + cabin + str(row["DEPDT_UTC"])
                 self.cap.append(actcap)
                 self.fcap.append(int(row["CAPO"]))
                 self.rownumd[k] = num
-                lbl = row["CC"] + row["ORGN"] + row["DSTN"] + str(fltnum).zfill(4) + cabin + str(row["DEPDT"])
+                lbl = row["CC"] + row["ORGN"] + row["DSTN"] + str(fltnum).zfill(4) + cabin + str(row["DEPDT_UTC"])
                 self.rownum2cmpt.append(lbl)
                 num += 1
         self.cap = np.array(self.cap)
@@ -366,10 +366,13 @@ class LPReaderFDC:
         res["v_flowsh2idx"] = self.v_flowsh2idx
         res["v_idx2flowsh"] = self.v_idx2flowsh
         res["rownumd"] = self.rownumd
-        return res 
+        return res
 
 if __name__ == "__main__":
-    lpreaderfdc = LPReaderFDC("20240604", "20240614")
+    lpreaderfdc = LPReaderFDC("20251006", "20260316")
     print("LPReaderFDC initialized")
     lpreaderfdc.read()
+    lpreaderfdc.get_pkl_object()
+
+
 
