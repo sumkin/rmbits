@@ -31,15 +31,16 @@ if __name__ == "__main__":
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_Fedor_withnolimits.ssim"
+    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_MAR_BASE.ssim"
     airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/Nolimits_report.xlsx"
+    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/Report_MAR_BASE.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
     restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
 
     dill_fwoc_fname = "../cache/fwoc_{}_{}.dill".format(month, fcstdate)
     mps_fname = "../cache/model_{}_{}.mps".format(month, fcstdate)
-    if os.path.exists(dill_fwoc_fname) and os.path.exists(mps_fname):
+    dill_sol_fname = "../cache/sol_{}_{}.dill".format(month, fcstdate)
+    if os.path.exists(dill_fwoc_fname) and os.path.exists(mps_fname) and os.path.exists(dill_sol_fname):
         with open(dill_fwoc_fname, "rb") as f:
             fwoc = dill.load(f)
         fwoc.model = read(mps_fname)
@@ -68,9 +69,14 @@ if __name__ == "__main__":
             d, k = int(d.lstrip("s[")), int(k.rstrip("]"))
             fwoc.s_vars[(d, k)] = s_var
         fwoc.obj = fwoc.model.getObjective()
+
+        with open(dill_sol_fname, "rb") as f:
+            s = dill.load(f)
+            sol = s["sol"]
+            sol_y_fixed = s["sol_y_fixed"]
     else:
-        #subfleets_to_fix = ["A7A", "A70", "33S"]
-        subfleets_to_fix = []
+        subfleets_to_fix = ["A7A", "A70", "33S"]
+        #subfleets_to_fix = []
         fwoc = FARMWoCancellations(fcstdate,
                                    month,
                                    depdates,
@@ -88,7 +94,8 @@ if __name__ == "__main__":
                                    debug_info_writer,
                                    subfleets_to_fix)
         fwoc.load_data()
-        fwoc.build_model(max_num_changes=100000)
+        #fwoc.build_model(max_num_changes=1000)
+        fwoc.build_model()
         fwoc.model.write(mps_fname)
 
         model = fwoc.model
@@ -111,18 +118,25 @@ if __name__ == "__main__":
         fwoc.s_vars = s_vars
         fwoc.obj = obj
 
-    fwoc.make_feasible()
+        fwoc.make_feasible()
 
-    # Solve.
-    fwoc.solve()
-    sol = fwoc.get_solution()
+        # Solve.
+        fwoc.solve()
+        sol = fwoc.get_solution()
 
-    # Solve with current assignment fixed.
-    fwoc.solve_with_y_fixed()
-    sol_y_fixed = fwoc.get_solution()
+        # Solve with current assignment fixed.
+        fwoc.solve_with_y_fixed()
+        sol_y_fixed = fwoc.get_solution()
 
-    debug_info_writer.write_fa_diagram(month, fwoc.dr, sol["y"], sol["m"])
-    fwoc.write_output_excel(sol_y_fixed, sol, fwoc.dr)
+        debug_info_writer.write_fa_diagram(month, fwoc.dr, sol["y"], sol["m"])
+
+        s = {}
+        s["sol"] = sol
+        s["sol_y_fixed"] = sol_y_fixed
+        with open(dill_sol_fname, "wb") as f:
+            dill.dump(s, f)
+
+    fwoc.write_output_excel(s["sol_y_fixed"], s["sol"], fwoc.dr)
 
     lb = LinesBuilder(depdates,
                       fwoc.dr.legs,
