@@ -182,11 +182,11 @@ class LPReaderFDC:
             fltnum, cabin = row["FLTNUM"], row["CABIN"]
             self.fltnumdepdt2decompdt[str(fltnum) + str(row["DEPDT"])] = str(row["DECOMPOSITION_DT"])
             if str(row["DECOMPOSITION_DT"]) == self.decompdate and actcap > 0.0:
-                k = str(int(fltnum)) + cabin + str(row["DEPDT_UTC"])
+                k = str(int(fltnum)) + cabin + str(row["DEPDT"])
                 self.cap.append(actcap)
                 self.fcap.append(int(row["CAPO"]))
                 self.rownumd[k] = num
-                lbl = row["CC"] + row["ORGN"] + row["DSTN"] + str(fltnum).zfill(4) + cabin + str(row["DEPDT_UTC"])
+                lbl = row["CC"] + row["ORGN"] + row["DSTN"] + str(fltnum).zfill(4) + cabin + str(row["DEPDT"])
                 self.rownum2cmpt.append(lbl)
                 num += 1
         self.cap = np.array(self.cap)
