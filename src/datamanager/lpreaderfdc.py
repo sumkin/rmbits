@@ -166,7 +166,9 @@ class LPReaderFDC:
         """
         num = 0
         self.rownumd = {}
+        self.rownumd_utc = {}
         self.rownum2cmpt = []
+        self.rownum2cmpt_utc = []
         self.fltnumdepdt2decompdt = {}
         self.cap = []
         self.fcap = []  # Full capacity.
@@ -183,11 +185,15 @@ class LPReaderFDC:
             self.fltnumdepdt2decompdt[str(fltnum) + str(row["DEPDT"])] = str(row["DECOMPOSITION_DT"])
             if str(row["DECOMPOSITION_DT"]) == self.decompdate and actcap > 0.0:
                 k = str(int(fltnum)) + cabin + str(row["DEPDT"])
+                k_utc = str(int(fltnum)) + cabin + str(row["DEPDT_UTC"])
                 self.cap.append(actcap)
                 self.fcap.append(int(row["CAPO"]))
                 self.rownumd[k] = num
+                self.rownumd_utc[k_utc] = num
                 lbl = row["CC"] + row["ORGN"] + row["DSTN"] + str(fltnum).zfill(4) + cabin + str(row["DEPDT"])
+                lbl_utc = row["CC"] + row["ORGN"] + row["DSTN"] + str(fltnum).zfill(4) + cabin + str(row["DEPDT_UTC"])
                 self.rownum2cmpt.append(lbl)
+                self.rownum2cmpt_utc.append(lbl_utc)
                 num += 1
         self.cap = np.array(self.cap)
         self.fcap = np.array(self.fcap)
@@ -337,7 +343,7 @@ class LPReaderFDC:
         return self.v_idx2flowsh
 
     def get_rsrc_names(self):
-        return self.rownum2cmpt
+        return self.rownum2cmpt_utc
 
     def get_arrdt(self, cc, orgn, dstn, fltnum, depdt):
         return self.invdf[(self.invdf["CC"] == cc) &
@@ -369,7 +375,7 @@ class LPReaderFDC:
         return res
 
 if __name__ == "__main__":
-    lpreaderfdc = LPReaderFDC("20251006", "20260316")
+    lpreaderfdc = LPReaderFDC("20251006", "20260315")
     print("LPReaderFDC initialized")
     lpreaderfdc.read()
     lpreaderfdc.get_pkl_object()
