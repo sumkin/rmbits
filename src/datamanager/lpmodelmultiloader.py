@@ -47,7 +47,6 @@ class LPModelMultiLoader:
         res_prdt_names = []
         res_rsrc_names = []
         res_initrow = []
-        res_fcap = []
         res_v_flowsh2idx = {}
         res_v_idx2flowsh = []
         res_rownumd = {}
