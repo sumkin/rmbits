@@ -123,6 +123,7 @@ if __name__ == "__main__":
         # Solve.
         fwoc.solve()
         sol = fwoc.get_solution()
+        sol_y = fwoc.sol_y
 
         # Solve with current assignment fixed.
         fwoc.solve_with_y_fixed()

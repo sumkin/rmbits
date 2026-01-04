@@ -783,6 +783,7 @@ class FARMWoCancellations:
             "booked_rev": booked_rev,
             "costs": costs,
             "duties_changed_ac": duties_changed_ac,
+            "prdt_names": self.dr.rm_model["prdt_names"],
             "rsrc_names": self.dr.rm_model["rsrc_names"],
             "M": M,
             "N": N,
