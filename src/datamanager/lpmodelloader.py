@@ -45,14 +45,24 @@ class LPModelLoader:
         return model
 
 if __name__ == "__main__":
-    date = "20200323"
-    fcstdate, depdate = date, date
+    fcstdate = "20251215"
+    depdate = "20260316"
     loader = LPModelLoader(fcstdate, depdate)
     model = loader.get()
-    print("model.keys() = ", model.keys())
-    print("model['d'] = ", model['d'])
-    print("sum(model['d']) = ", sum(model['d']))
-    print("Done")
-
-
+    print("model.keys() = {}".format(model.keys()))
+    prdt_names = model["prdt_names"]
+    bs = model["b"]
+    ds = model["d"]
+    sum_b = 0
+    sum_d = 0
+    for i in range(len(prdt_names)):
+        prdt_name = prdt_names[i]
+        b = bs[i]
+        d = ds[i]
+        if "LAXHEL20260315" in prdt_name:
+            #print("{} {}".format(prdt_name, b))
+            sum_b += b
+            sum_d += d
+    print("sum_b = {}".format(sum_b))
+    print("sum_d = {}".format(sum_d))
 

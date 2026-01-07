@@ -93,18 +93,22 @@ class LPReaderFDC:
             cur = ctx.cursor()
             cur.execute("SELECT GEO_OD_TS_KEY, POC, BOOKING_CLASS, SUM(OD_PAX_COUNT), AVG(YIELD)\
                          FROM RMP_SANDBOX.REPORT.NRM_BKG_CURVE\
-                         WHERE BASE_OD_DEPT_DATE = '{}-{}-{}'\
+                         WHERE (\
+                            BASE_OD_DEPT_DATE = '{}-{}-{}' OR\
+                            BASE_OD_DEPT_DATE = '{}-{}-{}' OR\
+                            BASE_OD_DEPT_DATE = '{}-{}-{}'\
+                         )\
                          GROUP BY GEO_OD_TS_KEY, BASE_OD_DEPT_DATE, POC, BOOKING_CLASS".format(
-                             self.depdate[:4],
-                             self.depdate[4:6],
-                             self.depdate[6:8]
+                             self.prev_depdate[:4], self.prev_depdate[4:6], self.prev_depdate[6:8],
+                             self.depdate[:4], self.depdate[4:6], self.depdate[6:8],
+                             self.next_depdate[:4], self.next_depdate[4:6], self.next_depdate[6:8]
                          ))
             data = []
             for row in cur.fetchall():
                 data.append([row[0], row[1], row[2], row[3], row[4]])
             bofdf = pd.DataFrame(data, columns=["GEO_OD_TS_KEY", "ISO_COUNTRY", "SELL_CLS", "REFERENCE", "YIELD"])
         assert bofdf is not None
- 
+
         # Merge class order.
         clsdf = pd.read_csv("s3://ay-emr-job/static/clsorder.csv")
         self.dcdf = self.dcdf.merge(clsdf, left_on=["BC"], right_on=["CLS"], how="left")
@@ -222,6 +226,9 @@ class LPReaderFDC:
             if n % 10000 == 0:
                 print("{}/{} ({}%)".format(n, totnum, int((100 * n)/totnum)))
 
+            flowsh = row["flowsh"]
+            initrow = row["initrow"]
+
             # Get decomposition dates.
             skip = False
             base_seg_dep_dates = str(row["BASE_SEG_DEP_DATE"]).split("-")
@@ -243,6 +250,7 @@ class LPReaderFDC:
                     skip = True
                     break
 
+
             if self.mode == "remainng":
                 d = row["ARD"]
             else:
@@ -258,9 +266,6 @@ class LPReaderFDC:
                 d = dmd_infl(row, d)  
 
             d = max(0.0, d)
-
-            flowsh = row["flowsh"]
-            initrow = row["initrow"]
 
             if not skip:
                 # Check that all flights are present.
@@ -375,10 +380,21 @@ class LPReaderFDC:
         return res
 
 if __name__ == "__main__":
-    lpreaderfdc = LPReaderFDC("20251006", "20260315")
+    lpreaderfdc = LPReaderFDC("20251215", "20260316")
     print("LPReaderFDC initialized")
     lpreaderfdc.read()
-    lpreaderfdc.get_pkl_object()
+    po = lpreaderfdc.get_pkl_object()
+
+    sum_b = 0
+    prdt_names = po["prdt_names"]
+    bs = po["b"]
+    for i in range(len(prdt_names)):
+        prdt_name = prdt_names[i]
+        b = bs[i]
+        if "LAXHEL20260315" in prdt_name:
+            sum_b += b
+            print(prdt_name, b)
+    print("sum_b = {}".format(sum_b))
 
 
 
