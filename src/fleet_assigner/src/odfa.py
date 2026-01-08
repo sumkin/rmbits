@@ -11,7 +11,7 @@ from lines_builder import LinesBuilder
 from CsvToSsimConverter import Converter
 
 if __name__ == "__main__":
-    fcstdate = "20251215"
+    fcstdate = "20260107"
     month = "march2026"
 
     excel_fname = "fa_{}_{}.xlsx".format(fcstdate, month)
@@ -31,9 +31,9 @@ if __name__ == "__main__":
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_MAR_BASE.ssim"
+    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIMMAR08JANnolimits.ssim"
     airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/Report_MAR_BASE.xlsx"
+    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/report_08JAN_nolimits.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
     restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
 
