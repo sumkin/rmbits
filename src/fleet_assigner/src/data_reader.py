@@ -386,11 +386,11 @@ class DataReader:
             elif ac_type == "32B":
                 pass
             elif ac_type == "32G":
-                ac_type = "320"
+                ac_type = "321"
             elif ac_type == "32I":
-                ac_type = "320"
+                ac_type = "321"
             elif ac_type == "32L":
-                ac_type = "320"
+                ac_type = "321"
             elif ac_type == "33B":
                 ac_type = "333"
             elif ac_type == "33S":

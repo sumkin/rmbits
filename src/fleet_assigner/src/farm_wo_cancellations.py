@@ -553,9 +553,12 @@ class FARMWoCancellations:
                     # Remove old constraint.
                     self.model.update()  # Update before querying.
                     c = self.model.getConstrByName(name)
-                    self.model.remove(c)
-                    del self.constr_name2id[name]
-                    self.num_constrs -= 1
+                    try:
+                        self.model.remove(c)
+                        del self.constr_name2id[name]
+                        self.num_constrs -= 1
+                    except:
+                        print("Try to remove constraint, which is missing, name = {}".format(name))
                 else:
                     set = False
                     print("d = {}".format(d))
