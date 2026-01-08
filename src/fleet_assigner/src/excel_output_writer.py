@@ -92,7 +92,7 @@ class ExcelOutputWriter:
                 after_rev_vals.append(0.0)
                 booked_rev_vals.append(0.0)
             else:
-                rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt)
+                rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt_utc)
 
                 before_paxes = round(sum([paxes_fixed[i] for i in range(len(paxes_fixed)) if i in rsrc_name_idxs]))
                 after_paxes = round(sum([paxes[i] for i in range(len(paxes)) if i in rsrc_name_idxs]))

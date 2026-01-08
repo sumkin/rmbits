@@ -46,7 +46,7 @@ class LPModelLoader:
 
 if __name__ == "__main__":
     fcstdate = "20251215"
-    depdate = "20260316"
+    depdate = "20260320"
     loader = LPModelLoader(fcstdate, depdate)
     model = loader.get()
     print("model.keys() = {}".format(model.keys()))
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         prdt_name = prdt_names[i]
         b = bs[i]
         d = ds[i]
-        if "LAXHEL20260315" in prdt_name:
+        if "LAXHEL20260319" in prdt_name:
             #print("{} {}".format(prdt_name, b))
             sum_b += b
             sum_d += d
