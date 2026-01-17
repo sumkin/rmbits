@@ -126,6 +126,27 @@ class DataReader:
                                    "DEPDT", "DEPTM", "ARRDT", "ARRTM",
                                    "DEPDT_UTC", "DEPTM_UTC", "ARRDT_UTC",
                                    "ARRTM_UTC", "AIRCRAFT_TYPE"]]
+        self.inv_df = self.inv_df[
+            (
+                self.inv_df["FLTNUM"] <= 1999
+            ) |
+            (
+                (self.inv_df["FLTNUM"] >= 7000) &
+                (self.inv_df["FLTNUM"] <= 7999)
+            ) |
+            (  # C flights
+                (self.inv_df["FLTNUM"] >= 2001) &
+                (self.inv_df["FLTNUM"] <= 2500)
+            ) |
+            (  # P flights.
+                (self.inv_df["FLTNUM"] >= 8881) &
+                (self.inv_df["FLTNUM"] <= 8996)
+            ) |
+            (  # K flights.
+                (self.inv_df["FLTNUM"] == 9971) |
+                (self.inv_df["FLTNUM"] == 9951)
+            )
+        ]
         self.inv_df = self.inv_df.drop_duplicates()
 
     def load_costs_df(self):
@@ -212,28 +233,7 @@ class DataReader:
         # Go over inventory and take all AY flights departing on given departure dates.
         for depdate in self.depdates + [self.next_depdate]:
             inv_df = self.inv_df[(self.inv_df["CC"] == "AY") &
-                                 (self.inv_df["DEPDT"] == depdate) &
-                                 (
-                                    (
-                                        self.inv_df["FLTNUM"] <= 1999
-                                    ) |
-                                    (
-                                        (self.inv_df["FLTNUM"] >= 7000) &
-                                        (self.inv_df["FLTNUM"] <= 7999)
-                                    ) |
-                                    (   # C flights
-                                        (self.inv_df["FLTNUM"] >= 2001) &
-                                        (self.inv_df["FLTNUM"] <= 2500)
-                                    ) |
-                                    (   # P flights.
-                                        (self.inv_df["FLTNUM"] >= 8881) &
-                                        (self.inv_df["FLTNUM"] <= 8996)
-                                    ) |
-                                    (   # K flights.
-                                        (self.inv_df["FLTNUM"] == 9971) |
-                                        (self.inv_df["FLTNUM"] == 9951)
-                                    )
-                                 )]
+                                 (self.inv_df["DEPDT"] == depdate)]
             for _, r in inv_df.iterrows():
                 orgn = r["ORGN"]
                 dstn = r["DSTN"]
