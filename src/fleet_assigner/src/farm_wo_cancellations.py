@@ -384,18 +384,26 @@ class FARMWoCancellations:
                 constr = self.s_vars[(d, k)] - y_bar - self.y_vars[(d, k)]
                 name = "s_y_rel_1_{}_{}".format(d, k)
                 self.model.addConstr(constr <= 0, name=name)
+                self.constr_name2id[name] = self.num_constrs
+                self.num_constrs += 1
 
                 constr = self.s_vars[(d, k)] - y_bar + self.y_vars[(d, k)]
                 name = "s_y_rel_2_{}_{}".format(d, k)
                 self.model.addConstr(constr >= 0, name=name)
+                self.constr_name2id[name] = self.num_constrs
+                self.num_constrs += 1
                 
                 constr = self.s_vars[(d, k)] - self.y_vars[(d, k)] + y_bar 
                 name = "s_y_rel_3_{}_{}".format(d, k)
                 self.model.addConstr(constr >= 0, name=name)
+                self.constr_name2id[name] = self.num_constrs
+                self.num_constrs += 1
 
                 constr = self.s_vars[(d, k)] - 2 + y_bar + self.y_vars[(d, k)]
                 name = "s_y_rel_4_{}_{}".format(d, k)
                 self.model.addConstr(constr <= 0, name=name)
+                self.constr_name2id[name] = self.num_constrs
+                self.num_constrs += 1
 
     def set_max_num_changes_constr(self, max_num_changes):
         """
@@ -406,6 +414,8 @@ class FARMWoCancellations:
             for k in range(self.dr.get_num_fleet_types()):
                 constr += self.s_vars[(d, k)]
         self.model.addConstr(constr <= max_num_changes, name="max_num_changes")
+        self.constr_name2id[name] = self.num_constrs
+        self.num_constrs += 1
 
     def set_fixed_duties_constr(self):
         """
