@@ -20,26 +20,60 @@ class ExcelOutputWriter:
                 ["Created", self.created_dt]
             ]
             df = pd.DataFrame(data)
-            df.to_excel(writer, header=False, index=False, sheet_name="info")
+            df.to_excel(writer, header=False, index=False, sheet_name="Summary")
 
-    def write_info(self, sol_y_fixed, sol):
+    def write_summary(self, sol_y_fixed, sol):
+        total_pax_before = float(sol_y_fixed["pax"]) + float(sol_y_fixed["booked_pax"])
+        total_pax_after = float(sol["pax"]) + float(sol["booked_pax"])
+        total_pax_diff = total_pax_after - total_pax_before
+
+        total_revenue_before = float(sol_y_fixed["rev"]) + float(sol_y_fixed["booked_rev"])
+        total_revenue_after = float(sol["rev"]) + float(sol["booked_rev"])
+        total_revenue_diff = total_revenue_after - total_revenue_before
+
+        costs_before = float(sol_y_fixed["costs"])
+        costs_after = float(sol["costs"])
+        costs_diff = costs_after - costs_before
+
+        profit_before = total_revenue_before - costs_before
+        profit_after = total_revenue_after - costs_after
+        profit_diff = profit_after - profit_before
+
+        duties_changed_before = ""
+        duties_changed_after = sol["duties_changed_ac"]
+        duties_changed_diff = ""
+
+        total_pax_before = format(int(total_pax_before), ',d').replace(',', ' ')
+        total_pax_after = format(int(total_pax_after), ',d').replace(',', ' ')
+        total_pax_diff = format(int(total_pax_diff), ',d').replace(',', ' ')
+
+        total_revenue_before = format(int(total_revenue_before), ',d').replace(',', ' ')
+        total_revenue_after = format(int(total_revenue_after), ',d').replace(',', ' ')
+        total_revenue_diff = format(int(total_revenue_diff), ',d').replace(',', ' ')
+
+        costs_before = format(int(costs_before), ',d').replace(',', ' ')
+        costs_after = format(int(costs_after), ',d').replace(',', ' ')
+        costs_diff = format(int(costs_diff), ',d').replace(',', ' ')
+
+        profit_before = format(int(profit_before), ',d').replace(',', ' ')
+        profit_after = format(int(profit_after), ',d').replace(',', ' ')
+        profit_diff = format(int(profit_diff), ',d').replace(',', ' ')
+
         data = [
             ["Created", self.created_dt, "", ""],
             ["", "", "", ""],
             ["", "Before optimization", "After optimization", "Difference"],
-            ["Pax", sol_y_fixed["pax"], sol["pax"], sol["pax"] - sol_y_fixed["pax"]],
-            ["Booked pax", sol_y_fixed["booked_pax"], sol["booked_pax"], sol["booked_pax"] - sol_y_fixed["booked_pax"]],
-            ["Revenue", sol_y_fixed["rev"], sol["rev"], sol["rev"] - sol_y_fixed["rev"]],
-            ["Booked revenue", sol_y_fixed["booked_rev"], sol["booked_rev"], sol["booked_rev"] - sol_y_fixed["booked_rev"]],
-            ["Costs", sol_y_fixed["costs"], sol["costs"], sol["costs"] - sol_y_fixed["costs"]],
-            ["Profit", sol_y_fixed["rev"] + sol_y_fixed["booked_rev"] - sol_y_fixed["costs"], sol["rev"] + sol["booked_rev"] - sol["costs"], sol["rev"] + sol["booked_rev"] - sol["costs"] - sol_y_fixed["rev"] - sol_y_fixed["booked_rev"] + sol_y_fixed["costs"]],
-            ["Duties changed aircraft", sol_y_fixed["duties_changed_ac"], sol["duties_changed_ac"], sol["duties_changed_ac"] - sol_y_fixed["duties_changed_ac"]]
+            ["Total pax", total_pax_before, total_pax_after, total_pax_diff],
+            ["Total revenue", total_revenue_before, total_revenue_after, total_revenue_diff],
+            ["Costs", costs_before, costs_after, costs_diff],
+            ["Profit", profit_before, profit_after, profit_diff],
+            ["Duties changed aircraft", duties_changed_before, duties_changed_after, duties_changed_diff]
         ]
         df = pd.DataFrame(data)
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
-            df.to_excel(writer, header=False, index=False, sheet_name="info")
+            df.to_excel(writer, header=False, index=False, sheet_name="Summary")
 
-    def write_inv_df(self, inv_df, sol_y_fixed, sol, dr):
+    def write_info_per_leg_df(self, inv_df, sol_y_fixed, sol, dr):
         leg_id_vals = []
         duty_id_vals = []
         before_paxes_vals = []
@@ -82,7 +116,7 @@ class ExcelOutputWriter:
 
             leg_id = dr.get_leg_id(orgn, dstn, fltnum, depdt_utc)
             if leg_id is None:
-                leg_id_vals.append(None)
+                leg_id_vals.append("")
 
                 before_paxes_vals.append(0.0)
                 after_paxes_vals.append(0.0)
@@ -102,7 +136,7 @@ class ExcelOutputWriter:
                 after_rev = sum([rev[i] for i in range(len(rev)) if i in rsrc_name_idxs])
                 booked_rev = sum([b_rev[i] for i in range(len(b_rev)) if i in rsrc_name_idxs])
 
-                leg_id_vals.append(leg_id)
+                leg_id_vals.append(str(leg_id))
 
                 before_paxes_vals.append(before_paxes)
                 after_paxes_vals.append(after_paxes)
@@ -113,7 +147,10 @@ class ExcelOutputWriter:
                 booked_rev_vals.append(booked_rev)
 
             duty_id = dr.get_duty_id_by_leg_id(leg_id)
-            duty_id_vals.append(duty_id)
+            if duty_id is None:
+                duty_id_vals.append("")
+            else:
+                duty_id_vals.append(str(duty_id))
 
             if duty_id is not None:
                 before_at = dr.duty2at[duty_id]
@@ -163,7 +200,12 @@ class ExcelOutputWriter:
         inv_df["Total profit before"] = [a + b - c for a, b, c in zip(booked_rev_vals, before_rev_vals, before_costs)]
         inv_df["Total profit after"] = [a + b - c for a, b, c in zip(booked_rev_vals, after_rev_vals, after_costs)]
 
+        inv_df = inv_df[
+            (inv_df["LEG_ID"].astype(str).str.strip() != "") &
+            (inv_df["DUTY_ID"].astype(str).str.strip() != "")
+        ]
         inv_df = inv_df.drop("AIRCRAFT_TYPE", axis=1)
+        """
         inv_df = inv_df[["CC", "FLTNUM", "ORGN", "DSTN", "DEPDT", "DEPTM", "ARRTM", "LEG_ID", "DUTY_ID",
             "A/C before", "A/C after", "A/C change", "Costs before", "Costs after",
             "Booked pax", "Pax before", "Pax after",
@@ -171,10 +213,41 @@ class ExcelOutputWriter:
             "Booked profit before", "Booked profit after", "Profit before", "Profit after",
             "Total pax before", "Total pax after", "Total revenue before", "Total revenue after",
             "Total profit before", "Total profit after"]]
+        """
+        inv_df["Forecast difference"] = inv_df["Total pax after"] - inv_df["Total pax before"]
+        inv_df["Costs difference"] = inv_df["Costs after"] - inv_df["Costs before"]
+        inv_df["Profit difference"] = inv_df["Profit after"] - inv_df["Profit before"]
+        inv_df = inv_df[["CC","FLTNUM","ORGN","DSTN","DEPDT","DEPTM","ARRTM",
+                         "A/C change", "A/C before", "A/C after",
+                         "Booked pax", "Total pax before", "Total pax after", "Forecast difference",
+                         "Total revenue before", "Total revenue after",
+                         "Costs before", "Costs after", "Costs difference",
+                         "Total profit before", "Total profit after", "Profit difference"
+                         ]]
+        inv_df["DEPDT"] = pd.to_datetime(inv_df["DEPDT"], format="%Y%m%d")
+        inv_df["DEPDT"] = inv_df["DEPDT"].dt.strftime("%Y-%m-%d")
+
+        inv_df["DEPTM"] = inv_df["DEPTM"].astype(str).str.zfill(4)
+        inv_df["DEPTM"] = inv_df["DEPTM"].str[:2] + ":" + inv_df["DEPTM"].str[2:4]
+
+        inv_df["ARRTM"] = inv_df["ARRTM"].astype(str).str.zfill(4)
+        inv_df["ARRTM"] = inv_df["ARRTM"].str[:2] + ":" + inv_df["ARRTM"].str[2:4]
+
+        cols_to_format = [
+            "Booked pax",
+            "Total pax before", "Total pax after", "Forecast difference",
+            "Total revenue before", "Total revenue after",
+            "Costs before", "Costs after", "Costs difference",
+            "Total profit before", "Total profit after", "Profit difference"
+        ]
+        for col in cols_to_format:
+            inv_df[col] = inv_df[col].fillna(0).astype(int)
+            inv_df[col] = inv_df[col].apply(lambda x: f"{x:,}".replace(",", " "))
+
         inv_df = inv_df.drop_duplicates()
 
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
-            inv_df.to_excel(writer, index=False, sheet_name="inv_df")
+            inv_df.to_excel(writer, index=False, sheet_name="Info per leg")
 
     def write_costs_df(self, costs_df):
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
