@@ -198,7 +198,6 @@ class DataReader:
         config_df = pd.read_csv(self.cap_file)
         for ac_type in self.fleet_types:
             self.capacities[ac_type] = {}
-
             cabins = self.cabin_df.loc[self.cabin_df["A/C"] == ac_type]["CABIN"].unique()
             for cabin in cabins:
                 self.capacities[ac_type][cabin] = config_df.loc[config_df["Subfleet"] == ac_type][cabin].iloc[0]
@@ -410,6 +409,8 @@ class DataReader:
             elif ac_type == "DH4":
                 ac_type = None
             elif ac_type == "E90":
+                pass
+            elif ac_type == "31E":
                 pass
             else:
                 ac_type = None

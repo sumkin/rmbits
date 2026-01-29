@@ -573,6 +573,7 @@ class FARMWoCancellations:
                     set = False
                     print("d = {}".format(d))
                     print("k = {}".format(k))
+                    print("ac = {}".format(self.dr.fleet_types[k]))
                     duty = self.dr.duties[d]
                     print([self.dr.legs[l] for l in duty])
                     print("old_val, old_reason = {}, {}".format(old_val, old_reason))
