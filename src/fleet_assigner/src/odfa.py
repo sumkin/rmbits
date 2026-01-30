@@ -73,6 +73,7 @@ if __name__ == "__main__":
         with open(dill_sol_fname, "rb") as f:
             s = dill.load(f)
             sol = s["sol"]
+            sol_y = s["sol_y"]
             sol_y_fixed = s["sol_y_fixed"]
     else:
         subfleets_to_fix = ["A7A", "A70", "31E", "33S"]
@@ -133,6 +134,7 @@ if __name__ == "__main__":
 
         s = {}
         s["sol"] = sol
+        s["sol_y"] = fwoc.sol_y
         s["sol_y_fixed"] = sol_y_fixed
         with open(dill_sol_fname, "wb") as f:
             dill.dump(s, f)
@@ -142,7 +144,7 @@ if __name__ == "__main__":
     lb = LinesBuilder(depdates,
                       fwoc.dr.legs,
                       fwoc.dr.duties,
-                      fwoc.sol_y,
+                      s["sol_y"],
                       fwoc.dr.fleet_types,
                       fwoc.dr.fleet_type2fleet_ids,
                       fwoc.dr.leg2duty,

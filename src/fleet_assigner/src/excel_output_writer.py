@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime
 from scipy.sparse import csc_matrix
 
+pd.set_option('display.max_columns', None)
+
 class ExcelOutputWriter:
 
     def __init__(self, fname):
@@ -103,12 +105,10 @@ class ExcelOutputWriter:
         rev = A.dot(sol["f"] * sol["z"])
         b_rev = A.dot(sol["f"] * sol["b"])
 
-
         for k, r in inv_df.iterrows():
             orgn = r["ORGN"]
             dstn = r["DSTN"]
             fltnum = r["FLTNUM"]
-            depdt = r["DEPDT"]
             depdt_utc = r["DEPDT_UTC"]
 
             before_at = None
@@ -128,13 +128,13 @@ class ExcelOutputWriter:
             else:
                 rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt_utc)
 
-                before_paxes = round(sum([paxes_fixed[i] for i in range(len(paxes_fixed)) if i in rsrc_name_idxs]))
-                after_paxes = round(sum([paxes[i] for i in range(len(paxes)) if i in rsrc_name_idxs]))
-                booked_paxes = round(sum([b_paxes[i] for i in range(len(b_paxes)) if i in rsrc_name_idxs]))
+                before_paxes = round(sum([paxes_fixed[i] for i in rsrc_name_idxs if i < len(paxes_fixed)]))
+                after_paxes = round(sum([paxes[i] for i in rsrc_name_idxs if i < len(paxes)]))
+                booked_paxes = round(sum([b_paxes[i] for i in rsrc_name_idxs if i < len(b_paxes)]))
 
-                before_rev = sum([rev_fixed[i] for i in range(len(rev_fixed)) if i in rsrc_name_idxs])
-                after_rev = sum([rev[i] for i in range(len(rev)) if i in rsrc_name_idxs])
-                booked_rev = sum([b_rev[i] for i in range(len(b_rev)) if i in rsrc_name_idxs])
+                before_rev = sum([rev_fixed[i] for i in rsrc_name_idxs if i < len(rev_fixed)])
+                after_rev = sum([rev[i] for i in rsrc_name_idxs if i < len(rev)])
+                booked_rev = sum([b_rev[i] for i in rsrc_name_idxs if i < len(b_rev)])
 
                 leg_id_vals.append(str(leg_id))
 
@@ -153,12 +153,13 @@ class ExcelOutputWriter:
                 duty_id_vals.append(str(duty_id))
 
             if duty_id is not None:
-                before_at = dr.duty2at[duty_id]
+                before_at = dr.duty2at.get(duty_id)
                 after_at = None
                 for kk in range(len(dr.fleet_types)):
                     if sol["y"][(duty_id, kk)] == 1:
                         after_at = dr.fleet_types[kk]
                         break
+
             before_at_vals.append(before_at)
             after_at_vals.append(after_at)
             if before_at != after_at:
@@ -175,6 +176,21 @@ class ExcelOutputWriter:
                 after_costs.append(0.0)
             else:
                 after_costs.append(dr.get_leg_costs(orgn, dstn, depdt_utc, after_at))
+
+        n = len(inv_df)
+        assert n == len(leg_id_vals)
+        assert n == len(duty_id_vals)
+        assert n == len(before_paxes_vals)
+        assert n == len(after_paxes_vals)
+        assert n == len(booked_paxes_vals)
+        assert n == len(before_rev_vals)
+        assert n == len(after_rev_vals)
+        assert n == len(booked_rev_vals)
+        assert n == len(before_at_vals)
+        assert n == len(after_at_vals)
+        assert n == len(at_change_vals)
+        assert n == len(before_costs)
+        assert n == len(after_costs)
 
         inv_df["LEG_ID"] = leg_id_vals
         inv_df["DUTY_ID"] = duty_id_vals
@@ -217,6 +233,7 @@ class ExcelOutputWriter:
         inv_df["Forecast difference"] = inv_df["Total pax after"] - inv_df["Total pax before"]
         inv_df["Costs difference"] = inv_df["Costs after"] - inv_df["Costs before"]
         inv_df["Profit difference"] = inv_df["Profit after"] - inv_df["Profit before"]
+
         inv_df = inv_df[["CC","FLTNUM","ORGN","DSTN","DEPDT","DEPTM","ARRTM",
                          "A/C change", "A/C before", "A/C after",
                          "Booked pax", "Total pax before", "Total pax after", "Forecast difference",
