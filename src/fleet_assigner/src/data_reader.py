@@ -284,7 +284,8 @@ class DataReader:
          self.leg2duty,
          self.duty2at,
          self.fixed_duties,
-         self.wetlease_sequences) = db.build()
+         self.wetlease_sequences,
+         self.leg2deparrtm) = db.build()
         assert len(self.duties) == len(self.duties_svc) == len(self.duties2startend), "{}, {}, {}".format(len(self.duties), len(self.duties_svc), len(self.duties2startend))
 
     def load_turnaround_times(self):

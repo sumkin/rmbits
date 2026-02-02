@@ -28,6 +28,7 @@ class DutiesBuilder2:
         self.leg2duty = {}
         self.duty2startend = []
         self.duty2at = {}
+        self.leg2deparrtm = {}
 
     def read_parent_child_pairs(self):
         df = pd.read_excel(self.pairings_file, sheet_name="Data")
@@ -49,7 +50,10 @@ class DutiesBuilder2:
             dstn = r["Dest"].strip()
             cc, fltnum = flids[0], flids[1]
             depdate_utc = datetime.strftime(r["Date"], "%Y%m%d")
+            deptm_utc = r["FltSTD"]
+            arrtm_utc = r["FltSTA"]
             svc = r["Svc"].strip()
+            self.leg2deparrtm[(cc, int(fltnum), depdate_utc)] = (deptm_utc, arrtm_utc)
 
             next_orgn = dstn
             next_dstn = r["OnwdEventDest"].strip()
@@ -221,4 +225,5 @@ class DutiesBuilder2:
                self.leg2duty,\
                self.duty2at,\
                self.fixed_duties,\
-               self.wetlease_sequences
+               self.wetlease_sequences,\
+               self.leg2deparrtm

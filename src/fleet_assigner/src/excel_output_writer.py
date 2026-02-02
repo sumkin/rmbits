@@ -75,7 +75,7 @@ class ExcelOutputWriter:
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
             df.to_excel(writer, header=False, index=False, sheet_name="Summary")
 
-    def write_info_per_leg_df(self, inv_df, sol_y_fixed, sol, dr):
+    def write_info_per_leg_df(self, inv_df, sol_y_fixed, sol, y, dr):
         leg_id_vals = []
         duty_id_vals = []
         before_paxes_vals = []
@@ -154,11 +154,23 @@ class ExcelOutputWriter:
 
             if duty_id is not None:
                 before_at = dr.duty2at.get(duty_id)
-                after_at = None
                 for kk in range(len(dr.fleet_types)):
                     if sol["y"][(duty_id, kk)] == 1:
+                        assert kk == y[duty_id], "kk = {}, y[{}] = {}".format(kk, duty_id, y[duty_id])
                         after_at = dr.fleet_types[kk]
                         break
+
+            """
+            if duty_id == 114:
+                print("y[{}] = {}".format(duty_id, y[duty_id]))
+                print("sol.keys() = {}".format(sol.keys()))
+                print("sol_y_fixed.keys() = {}".format(sol_y_fixed.keys()))
+                print("dr.fleet_types = {}".format(dr.fleet_types))
+                print("before_at = {}".format(before_at))
+                print("after_at = {}".format(after_at))
+                assert False
+                #print("sol_y = {}".format(sol["sol_y"][duty_id]))
+            """
 
             before_at_vals.append(before_at)
             after_at_vals.append(after_at)
@@ -215,6 +227,13 @@ class ExcelOutputWriter:
         inv_df["Total revenue after"] = [a + b for a, b in zip(booked_rev_vals, after_rev_vals)]
         inv_df["Total profit before"] = [a + b - c for a, b, c in zip(booked_rev_vals, before_rev_vals, before_costs)]
         inv_df["Total profit after"] = [a + b - c for a, b, c in zip(booked_rev_vals, after_rev_vals, after_costs)]
+
+        """
+        print(inv_df[
+            inv_df["DUTY_ID"] == 114
+        ].head(10))
+        assert False
+        """
 
         inv_df = inv_df[
             (inv_df["LEG_ID"].astype(str).str.strip() != "") &
