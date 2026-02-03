@@ -77,6 +77,8 @@ class ExcelOutputWriter:
 
     def write_info_per_leg_df(self, inv_df, sol_y_fixed, sol, y, dr):
         leg_id_vals = []
+        deptm_vals = []
+        arrtm_vals = []
         duty_id_vals = []
         before_paxes_vals = []
         after_paxes_vals = []
@@ -106,6 +108,7 @@ class ExcelOutputWriter:
         b_rev = A.dot(sol["f"] * sol["b"])
 
         for k, r in inv_df.iterrows():
+            cc = r["CC"]
             orgn = r["ORGN"]
             dstn = r["DSTN"]
             fltnum = r["FLTNUM"]
@@ -117,6 +120,8 @@ class ExcelOutputWriter:
             leg_id = dr.get_leg_id(orgn, dstn, fltnum, depdt_utc)
             if leg_id is None:
                 leg_id_vals.append("")
+                deptm_vals.append("")
+                arrtm_vals.append("")
 
                 before_paxes_vals.append(0.0)
                 after_paxes_vals.append(0.0)
@@ -126,6 +131,14 @@ class ExcelOutputWriter:
                 after_rev_vals.append(0.0)
                 booked_rev_vals.append(0.0)
             else:
+                if (cc, int(fltnum), depdt_utc) in dr.leg2deparrtm.keys():
+                    deparrtm = dr.leg2deparrtm[(cc, int(fltnum), depdt_utc)]
+                    deptm_vals.append(deparrtm[0])
+                    arrtm_vals.append(deparrtm[1])
+                else:
+                    deptm_vals.append("")
+                    arrtm_vals.append("")
+
                 rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt_utc)
 
                 before_paxes = round(sum([paxes_fixed[i] for i in rsrc_name_idxs if i < len(paxes_fixed)]))
@@ -160,18 +173,6 @@ class ExcelOutputWriter:
                         after_at = dr.fleet_types[kk]
                         break
 
-            """
-            if duty_id == 114:
-                print("y[{}] = {}".format(duty_id, y[duty_id]))
-                print("sol.keys() = {}".format(sol.keys()))
-                print("sol_y_fixed.keys() = {}".format(sol_y_fixed.keys()))
-                print("dr.fleet_types = {}".format(dr.fleet_types))
-                print("before_at = {}".format(before_at))
-                print("after_at = {}".format(after_at))
-                assert False
-                #print("sol_y = {}".format(sol["sol_y"][duty_id]))
-            """
-
             before_at_vals.append(before_at)
             after_at_vals.append(after_at)
             if before_at != after_at:
@@ -191,6 +192,8 @@ class ExcelOutputWriter:
 
         n = len(inv_df)
         assert n == len(leg_id_vals)
+        assert n == len(deptm_vals)
+        assert n == len(arrtm_vals)
         assert n == len(duty_id_vals)
         assert n == len(before_paxes_vals)
         assert n == len(after_paxes_vals)
@@ -228,12 +231,8 @@ class ExcelOutputWriter:
         inv_df["Total profit before"] = [a + b - c for a, b, c in zip(booked_rev_vals, before_rev_vals, before_costs)]
         inv_df["Total profit after"] = [a + b - c for a, b, c in zip(booked_rev_vals, after_rev_vals, after_costs)]
 
-        """
-        print(inv_df[
-            inv_df["DUTY_ID"] == 114
-        ].head(10))
-        assert False
-        """
+        inv_df["DEPTM"] = deptm_vals
+        inv_df["ARRTM"] = arrtm_vals
 
         inv_df = inv_df[
             (inv_df["LEG_ID"].astype(str).str.strip() != "") &
@@ -263,11 +262,11 @@ class ExcelOutputWriter:
         inv_df["DEPDT"] = pd.to_datetime(inv_df["DEPDT"], format="%Y%m%d")
         inv_df["DEPDT"] = inv_df["DEPDT"].dt.strftime("%Y-%m-%d")
 
-        inv_df["DEPTM"] = inv_df["DEPTM"].astype(str).str.zfill(4)
-        inv_df["DEPTM"] = inv_df["DEPTM"].str[:2] + ":" + inv_df["DEPTM"].str[2:4]
+        #inv_df["DEPTM"] = inv_df["DEPTM"].astype(str).str.zfill(4)
+        #inv_df["DEPTM"] = inv_df["DEPTM"].str[:2] + ":" + inv_df["DEPTM"].str[2:4]
 
-        inv_df["ARRTM"] = inv_df["ARRTM"].astype(str).str.zfill(4)
-        inv_df["ARRTM"] = inv_df["ARRTM"].str[:2] + ":" + inv_df["ARRTM"].str[2:4]
+        #inv_df["ARRTM"] = inv_df["ARRTM"].astype(str).str.zfill(4)
+        #inv_df["ARRTM"] = inv_df["ARRTM"].str[:2] + ":" + inv_df["ARRTM"].str[2:4]
 
         cols_to_format = [
             "Booked pax",
