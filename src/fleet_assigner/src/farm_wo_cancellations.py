@@ -66,27 +66,27 @@ class FARMWoCancellations:
         self.fixed_y_vars = {}
 
     def load_data(self):
-        pkl_dr_fname = "../cache/dr_{}_{}.pkl".format(self.month, self.fcstdate)
-        if os.path.exists(pkl_dr_fname):
-            with open(pkl_dr_fname, "rb") as f:
-                dr = pickle.load(f)
-        else:
-            dr = DataReader(self.fcstdate,
-                            self.depdates,
-                            self.costs_file,
-                            self.fleet_file,
-                            self.cap_file,
-                            self.leg_distance_file,
-                            self.subfleet_ranges_file,
-                            self.maintenance_file,
-                            self.airport_allowance_file,
-                            self.leg_pairings_file,
-                            self.turnaround_times_file,
-                            self.restrictions_file,
-                            self.excel_output_writer)
-            dr.read()
-            with open(pkl_dr_fname, "wb") as f:
-                pickle.dump(dr, f)
+        #pkl_dr_fname = "../cache/dr_{}_{}.pkl".format(self.month, self.fcstdate)
+        #if os.path.exists(pkl_dr_fname):
+        #    with open(pkl_dr_fname, "rb") as f:
+        #        dr = pickle.load(f)
+        #else:
+        dr = DataReader(self.fcstdate,
+                        self.depdates,
+                        self.costs_file,
+                        self.fleet_file,
+                        self.cap_file,
+                        self.leg_distance_file,
+                        self.subfleet_ranges_file,
+                        self.maintenance_file,
+                        self.airport_allowance_file,
+                        self.leg_pairings_file,
+                        self.turnaround_times_file,
+                        self.restrictions_file,
+                        self.excel_output_writer)
+        dr.read()
+        #with open(pkl_dr_fname, "wb") as f:
+        #    pickle.dump(dr, f)
         self.dr = dr
 
     def create_variables(self):
@@ -488,6 +488,10 @@ class FARMWoCancellations:
                     k = self.dr.fleet_types.index(subfleet)
                     self.fix_y_var(duty_id, k, 1, "subfleets_to_fix")
                     print("Duty {} fixed for {}".format(duty_id, subfleet))
+                else:
+                    k = self.dr.fleet_types.index(subfleet)
+                    self.fix_y_var(duty_id, k, 0, "subfleets_to_fix")
+                    print("Subfleet {} is excluded for duty_id = {}.".format(subfleet, duty_id))
 
     def set_constraints(self, max_num_changes=None):
         """
