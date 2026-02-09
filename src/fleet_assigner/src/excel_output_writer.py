@@ -118,6 +118,12 @@ class ExcelOutputWriter:
             after_at = None
 
             leg_id = dr.get_leg_id(orgn, dstn, fltnum, depdt_utc)
+            duty_id = dr.get_duty_id_by_leg_id(leg_id)
+            if duty_id is None:
+                duty_id_vals.append("")
+            else:
+                duty_id_vals.append(str(duty_id))
+
             if leg_id is None:
                 leg_id_vals.append("")
                 deptm_vals.append("")
@@ -139,6 +145,7 @@ class ExcelOutputWriter:
                     deptm_vals.append("")
                     arrtm_vals.append("")
 
+
                 rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt_utc)
 
                 before_paxes = round(sum([paxes_fixed[i] for i in rsrc_name_idxs if i < len(paxes_fixed)]))
@@ -158,12 +165,6 @@ class ExcelOutputWriter:
                 before_rev_vals.append(before_rev)
                 after_rev_vals.append(after_rev)
                 booked_rev_vals.append(booked_rev)
-
-            duty_id = dr.get_duty_id_by_leg_id(leg_id)
-            if duty_id is None:
-                duty_id_vals.append("")
-            else:
-                duty_id_vals.append(str(duty_id))
 
             if duty_id is not None:
                 before_at = dr.duty2at.get(duty_id)

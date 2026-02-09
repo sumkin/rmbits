@@ -49,6 +49,7 @@ class DataReader:
 
         self.legs = []
         self.orgn_dstn_fltnum_depdt2leg_id = {}  # Map to speed-up querying for leg id.
+        self.leg2deparrtm = {}
 
     def read(self):
         print(time_now() + " Loading inventory dataframe...")
@@ -89,6 +90,9 @@ class DataReader:
 
         print(time_now() + " Loading airport allowance...")
         self.load_airport_allowance()
+
+        print(time_now() + " Loading pairings...")
+        self.load_pairings()
 
         print(time_now() + " Buidling duties...")
         self.build_duties2()
@@ -219,6 +223,28 @@ class DataReader:
     def load_airport_allowance(self):
         self.airport_allowance_df = pd.read_csv(self.airport_allowance_file)
 
+    def load_pairings(self):
+        df = pd.read_excel(self.leg_pairings_file, sheet_name="Data")
+        df = df.dropna()
+        for i, r in df.iterrows():
+            if r["A/C"] == "73Z" or r["A/C"] == "32V":
+                # This is wetlease. Should be ignored.
+                continue
+
+            if r["OnwdEventService"].strip() == "Z":
+                # This is maintenance. Ignore such entries for duty builder.
+                continue
+
+            flids = r["FlId"].strip().split()
+            flids = [e for e in flids if e != ""]
+            assert len(flids) == 2, "flids = {}".format(flids)
+
+            cc, fltnum = flids[0], flids[1]
+            depdate_utc = datetime.strftime(r["Date"], "%Y%m%d")
+            deptm_utc = r["FltSTD"]
+            arrtm_utc = r["FltSTA"]
+            self.leg2deparrtm[(cc, int(fltnum), depdate_utc)] = (deptm_utc, arrtm_utc)
+
     def _create_legs(self):
 
         def time2mins(dt, t):
@@ -234,14 +260,21 @@ class DataReader:
             inv_df = self.inv_df[(self.inv_df["CC"] == "AY") &
                                  (self.inv_df["DEPDT"] == depdate)]
             for _, r in inv_df.iterrows():
+                cc = r["CC"]
                 orgn = r["ORGN"]
                 dstn = r["DSTN"]
                 fltnum = r["FLTNUM"]
                 depdt = r["DEPDT_UTC"]
                 arrdt = r["ARRDT_UTC"]
-                deptm = time2mins(r["DEPDT_UTC"], r["DEPTM_UTC"])
-                arrtm = time2mins(r["ARRDT_UTC"], r["ARRTM_UTC"])
+                #deptm = time2mins(r["DEPDT_UTC"], r["DEPTM_UTC"])
+                #arrtm = time2mins(r["ARRDT_UTC"], r["ARRTM_UTC"])
                 at = r["AIRCRAFT_TYPE"]
+                k = (cc, int(fltnum), depdt)
+                if k not in self.leg2deparrtm.keys():
+                    continue
+                deparrtm = self.leg2deparrtm[k]
+                deptm = time2mins(r["DEPDT_UTC"], "".join(str(deparrtm[0]).split(":")[:2]))
+                arrtm = time2mins(r["DEPDT_UTC"], "".join(str(deparrtm[1]).split(":")[:2]))
                 leg = [orgn, dstn, fltnum, depdt, arrdt, deptm, arrtm, at]
                 if at == "WF8":
                     # This is DH4 aircraft. Skip it, because we do not manage it.
@@ -284,8 +317,7 @@ class DataReader:
          self.leg2duty,
          self.duty2at,
          self.fixed_duties,
-         self.wetlease_sequences,
-         self.leg2deparrtm) = db.build()
+         self.wetlease_sequences) = db.build()
         assert len(self.duties) == len(self.duties_svc) == len(self.duties2startend), "{}, {}, {}".format(len(self.duties), len(self.duties_svc), len(self.duties2startend))
 
     def load_turnaround_times(self):
