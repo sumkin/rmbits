@@ -49,8 +49,8 @@ class DutiesBuilder2:
             dstn = r["Dest"].strip()
             cc, fltnum = flids[0], flids[1]
             depdate_utc = datetime.strftime(r["Date"], "%Y%m%d")
-            deptm_utc = r["FltSTD"]
-            arrtm_utc = r["FltSTA"]
+            deptm_utc = r["STD"]
+            arrtm_utc = r["STA"]
             svc = r["Svc"].strip()
 
             next_orgn = dstn

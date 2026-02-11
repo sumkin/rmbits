@@ -137,14 +137,13 @@ class ExcelOutputWriter:
                 after_rev_vals.append(0.0)
                 booked_rev_vals.append(0.0)
             else:
-                if (cc, int(fltnum), depdt_utc) in dr.leg2deparrtm.keys():
-                    deparrtm = dr.leg2deparrtm[(cc, int(fltnum), depdt_utc)]
+                if (cc, orgn, dstn, int(fltnum), depdt_utc) in dr.leg2deparrtm.keys():
+                    deparrtm = dr.leg2deparrtm[(cc, orgn, dstn, int(fltnum), depdt_utc)]
                     deptm_vals.append(deparrtm[0])
                     arrtm_vals.append(deparrtm[1])
                 else:
                     deptm_vals.append("")
                     arrtm_vals.append("")
-
 
                 rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt_utc)
 

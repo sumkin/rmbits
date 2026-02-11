@@ -664,7 +664,7 @@ class FARMWoCancellations:
                     print("len(self.dr.duties) = {}".format(len(self.dr.duties)))
                     print("len(self.dr.duties2startend) = {}".format(len(self.dr.duties2startend)))
                     print("ks = {}".format(ks))
-                    print(self.dr.ts[1810], self.dr.ts[1811], self.dr.ts[1812])
+                    print(self.dr.ts[13], self.dr.ts[14], self.dr.ts[15])
                     print("ac_types = {}".format(ac_types))
                     print("duties_ac_types = {}".format(duties_ac_types))
                     print("fleet_types = {}".format(self.dr.fleet_types))

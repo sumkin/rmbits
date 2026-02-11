@@ -240,10 +240,12 @@ class DataReader:
             assert len(flids) == 2, "flids = {}".format(flids)
 
             cc, fltnum = flids[0], flids[1]
+            orgn = r["Orig"].strip()
+            dstn = r["Dest"].strip()
             depdate_utc = datetime.strftime(r["Date"], "%Y%m%d")
-            deptm_utc = r["FltSTD"]
-            arrtm_utc = r["FltSTA"]
-            self.leg2deparrtm[(cc, int(fltnum), depdate_utc)] = (deptm_utc, arrtm_utc)
+            deptm_utc = r["STD"]
+            arrtm_utc = r["STA"]
+            self.leg2deparrtm[(cc, orgn, dstn, int(fltnum), depdate_utc)] = (deptm_utc, arrtm_utc)
 
     def _create_legs(self):
 
@@ -269,12 +271,13 @@ class DataReader:
                 #deptm = time2mins(r["DEPDT_UTC"], r["DEPTM_UTC"])
                 #arrtm = time2mins(r["ARRDT_UTC"], r["ARRTM_UTC"])
                 at = r["AIRCRAFT_TYPE"]
-                k = (cc, int(fltnum), depdt)
+                k = (cc, orgn, dstn, int(fltnum), depdt)
                 if k not in self.leg2deparrtm.keys():
                     continue
                 deparrtm = self.leg2deparrtm[k]
                 deptm = time2mins(r["DEPDT_UTC"], "".join(str(deparrtm[0]).split(":")[:2]))
-                arrtm = time2mins(r["DEPDT_UTC"], "".join(str(deparrtm[1]).split(":")[:2]))
+                arrtm = time2mins(r["ARRDT_UTC"], "".join(str(deparrtm[1]).split(":")[:2]))
+                assert arrtm > deptm, "deparrtm = {}".format(deparrtm)
                 leg = [orgn, dstn, fltnum, depdt, arrdt, deptm, arrtm, at]
                 if at == "WF8":
                     # This is DH4 aircraft. Skip it, because we do not manage it.
