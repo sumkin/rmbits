@@ -127,10 +127,7 @@ class LPModelMultiLoader:
 
         res_Adistratio_data = []
         n = len(res_Ai)
-        print("n = {}".format(n))
         for k in range(n):
-            if k % 1000 == 0:
-              print("k = {}".format(k))
             i = res_Ai[k]
             j = res_Aj[k]
             resource = res_rsrc_names[i]

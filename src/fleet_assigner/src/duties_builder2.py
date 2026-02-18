@@ -31,10 +31,13 @@ class DutiesBuilder2:
 
     def read_parent_child_pairs(self):
         df = pd.read_excel(self.pairings_file, sheet_name="Data")
-        df = df.dropna()
+        #df = df.dropna()
         for i, r in df.iterrows():
             if r["A/C"] == "73Z" or r["A/C"] == "32V":
                 # This is wetlease. Should be ignored.
+                continue
+
+            if pd.isna(r["OnwdEventService"]):
                 continue
 
             if r["OnwdEventService"].strip() == "Z":
@@ -47,7 +50,7 @@ class DutiesBuilder2:
 
             orgn = r["Orig"].strip()
             dstn = r["Dest"].strip()
-            cc, fltnum = flids[0], flids[1]
+            cc, fltnum = flids[0].strip(), flids[1].strip()
             depdate_utc = datetime.strftime(r["Date"], "%Y%m%d")
             deptm_utc = r["STD"]
             arrtm_utc = r["STA"]
@@ -61,16 +64,27 @@ class DutiesBuilder2:
             ac = r["A/C"].strip()
 
             # Check that next leg is in file.
+            next_fltnum1 = cc + " " + str(next_fltnum).zfill(3)
+            next_fltnum2 = cc + "  " + str(next_fltnum).zfill(3)
             sub_df = df[
                 (df["Orig"] == next_orgn) &
                 (df["Dest"] == next_dstn) &
                 (
-                    (df["FlId"].str.strip() == cc + " " + str(next_fltnum).zfill(3)) |
-                    (df["FlId"].str.strip() == cc + "  " + str(next_fltnum).zfill(3))
+                    (df["FlId"].str.strip() == next_fltnum1) |
+                    (df["FlId"].str.strip() == next_fltnum2)
                 ) &
                 (df["Date"] == next_depdate_utc)
             ]
             if sub_df.shape[0] == 0:
+                if is_debug:
+                    print("cc = {}".format(cc))
+                    print("next_fltnum1 = {}".format(next_fltnum1))
+                    print("next_fltnum2 = {}".format(next_fltnum2))
+                    print("next_orgn = {}".format(next_orgn))
+                    print("next_dstn = {}".format(next_dstn))
+                    print("next_fltnum = {}".format(next_fltnum))
+                    print("next_depdate_utc = {}".format(next_depdate_utc))
+                    print("Skipped 1")
                 continue
 
             leg_id1 = self.dr.get_leg_id(orgn, dstn, fltnum, depdate_utc)
@@ -78,6 +92,13 @@ class DutiesBuilder2:
             if cc == "AY":
                 # Check this for AY flights only.
                 if leg_id1 is None or leg_id2 is None:
+                    if is_debug:
+                        print("next_orgn = {}".format(next_orgn))
+                        print("next_dstn = {}".format(next_dstn))
+                        print("next_fltnum = {}".format(next_fltnum))
+                        print("next_depdate_utc = {}".format(next_depdate_utc))
+                        print("leg_id1, leg_id2 = {}, {}".format(leg_id1, leg_id2))
+                        print("Skipped 2")
                     continue
 
             leg1 = cc + orgn + dstn + str(fltnum).zfill(4) + depdate_utc + ac + svc
@@ -89,7 +110,7 @@ class DutiesBuilder2:
         while True:
             merged = False
             n = len(self.sequences)
-            if n % 100 == 0:
+            if n % 1000 == 0:
                 print("n = {}".format(n))
             for i in range(n):
                 e1 = self.sequences[i]
