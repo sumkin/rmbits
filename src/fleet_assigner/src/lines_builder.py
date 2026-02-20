@@ -135,6 +135,8 @@ class LinesBuilder:
             for _, r in self.dr.wetlease_df.iterrows():
                 depdt = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=r["from_mins"])
                 arrdt = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=r["to_mins"])
+                if r["actype"] not in ac_type2num.keys():
+                    ac_type2num[r["actype"]] = 0
                 row = [
                     r["orgn"],                                              # ORGN
                     r["dstn"],                                              # DSTN
@@ -144,7 +146,7 @@ class LinesBuilder:
                     depdt.strftime("%H:%M"),                                # DEPTM
                     arrdt.strftime("%H:%M"),                                # ARRTM
                     r["actype"],                                            # AC_TYPE
-                    ac_type2num[r["actype"]] + 1,                           # AIRCRAFT_TYPE
+                    ac_type2num[r["actype"]] + 1,                           # AIRCRAFT NUM
                     r["actype"] + "/" + str(ac_type2num[r["actype"]] + 1),  # LINE
                     "",                                                     # COSTS
                     "",                                                     # J_CAP

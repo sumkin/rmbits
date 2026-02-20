@@ -26,7 +26,7 @@ class WetleaseReader(SSIMReader):
 
         for line in self.get_line():
             cc, orgn, dstn, fltnum, date_s, date_e, time_s, time_e, dows, actype = line
-            if cc != "QF":
+            if cc != "QF" and cc != "IB" and cc != "JP":
                 continue
             date = date_s
             while date <= date_e:
@@ -62,11 +62,12 @@ class WetleaseReader(SSIMReader):
         return df
 
 if __name__ == "__main__":
-    s3fname = "s3://ay-emr-job/fleet_assigner/input/SSIM_SEP_19JUN.ssim"
+    s3fname = "s3://ay-emr-job/fleet_assigner/input/SSIM_MAR_19FEB.ssim"
     start_date = "20250901"
     mr = WetleaseReader(s3fname, start_date)
     df = mr.load()
-    print(df.shape)
-    print(df.head(5))
-    print(df.tail(5))
+    print(df["cc"].unique())
+    #print(df.shape)
+    #print(df.head(5))
+    #print(df.tail(5))
 

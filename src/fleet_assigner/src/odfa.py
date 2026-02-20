@@ -30,7 +30,7 @@ if __name__ == "__main__":
     cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_11FEBsample.ssim"
+    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_MAR_19FEB.ssim"
     airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
     leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/report.xlsx"
     turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"

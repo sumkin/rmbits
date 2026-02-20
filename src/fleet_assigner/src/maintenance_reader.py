@@ -27,7 +27,7 @@ class MaintenanceReader(SSIMReader):
 
         for line in self.get_line():
             carrier, orgn, dstn, fltnum, date_s, date_e, time_s, time_e, dows, actype = line
-            if carrier != "AY" and carrier != "N7":
+            if carrier != "AY" and carrier != "N7" and carrier != "IB" and carrier != "JP":
                 continue
             if orgn != "HEL" or dstn != "HEL":
                 continue

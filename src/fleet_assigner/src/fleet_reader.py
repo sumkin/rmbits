@@ -25,7 +25,9 @@ class FleetReader:
                                  "updated_by"]
         self.fleet_df = self.fleet_df.loc[
             (self.fleet_df["owner"] == "AY") |
-            (self.fleet_df["owner"] == "N7")                                
+            (self.fleet_df["owner"] == "N7") |
+            (self.fleet_df["owner"] == "IB") |
+            (self.fleet_df["owner"] == "JP")
         ]
         self.fleet_df = self.fleet_df.loc[
             (self.fleet_df["subfleet"] != "ERJ") &

@@ -179,7 +179,9 @@ class DataReader:
         self.subfleet_range_df.columns = ["OWNER", "SUBFLEET", "MAX_RANGE"]
         self.subfleet_range_df = self.subfleet_range_df[
             (self.subfleet_range_df["OWNER"] == "AY") |
-            (self.subfleet_range_df["OWNER"] == "N7")
+            (self.subfleet_range_df["OWNER"] == "N7") |
+            (self.subfleet_range_df["OWNER"] == "IB") |
+            (self.subfleet_range_df["OWNER"] == "JP")
         ]
 
     def create_cabin_df(self):
