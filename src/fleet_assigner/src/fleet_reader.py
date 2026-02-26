@@ -38,8 +38,8 @@ class FleetReader:
         ]
         self.fleet_df = self.fleet_df.loc[~self.fleet_df["subfleet"].str.contains("ERR:")]
         self.fleet_df = self.fleet_df[["subfleet", "eff_date", "dis_date", "num_aircrafts"]]
-        self.fleet_df["eff_date"] = pd.to_datetime(self.fleet_df["eff_date"], format="%d/%m/%Y")
-        self.fleet_df["dis_date"] = pd.to_datetime(self.fleet_df["dis_date"], format="%d/%m/%Y")
+        self.fleet_df["eff_date"] = pd.to_datetime(self.fleet_df["eff_date"], format="%d-%m-%y")
+        self.fleet_df["dis_date"] = pd.to_datetime(self.fleet_df["dis_date"], format="%d-%m-%y")
 
         # Filter based on overlap with departure dates.
         min_depdate = datetime.strptime(min(self.depdates), "%Y%m%d")
@@ -62,28 +62,19 @@ class FleetReader:
         fleet_types = self.get_fleet_types()
         for fleet_type in fleet_types:
             df = self.fleet_df[self.fleet_df["SUBFLEET"] == fleet_type]
+            df["NUM_AIRCRAFTS"] = df["NUM_AIRCRAFTS"].astype(int)
             res[fleet_type] = [fleet_type + "_" + str(e) for e in list(range(df["NUM_AIRCRAFTS"].iloc[0]))]
         return res
 
     def get_num_aircrafts(self, ac_type, t0_min, t1_min, _t0, _t1, wetlease_sequences):
         assert _t0 <= _t1
-        t0 = datetime.strftime(_t0, "%Y%m%d")
-        t1 = datetime.strftime(_t1, "%Y%m%d")
+        t0 = datetime.strftime(_t0, "%Y-%m-%d")
+        t1 = datetime.strftime(_t1, "%Y-%m-%d")
         df = self.fleet_df[self.fleet_df.apply(lambda x: x["EFF_DATE"] <= t0 and t1 <= x["DIS_DATE"], axis=1)]
         res = df[df["SUBFLEET"] == ac_type]["NUM_AIRCRAFTS"].sum()
 
         mdf = self.maint_df[self.maint_df.apply(lambda x: max(t0_min, x["from_mins"]) < min(t1_min - 1, x["to_mins"]), axis=1)]
         mres = mdf[mdf["actype"] == ac_type].drop_duplicates().shape[0]  # FIXME: drop_duplicates() should be done earlier.
-        """
-        This is shit.
-        froms, tos = [], []
-        for k, r in mdf.iterrows():
-            froms.append(r["from_mins"])
-            tos.append(r["to_mins"])
-            if max(froms) > min(tos) and mres == 2: # FIXME: this is special case. Probably should be done more generally.
-                # If maintenance blocks do not intersect then substract only one aircraft.
-                mres = 1
-        """
         wsres = 0
         for sequence in wetlease_sequences:
             ac = sequence[0][20:-1]
