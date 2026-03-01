@@ -110,7 +110,7 @@ if __name__ == "__main__":
             sol_y = s["sol_y"]
             sol_y_fixed = s["sol_y_fixed"]
     else:
-        subfleets_to_fix = ["A7A", "A70", "31E", "33S"]
+        subfleets_to_fix = ["A7A", "A70", "31E", "33S", "32I", "73Z"]
 
         # Optimize with fixed subfleets.
         fwoc_fixed = FARMWoCancellations(fcstdate,
