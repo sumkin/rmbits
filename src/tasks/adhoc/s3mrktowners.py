@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 
-df_raw = pd.read_csv('s3://ay-emr-job/static/market_owners_raw.csv', skiprows=1, sep=';')
+df_raw = pd.read_csv('s3://ay-rmp-home/static/market_owners_raw.csv', skiprows=1, sep=';')
 df_owners = df_raw[['Initials',\
                     'Origin Continent',\
                     'Origin Country',\
@@ -28,8 +28,8 @@ df_owners.columns = ['OWNER',\
                      'POSI',\
                      'POSE']
 
-df_pos = pd.read_csv('s3://ay-emr-job/static/POS.csv')
-df_ap = pd.read_csv('s3://ay-emr-job/static/ff_airports.csv', sep=';')
+df_pos = pd.read_csv('s3://ay-rmp-home/static/POS.csv')
+df_ap = pd.read_csv('s3://ay-rmp-home/static/ff_airports.csv', sep=';')
 
 def cntnt_map(cntnt):
     '''

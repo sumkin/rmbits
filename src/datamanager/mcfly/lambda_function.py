@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     #srcyl = YieldLookup(srcdate)
     srcyl = YieldLookupLoader(srcdate).get()
 
-    csvfnames3 = 'ay-emr-job/nrm/mcfly/' + srcdate[:4] + '/' + srcdate[4:6] + '/' + srcdate[6:8] +\
+    csvfnames3 = 'ay-rmp-home/nrm/mcfly/' + srcdate[:4] + '/' + srcdate[4:6] + '/' + srcdate[6:8] +\
                                      '/MCFLY_' + srcdate + '_' + depdate + '_' + bkgdate + '.csv.gz'
     mcflyreader = McFlyReader(srcdate, depdate, bkgdate, srcyl)
     mcflyreader.read_dfs() 
@@ -41,7 +41,7 @@ def lambda_handler(event, context):
     # Copy file to s3.
     s3_client = boto3.client('s3')
     subfolder = srcdate[:4] + '/' + srcdate[4:6] + '/' + srcdate[6:8] + '/' + depdate
-    s3_client.upload_file(csvfname_fp + '.gz', 'ay-emr-job', 'nrm/mcfly/' + subfolder + '/' + csvfname + '.gz')
+    s3_client.upload_file(csvfname_fp + '.gz', 'ay-rmp-home', 'nrm/mcfly/' + subfolder + '/' + csvfname + '.gz')
 
     # Remove sent file.
     subprocess.check_output(['rm',csvfname_fp+'.gz'])

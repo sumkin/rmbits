@@ -14,8 +14,8 @@ with open(fname, 'w') as fout:
     while dt <= datetime(2020,1,13):
         depdt = dt.strftime('%Y%m%d')
         print 'depdt = ', depdt
-        path  = 's3://ay-emr-job/nrm/cf/2019/01/22/cf_sar_rows_20190122_' + depdt + '.csv.gz'
-        bpath = 's3://ay-emr-job/nrm/brexit_cf/2019/01/22/br_cf_sar_rows_20190122_' + depdt + '.csv.gz'
+        path  = 's3://ay-rmp-home/nrm/cf/2019/01/22/cf_sar_rows_20190122_' + depdt + '.csv.gz'
+        bpath = 's3://ay-rmp-home/nrm/brexit_cf/2019/01/22/br_cf_sar_rows_20190122_' + depdt + '.csv.gz'
 
         df = pd.read_csv(path, low_memory = False)       
         df['MARGINAL'].replace('.', '0.0', inplace = True)

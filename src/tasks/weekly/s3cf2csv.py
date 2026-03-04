@@ -15,28 +15,28 @@ prefix = ''
 def process(fname, dtstr):
     decompdt = fname.split('/')[5].split('.')[0].split('_')[3]
 
-    csv2check = "ay-emr-job/nrm/{}cf/{}/{}/{}/{}cf_{}_{}.csv.gz".format(prefix,
+    csv2check = "ay-rmp-home/nrm/{}cf/{}/{}/{}/{}cf_{}_{}.csv.gz".format(prefix,
                                                                         dtstr[:4],
                                                                         dtstr[4:6],
                                                                         dtstr[6:8],
                                                                         prefix,
                                                                         dtstr,
                                                                         decompdt)
-    csv2check_sp = "ay-emr-job/nrm/{}cf/{}/{}/{}/{}cf_sp_{}_{}.csv.gz".format(prefix,
+    csv2check_sp = "ay-rmp-home/nrm/{}cf/{}/{}/{}/{}cf_sp_{}_{}.csv.gz".format(prefix,
                                                                               dtstr[:4],
                                                                               dtstr[4:6],
                                                                               dtstr[6:8],
                                                                               prefix,
                                                                               dtstr,
                                                                               decompdt)
-    csv2check_rsrc_sens = "ay-emr-job/nrm/{}cf/{}/{}/{}/{}cf_rsrc_sens_{}_{}.csv.gz".format(prefix,
+    csv2check_rsrc_sens = "ay-rmp-home/nrm/{}cf/{}/{}/{}/{}cf_rsrc_sens_{}_{}.csv.gz".format(prefix,
                                                                                             dtstr[:4],
                                                                                             dtstr[4:6],
                                                                                             dtstr[6:8],
                                                                                             prefix,
                                                                                             dtstr,
                                                                                             decompdt)
-    csv2check_prdt_sens = "ay-emr-job/nrm/{}cf/{}/{}/{}/{}cf_prdt_sens_{}_{}.csv.gz".format(prefix,
+    csv2check_prdt_sens = "ay-rmp-home/nrm/{}cf/{}/{}/{}/{}cf_prdt_sens_{}_{}.csv.gz".format(prefix,
                                                                                             dtstr[:4],
                                                                                             dtstr[4:6],
                                                                                             dtstr[6:8],
@@ -187,7 +187,7 @@ if __name__ == "__main__":
         dtm = dtstr[4:6]
         dtd = dtstr[6:8]
 
-        fnames = gets3files("ay-emr-job/nrm/bff/{}/{}/{}".format(dty, dtm, dtd))
+        fnames = gets3files("ay-rmp-home/nrm/bff/{}/{}/{}".format(dty, dtm, dtd))
         fnames = [fname for fname in fnames if "final" not in fname]
         if len(fnames) != 0:
             dt_s = datetime.now()

@@ -10,7 +10,7 @@ from funcutils import *
 
 def process_exp(fname, dtstr):
     depdt = fname.split('/')[5].split('.')[0].split('_')[4]
-    csv2check_exp = "ay-emr-job/nrm/nrv_exp/{}/{}/{}/nrv_exp_{}_{}.csv.gz".format(dtstr[:4],
+    csv2check_exp = "ay-rmp-home/nrm/nrv_exp/{}/{}/{}/nrv_exp_{}_{}.csv.gz".format(dtstr[:4],
                                                                                   dtstr[4:6],
                                                                                   dtstr[6:8],
                                                                                   dtstr,
@@ -65,7 +65,7 @@ def process_exp(fname, dtstr):
 
 def process_pwl(fname, dtstr):
     depdt = fname.split('/')[5].split('.')[0].split('_')[4]
-    csv2check_pwl = "ay-emr-job/nrm/nrv_pwl/{}/{}/{}/nrv_pwl_{}_{}.csv.gz".format(dtstr[:4],
+    csv2check_pwl = "ay-rmp-home/nrm/nrv_pwl/{}/{}/{}/nrv_pwl_{}_{}.csv.gz".format(dtstr[:4],
                                                                                   dtstr[4:6],
                                                                                   dtstr[6:8],
                                                                                   dtstr,
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         dtstr = datetime.strftime(dt, "%Y%m%d")
         dty, dtm, dtd = dtstr[:4], dtstr[4:6], dtstr[6:8]
 
-        fnames = gets3files("ay-emr-job/nrm/cf/"+dty+"/"+dtm+"/"+dtd)
+        fnames = gets3files("ay-rmp-home/nrm/cf/"+dty+"/"+dtm+"/"+dtd)
         fnames = [fname for fname in fnames if "prdt_sens" in fname]
 
         if len(fnames) != 0:

@@ -65,7 +65,7 @@ class DebugInfoWriter:
             fig.update_layout(title=ac_type)
             s3copy(
                 "{}{}_fa.html".format(self.output_folder, ac_type),
-                "s3://ay-emr-job/fleet_assigner/{}/output/{}_fa.html".format(month, ac_type)
+                "s3://ay-rmp-home/fleet_assigner/{}/output/{}_fa.html".format(month, ac_type)
             )
 
 if __name__ == "__main__":

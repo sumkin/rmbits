@@ -6,7 +6,7 @@ class AirportAllowanceGenerator:
 
     def __init__(self):
         self.acv2at = {}
-        acv_df = pd.read_csv("s3://ay-emr-job/fleet_assigner/december2023/acv_subfleet.csv", sep=";")
+        acv_df = pd.read_csv("s3://ay-rmp-home/fleet_assigner/december2023/acv_subfleet.csv", sep=";")
         for k, r in acv_df.iterrows():
             self.acv2at[r["acv"].strip()] = r["subfleet"].strip()
 
@@ -22,7 +22,7 @@ class AirportAllowanceGenerator:
             day = str(dt.day).zfill(2)
             dt_s = dt.strftime("%Y%m%d")
             try:
-                df = pd.read_csv("s3://ay-emr-job/nrm/bif/{}/{}/INV_{}.csv.gz".format(year, month, dt_s),
+                df = pd.read_csv("s3://ay-rmp-home/nrm/bif/{}/{}/INV_{}.csv.gz".format(year, month, dt_s),
                                  low_memory=False)
                 df = df[
                     df["CC"] == "AY"

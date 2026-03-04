@@ -13,7 +13,7 @@ from fdcreader import *
 
 
 def process(fcstdt, curdt, depdt):
-    csv2check = "ay-emr-job/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(curdt[:4],
+    csv2check = "ay-rmp-home/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(curdt[:4],
                                                                       curdt[4:6],
                                                                       curdt[6:8],
                                                                       curdt,
@@ -22,7 +22,7 @@ def process(fcstdt, curdt, depdt):
         print(csv2check, " exists")
         return 0
 
-    bff2check = "ay-emr-job/nrm/bff/{}/{}/{}/FCST_OD_{}_{}.csv.gz".format(fcstdt[:4],
+    bff2check = "ay-rmp-home/nrm/bff/{}/{}/{}/FCST_OD_{}_{}.csv.gz".format(fcstdt[:4],
                                                                           fcstdt[4:6],
                                                                           fcstdt[6:8],
                                                                           fcstdt,

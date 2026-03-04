@@ -13,10 +13,10 @@ from postanalysis import *
 
 def process(depdt):
     print('Processing ', depdt)
-    csv2check = 'ay-emr-job/nrm/pa/' + depdt[:4] +\
+    csv2check = 'ay-rmp-home/nrm/pa/' + depdt[:4] +\
                                  '/' + depdt[4:6] +\
                                  '/pa_' + depdt + '.csv.gz'
-    csv2checkg = 'ay-emr-job/nrm/pa/' + depdt[:4] +\
+    csv2checkg = 'ay-rmp-home/nrm/pa/' + depdt[:4] +\
                                   '/' + depdt[4:6] +\
                                   '/pag_' + depdt + '.csv.gz'
     if s3fileexists(csv2check) and s3fileexists(csv2checkg):

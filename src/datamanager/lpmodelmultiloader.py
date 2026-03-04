@@ -120,7 +120,7 @@ class LPModelMultiLoader:
 
         # Build A distance matrix.
         od_dist_cache = {}
-        dist_df = pd.read_csv("s3://ay-emr-job/fleet_assigner/input/od_distances.csv") # File should be specified in odfa.py
+        dist_df = pd.read_csv("s3://ay-rmp-home/fleet_assigner/input/od_distances.csv") # File should be specified in odfa.py
         dist_df["ap1"] = dist_df["ap1"].astype("category")
         dist_df["ap2"] = dist_df["ap2"].astype("category")
         assert len(res_Ai) == len(res_Aj) == len(res_Adata)

@@ -62,7 +62,7 @@ def process(fname):
 
     print("Copying file to s3...")
     subfolder = str(dt.year) + '/' + str(dt.month).zfill(2)
-    s3fname = 's3://ay-emr-job/nrm/baf/'+subfolder+'/'+csv_fname+'.gz'
+    s3fname = 's3://ay-rmp-home/nrm/baf/'+subfolder+'/'+csv_fname+'.gz'
     subprocess.check_output(['aws','s3','cp',csv_fname_fp+'.gz',s3fname])
 
     print("Cleaning-up...")
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     for fname in fnames[:30]:
         # Check that file is already processed.
         dt = datetime.strptime(fname.rsplit('/',1)[1].split('.')[4][1:], '%y%m%d')
-        csv2check = 'ay-emr-job/nrm/baf/'+str(dt.year)+\
+        csv2check = 'ay-rmp-home/nrm/baf/'+str(dt.year)+\
                       '/'+str(dt.month).zfill(2)+'/AV_OD_'+dt.strftime('%Y%m%d')+'.csv.gz'
 
         if s3fileexists(csv2check):

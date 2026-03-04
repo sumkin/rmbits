@@ -53,7 +53,7 @@ class PAReport:
         for date in self.dates:
             n_date = datetime.strftime(datetime.strptime(date,'%Y%m%d') + timedelta(days=1),'%Y%m%d')
             print date, n_date
-            path = 's3://ay-emr-job/nrm/bof/'+n_date[:4]+'/'+n_date[4:6]+'/BKG_OD_'+n_date+'.csv.gz'
+            path = 's3://ay-rmp-home/nrm/bof/'+n_date[:4]+'/'+n_date[4:6]+'/BKG_OD_'+n_date+'.csv.gz'
             if self.bof is None:
                 self.bof = pd.read_csv(path, low_memory = False)
                 self.bof = self.bof.loc[self.bof['DAYSPRIOR'] == -1]
@@ -71,7 +71,7 @@ class PAReport:
         for date in self.dates:
             n_date = datetime.strftime(datetime.strptime(date,'%Y%m%d') + timedelta(days=1),'%Y%m%d')
             print date, n_date
-            path = 's3://ay-emr-job/nrm/bif/'+n_date[:4]+'/'+n_date[4:6]+'/INV_'+n_date+'.csv.gz'
+            path = 's3://ay-rmp-home/nrm/bif/'+n_date[:4]+'/'+n_date[4:6]+'/INV_'+n_date+'.csv.gz'
             if self.bif is None:
                 self.bif = pd.read_csv(path, low_memory = False)
                 self.bif = self.bif.loc[self.bif['CC'] == 'AY']
@@ -92,7 +92,7 @@ class PAReport:
         self.pag = None
         for date in self.dates:
             print date 
-            path = 's3://ay-emr-job/nrm/pa/'+date[:4]+'/'+date[4:6]+'/pag_'+date+'.csv.gz'
+            path = 's3://ay-rmp-home/nrm/pa/'+date[:4]+'/'+date[4:6]+'/pag_'+date+'.csv.gz'
             if self.pag is None:
                 self.pag = pd.read_csv(path, low_memory = False)
                 self.pag = self.pag.loc[self.pag['BC'] == 'G']

@@ -89,7 +89,7 @@ class McFlyReader:
         for i in range(NUM_TRIES):
             try:
                 # Forecast data frame.
-                self.fdf = pd.read_csv('s3://ay-emr-job/nrm/fullbff/' +\
+                self.fdf = pd.read_csv('s3://ay-rmp-home/nrm/fullbff/' +\
                                        self.srcdate[:4] + '/' + self.srcdate[4:6] + '/' + self.srcdate[6:8] + '/' +\
                                        'FCST_' + self.srcdate + '_' + self.depdate + '_' + self.bkgdate + '.csv.gz',\
                                        usecols = ['GEO_OD_TS_KEY',\
@@ -122,7 +122,7 @@ class McFlyReader:
                                                            'AGCD': 'sum'}).reset_index()
 
         # Class data frame.
-        clsdf = pd.read_csv('s3://ay-emr-job/static/clsorder.csv')
+        clsdf = pd.read_csv('s3://ay-rmp-home/static/clsorder.csv')
 
         # Merge class order data frame to forecast data frame.
         self.df = self.df.merge(clsdf, left_on = ['BC'], right_on = ['CLS'], how = 'left')

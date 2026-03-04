@@ -26,7 +26,7 @@ class DutiesBuilder:
 
         # Create aircraft configuration to aircraft type mapping.
         self.acv2at = {}
-        acv_df = pd.read_csv("s3://ay-emr-job/fleet_assigner/december2023/acv_subfleet.csv", sep=";")
+        acv_df = pd.read_csv("s3://ay-rmp-home/fleet_assigner/december2023/acv_subfleet.csv", sep=";")
         for k, r in acv_df.iterrows():
             self.acv2at[r["acv"].strip()] = r["subfleet"].strip()
 

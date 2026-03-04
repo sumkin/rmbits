@@ -41,9 +41,9 @@ class PWDCReader:
         depdateday   = self.depdate[6:8]
 
         # Read forecast dataframe.
-        fcstcsvfrom = 's3://ay-emr-job/nrm/bff/'+datefromyear+'/'+datefrommonth+'/'+datefromday+\
+        fcstcsvfrom = 's3://ay-rmp-home/nrm/bff/'+datefromyear+'/'+datefrommonth+'/'+datefromday+\
                                              '/FCST_OD_'+self.datefrom+'_'+self.depdate+'.csv.gz'
-        fcstcsvto = 's3://ay-emr-job/nrm/bff/'+datetoyear+'/'+datetomonth+'/'+datetoday+\
+        fcstcsvto = 's3://ay-rmp-home/nrm/bff/'+datetoyear+'/'+datetomonth+'/'+datetoday+\
                                            '/FCST_OD_'+self.dateto+'_'+self.depdate+'.csv.gz'
 
         fcstdffrom = pd.read_csv(fcstcsvfrom, low_memory = False).fillna('')
@@ -79,7 +79,7 @@ class PWDCReader:
         fcstdf['SDMD'] = fcstdf['SRD_PREV'] - fcstdf['SRD_CURR']
 
         # Read class order and join it to forecast dataframe.
-        clsdf = pd.read_csv('s3://ay-emr-job/static/clsorder.csv').fillna('')
+        clsdf = pd.read_csv('s3://ay-rmp-home/static/clsorder.csv').fillna('')
         fcstdf = pd.merge(fcstdf, clsdf, how='left',
                                          left_on=['BC'],
                                          right_on=['CLS'])

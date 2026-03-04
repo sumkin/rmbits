@@ -96,8 +96,8 @@ def process(fname):
 
     print("Copying file to s3...")
     subfolder = str(src_dt.year) + '/' + str(src_dt.month).zfill(2)
-    od_s3fname = 's3://ay-emr-job/nrm/bof/' + subfolder + '/' + od_csv_fname + '.gz'
-    seg_s3fname = 's3://ay-emr-job/nrm/bof/' + subfolder + '/' + seg_csv_fname + '.gz'
+    od_s3fname = 's3://ay-rmp-home/nrm/bof/' + subfolder + '/' + od_csv_fname + '.gz'
+    seg_s3fname = 's3://ay-rmp-home/nrm/bof/' + subfolder + '/' + seg_csv_fname + '.gz'
     subprocess.check_output(['aws','s3','cp', od_csv_fname_fp + '.gz', od_s3fname])
     subprocess.check_output(['aws','s3','cp', seg_csv_fname_fp + '.gz', seg_s3fname])
 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     for fname in fnames[:100]:
         # Check that file is already processed.
         dt = datetime.strptime(fname.rsplit('/',1)[1].split('.')[4][1:], '%y%m%d')
-        csv2check = 'ay-emr-job/nrm/bof/'+str(dt.year)+'/'+\
+        csv2check = 'ay-rmp-home/nrm/bof/'+str(dt.year)+'/'+\
                     str(dt.month).zfill(2)+'/BKG_OD_'+dt.strftime('%Y%m%d')+'.csv.gz'
         if s3fileexists(csv2check):
             print(csv2check, 'exists')

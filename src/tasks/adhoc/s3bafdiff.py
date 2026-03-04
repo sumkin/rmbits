@@ -1,5 +1,5 @@
 '''
-Script reads s3://ay-emr-job/nrm/baf folder.
+Script reads s3://ay-rmp-home/nrm/baf folder.
 Find all the BAF files not compared to previous one.
 
 Generates the difference and writes CSV file to s3.
@@ -22,12 +22,12 @@ thisfiledir = os.path.dirname(os.path.realpath(__file__))
 def get_prev_cur_info(fname):
     curdt  = datetime.strptime(fname.rsplit('/',1)[1].split('.')[0].split('_')[2], '%Y%m%d')
     prevdt = curdt - timedelta(1)
-    prevfname = 'ay-emr-job/nrm/baf/'+str(prevdt.year)+\
+    prevfname = 'ay-rmp-home/nrm/baf/'+str(prevdt.year)+\
                 '/'+str(prevdt.month).zfill(2)+'/AV_OD_'+prevdt.strftime('%Y%m%d')+'.json.gz'
-    difffname = 'ay-emr-job/nrm/baf/'+str(curdt.year)+\
+    difffname = 'ay-rmp-home/nrm/baf/'+str(curdt.year)+\
                '/'+str(curdt.month).zfill(2)+'/AV_OD_DIFF_'+curdt.strftime('%Y%m%d')+\
                '-'+prevdt.strftime('%Y%m%d')+'.csv'
-    locfname = 'ay-emr-job/nrm/baf/'+str(curdt.year)+\
+    locfname = 'ay-rmp-home/nrm/baf/'+str(curdt.year)+\
                '/'+str(curdt.month).zfill(2)+'/AV_OD_LOCDIFF_'+curdt.strftime('%Y%m%d')+\
                '-'+prevdt.strftime('%Y%m%d')+'.csv'
     return prevdt,curdt,prevfname,difffname,locfname
@@ -51,19 +51,19 @@ def process(fname):
             s3fnames = filter(lambda s: 'part-000' in s, s3fnames)
             assert len(s3fnames) == 1
             s3fname = s3fnames[0]
-            subprocess.check_output(['aws','s3','cp','s3://ay-emr-job/'+s3fname,\
+            subprocess.check_output(['aws','s3','cp','s3://ay-rmp-home/'+s3fname,\
                                      's3://' + name])
 
             # Deleting tmp folder.
             subprocess.check_output(['aws','s3','rm','--recursive',\
-                                     's3://ay-emr-job/'+s3fname.rsplit('/',1)[0]+'/'])
+                                     's3://ay-rmp-home/'+s3fname.rsplit('/',1)[0]+'/'])
 
         print "Done"
 
 
 if __name__ == "__main__":
     # Get files in folder.
-    fnames = gets3files('ay-emr-job/nrm/baf')
+    fnames = gets3files('ay-rmp-home/nrm/baf')
 
     # Filter out files.
     fnames = filter(lambda s: re.search('AV_OD_\d{8}.json.gz',s), fnames)

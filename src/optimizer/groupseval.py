@@ -23,7 +23,7 @@ class GroupsEvaluator:
         self.model = LPModelLoader(self.fcstdate, self.depdate).get()
 
         print('Reading inventory...')
-        self.invdf = pd.read_csv('s3://ay-emr-job/nrm/bif/' + self.fcstyear + '/' +\
+        self.invdf = pd.read_csv('s3://ay-rmp-home/nrm/bif/' + self.fcstyear + '/' +\
                                                               self.fcstmonth + '/' +\
                                                         'INV_' + self.fcstdate + '.csv.gz')
         self.invdf = self.invdf.loc[(self.invdf['DEPDT'] == int(self.depdate)) |

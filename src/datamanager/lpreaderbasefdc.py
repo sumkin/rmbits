@@ -32,7 +32,7 @@ class LPReaderBaseFDC:
         depday   = self.depdate[6:8]  
 
         # Demand curve data frame.
-        dccsv = 's3://ay-emr-job/nrm/fdc/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+        dccsv = 's3://ay-rmp-home/nrm/fdc/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                        '/dc_'+self.fcstdate+'_'+self.depdate+'.csv.gz'
         self.dccsv = dccsv
         dc_dfo = pd.read_csv(dccsv, low_memory = False).fillna('')
@@ -60,7 +60,7 @@ class LPReaderBaseFDC:
         self.dc_df = self.dc_df.reset_index(0)
 
         # Inventory data frame.
-        invcsv = 's3://ay-emr-job/nrm/bif/'+fcstyear+'/'+fcstmonth+\
+        invcsv = 's3://ay-rmp-home/nrm/bif/'+fcstyear+'/'+fcstmonth+\
                                         '/INV_'+self.fcstdate+'.csv.gz'
         self.inv_df = pd.read_csv(invcsv, low_memory = False).fillna('')
         self.inv_df = self.inv_df.loc[self.inv_df['DEPDT'] == int(self.depdate)] # flights for forecast date only.
@@ -70,7 +70,7 @@ class LPReaderBaseFDC:
                                       (self.inv_df['CABIN'] == 'Y')]
 
         # Booking data frame.
-        bkgcsv = 's3://ay-emr-job/nrm/bof/' + fcstyear + '/' + fcstmonth+\
+        bkgcsv = 's3://ay-rmp-home/nrm/bof/' + fcstyear + '/' + fcstmonth+\
                                         '/BKG_OD_' + self.fcstdate + '.csv.gz'
         bkg_dfo = pd.read_csv(bkgcsv, low_memory = False).fillna('')
         self.bkg_df = bkg_dfo[['BASE_OD_ORGN','BASE_OD_DSTN','BASE_OPR_FLTNUM','BASE_OD_DEPT_DATE','ISO_COUNTRY','SELL_CLS','REFERENCE']]\
@@ -102,12 +102,12 @@ class LPReaderBaseFDC:
         self.dcbkg_df['COUNT'] = self.dcbkg_df['COUNT'].replace('', 0, regex = True)
 
         # Yield data frame.
-        yldcsv = 's3://ay-emr-job/nrm/yield/' + fcstyear + '/' + fcstmonth +\
+        yldcsv = 's3://ay-rmp-home/nrm/yield/' + fcstyear + '/' + fcstmonth +\
                                           '/YIELD_' + self.fcstdate + '.csv.gz'
         self.yld_df = pd.read_csv(yldcsv, low_memory = False).fillna('')
 
         # FF map data frame.
-        ffmapcsv = 's3://ay-emr-job/ffmap/FF_MAP_LV.csv'
+        ffmapcsv = 's3://ay-rmp-home/ffmap/FF_MAP_LV.csv'
         self.ffmap_df = pd.read_csv(ffmapcsv, low_memory = False).fillna('')
         self.ffmap_df = self.ffmap_df.replace(np.nan, '', regex=True)
         

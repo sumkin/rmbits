@@ -27,7 +27,7 @@ class LPReaderFDCDB:
         rs_curs = DBConnector.get_rs_curs()
          
 
-        dcsvfname = 'ay-emr-job/nrm/bif/'+fcstyear+'/'+fcstmonth+\
+        dcsvfname = 'ay-rmp-home/nrm/bif/'+fcstyear+'/'+fcstmonth+\
                                       '/INV_'+fcstdatein+'.csv.gz'
 
         # FIXME: check forecast dates.
@@ -51,7 +51,7 @@ class LPReaderFDCDB:
         fcstday = self.fcstdate[6:8]
 
         # Inventory data frame.
-        invcsv = 's3://ay-emr-job/nrm/bif/'+fcstyear+'/'+fcstmonth+\
+        invcsv = 's3://ay-rmp-home/nrm/bif/'+fcstyear+'/'+fcstmonth+\
                                         '/INV_'+self.fcstdate+'.csv.gz'
         self.invdf = pd.read_csv(invcsv, low_memory = False).fillna('')
         self.invdf = self.invdf.loc[(self.invdf['DEPDT'] == int(self.depdate)) |

@@ -8,7 +8,7 @@ class AirportS3:
     def __init__(self):
         for i in range(5):
             try:
-                self.df = pd.read_csv('s3://ay-emr-job/static/ff_airports.csv', sep=';')
+                self.df = pd.read_csv('s3://ay-rmp-home/static/ff_airports.csv', sep=';')
                 break
             except:
                 sleep(random.randint(0,5))

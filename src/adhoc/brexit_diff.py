@@ -18,10 +18,10 @@ for i in range(400):
     depdt = depdt + timedelta(days = 1)
     depdate = datetime.strftime(depdt, '%Y%m%d')
     print 'depdate = ', depdate
-    df = pd.read_csv('s3://ay-emr-job/nrm/cf/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+    df = pd.read_csv('s3://ay-rmp-home/nrm/cf/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                          '/cf_'+fcstdate+'_'+depdate+'.csv.gz', low_memory = False)
     df['REV'] = df['MP'] * df['LPC_D']
-    bdf = pd.read_csv('s3://ay-emr-job/nrm/brexit_cf/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+    bdf = pd.read_csv('s3://ay-rmp-home/nrm/brexit_cf/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                          '/brexit_cf_'+fcstdate+'_'+depdate+'.csv.gz', low_memory = False)
     bdf['REV'] = bdf['MP'] * bdf['LPC_D']
     mdf = bdf.merge(df, left_on = ['GEO_OD_TS_KEY','POS','FF','BC','TP'],\
@@ -32,7 +32,7 @@ for i in range(400):
     mdf = mdf.sort_values(by = ['LPC_DIFF'], ascending = False)
    
     fname_out = '/home/ay49514/tmp/br_diff_cf_'+fcstdate+'_'+depdate+'.csv'
-    csvout = 'ay-emr-job/nrm/brexit_diff_cf/' + fcstdate[:4]  +\
+    csvout = 'ay-rmp-home/nrm/brexit_diff_cf/' + fcstdate[:4]  +\
                                           '/' + fcstdate[4:6] +\
                                           '/' + fcstdate[6:8] +\
                                           '/br_diff_cf_' + fcstdate + '_' + depdate + '.csv.gz' 

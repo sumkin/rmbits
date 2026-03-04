@@ -11,30 +11,29 @@ from lines_builder import LinesBuilder
 from CsvToSsimConverter import Converter
 
 if __name__ == "__main__":
-    fcstdate = "20260107"
-    month = "march2026"
+    fcstdate = "20260226"
+    month = "october2026"
 
     excel_fname = "fa_{}_{}.xlsx".format(fcstdate, month)
     excel_output_writer = ExcelOutputWriter("../output/{}".format(excel_fname))
     debug_info_writer = DebugInfoWriter("../output/")
 
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
-    depdates = ["20260228",
-                "20260301", "20260302", "20260303", "20260304", "20260305", "20260306", "20260307",
-                "20260308", "20260309", "20260310", "20260311", "20260312", "20260313", "20260314",
-                "20260315", "20260316", "20260317", "20260318", "20260319", "20260320", "20260321",
-                "20260322", "20260323", "20260324", "20260325", "20260326", "20260327", "20260328",
-                "20260329"]
-    costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
-    fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
-    cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
-    leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
-    subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_MAR_19FEB.ssim"
-    airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/report.xlsx"
-    turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
-    restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
+    depdates = ["20260930",
+                "20261001", "20261002", "20261003", "20261004", "20261005", "20261006", "20261007",
+                "20261008", "20261009", "20261010", "20261011", "20261012", "20261013", "20261014",
+                "20261015", "20261016", "20261017", "20261018", "20261019", "20261020", "20261021",
+                "20261022", "20261023", "20261024"]
+    costs_file = "s3://ay-rmp-home/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
+    fleet_file = "s3://ay-rmp-home/fleet_assigner/input/aircraft_inventory.csv"
+    cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
+    leg_distance_file = "s3://ay-rmp-home/fleet_assigner/input/leg_distances.csv"
+    subfleet_ranges_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_ranges.csv"
+    maintenance_file = "s3://ay-rmp-home/fleet_assigner/input/SSIM_S26_OCT.ssim"
+    airport_allowance_file = "s3://ay-rmp-home/fleet_assigner/input/airport_allowance.csv"
+    leg_pairings_file = "s3://ay-rmp-home/fleet_assigner/input/OPT_Fedor_report.xlsx"
+    turnaround_times_file = "s3://ay-rmp-home/fleet_assigner/input/turnaround_times.csv"
+    restrictions_file = "s3://ay-rmp-home/fleet_assigner/input/restrictions.csv"
 
     dill_fwoc_fname = "../cache/fwoc_{}_{}.dill".format(month, fcstdate)
     dill_fwoc_fixed_fname = "../cache/fwoc_fixed_{}_{}.dill".format(month, fcstdate)
@@ -204,10 +203,10 @@ if __name__ == "__main__":
                       excel_output_writer)
     lb.build()
     lb.write_csv("../output/lines.csv")
-    s3copy("../output/lines.csv", "s3://ay-emr-job/fleet_assigner/{}/output/lines.csv".format(month))
+    s3copy("../output/lines.csv", "s3://ay-rmp-home/fleet_assigner/{}/output/lines.csv".format(month))
 
     conv = Converter("../output/lines.csv", "../output/lines.ssim")
     conv.convert()
-    s3copy("../output/lines.ssim", "s3://ay-emr-job/fleet_assigner/{}/output/lines.ssim".format(month))
+    s3copy("../output/lines.ssim", "s3://ay-rmp-home/fleet_assigner/{}/output/lines.ssim".format(month))
 
-    s3copy("../output/{}".format(excel_fname), "s3://ay-emr-job/fleet_assigner/{}/output/{}".format(month, excel_fname))
+    s3copy("../output/{}".format(excel_fname), "s3://ay-rmp-home/fleet_assigner/{}/output/{}".format(month, excel_fname))

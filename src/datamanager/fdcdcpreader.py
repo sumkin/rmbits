@@ -39,11 +39,11 @@ class FDCDCPReader:
         depdateday   = self.depdate[6:8]
 
         # Read forecast dataframes.
-        fcstcsv = 's3://ay-emr-job/nrm/bff/'+fcstdateyear+'/'+fcstdatemonth+'/'+fcstdateday+\
+        fcstcsv = 's3://ay-rmp-home/nrm/bff/'+fcstdateyear+'/'+fcstdatemonth+'/'+fcstdateday+\
                                          '/FCST_OD_'+self.fcstdate+'_'+self.depdate+'.csv.gz'
-        fcstdcpcsv = 's3://ay-emr-job/nrm/bff/'+fcstdateyear+'/'+fcstdatemonth+'/'+fcstdateday+\
+        fcstdcpcsv = 's3://ay-rmp-home/nrm/bff/'+fcstdateyear+'/'+fcstdatemonth+'/'+fcstdateday+\
                                             '/FCST_OD_DCP_'+self.fcstdate+'_'+self.depdate+'.csv.gz'
-        dcpcsv = 's3://ay-emr-job/static/dcp_ranges.csv'
+        dcpcsv = 's3://ay-rmp-home/static/dcp_ranges.csv'
 
         fcstdf = pd.read_csv(fcstcsv, low_memory = False)
         fcstdcpdf = pd.read_csv(fcstdcpcsv, low_memory = False)

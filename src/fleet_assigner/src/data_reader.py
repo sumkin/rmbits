@@ -48,6 +48,7 @@ class DataReader:
         self.output_writer = output_writer
 
         self.legs = []
+        self.missing_fcst_legs = []
         self.orgn_dstn_fltnum_depdt2leg_id = {}  # Map to speed-up querying for leg id.
         self.leg2deparrtm = {}
 
@@ -105,7 +106,7 @@ class DataReader:
 
     def load_inv_df(self):
         fcstyear, fcstmonth = self.fcstdate[:4], self.fcstdate[4:6]
-        self.inv_df = pd.read_csv("s3://ay-emr-job/nrm/bif/{}/{}/INV_{}.csv.gz".format(fcstyear, fcstmonth, self.fcstdate),
+        self.inv_df = pd.read_csv("s3://ay-rmp-home/nrm/bif/{}/{}/INV_{}.csv.gz".format(fcstyear, fcstmonth, self.fcstdate),
                                    dtype={"ARRDT": str, "DEPTM": str, "ARRTM": str}
         )
         self.next_depdate = datetime.strptime(self.depdates[len(self.depdates) - 1], "%Y%m%d") + timedelta(days=1)
@@ -155,7 +156,7 @@ class DataReader:
 
     def load_costs_df(self):
         self.costs_df = pd.read_csv(self.costs_file)
-        self.costs_df.columns = ["DEPDT", "ORGN", "DSTN", "AIRCRAFT", "PCI_COSTS", "PCII_COSTS", "MARGINAL_COSTS"]
+        self.costs_df.columns = ["DEPDT", "FLTNUM", "ORGN", "DSTN", "AIRCRAFT", "PCI_COSTS", "MARGINAL_COSTS"]
         self.costs_df["ORGN"] = self.costs_df["ORGN"].astype("category")
         self.costs_df["DSTN"] = self.costs_df["DSTN"].astype("category")
         self.costs_df["DEPDT"] = self.costs_df["DEPDT"].astype("category")
@@ -215,7 +216,7 @@ class DataReader:
         self.rm_model = loader.get()
 
     def load_bookings(self):
-        self.bkg_df = pd.read_csv("s3://ay-emr-job/nrm/bof/{}/{}/BKG_OD_{}.csv.gz".format(self.fcstdate[:4], self.fcstdate[4:6], self.fcstdate), low_memory = False)
+        self.bkg_df = pd.read_csv("s3://ay-rmp-home/nrm/bof/{}/{}/BKG_OD_{}.csv.gz".format(self.fcstdate[:4], self.fcstdate[4:6], self.fcstdate), low_memory = False)
         self.bkg_df = self.bkg_df[self.bkg_df["BASE_OD_DEPT_DATE"].isin([int(depdate) for depdate in self.depdates])]
 
     def load_maintenance(self):
@@ -226,14 +227,16 @@ class DataReader:
         self.airport_allowance_df = pd.read_csv(self.airport_allowance_file)
 
     def load_pairings(self):
-        df = pd.read_excel(self.leg_pairings_file, sheet_name="Data")
-        for i, r in df.iterrows():
-            if r["A/C"] == "73Z" or r["A/C"] == "32V":
+        self.pairings_df = pd.read_excel(self.leg_pairings_file, sheet_name="Data")
+        for i, r in self.pairings_df.iterrows():
+            if r["A/C"] == "32V":
                 # This is wetlease. Should be ignored.
+                print("WARNING: r = {} is ignored (wetlease).".format(r))
                 continue
 
             if r["Svc"].strip() == "Z":
                 # This is maintenance. Ignore such entries for duty builder.
+                print("WARNING: r = {} is ignored (maintenance).".format(r))
                 continue
 
             flids = r["FlId"].strip().split()
@@ -259,42 +262,43 @@ class DataReader:
 
         # Create list of legs.
         # Go over inventory and take all AY flights departing on given departure dates.
-        for depdate in self.depdates + [self.next_depdate]:
-            inv_df = self.inv_df[(self.inv_df["CC"] == "AY") &
-                                 (self.inv_df["DEPDT"] == depdate)]
-            for _, r in inv_df.iterrows():
-                cc = r["CC"]
-                orgn = r["ORGN"]
-                dstn = r["DSTN"]
-                fltnum = r["FLTNUM"]
-                depdt = r["DEPDT_UTC"]
-                arrdt = r["ARRDT_UTC"]
-                #deptm = time2mins(r["DEPDT_UTC"], r["DEPTM_UTC"])
-                #arrtm = time2mins(r["ARRDT_UTC"], r["ARRTM_UTC"])
-                at = r["AIRCRAFT_TYPE"]
-                k = (cc, orgn, dstn, int(fltnum), depdt)
-                if k not in self.leg2deparrtm.keys():
-                    continue
-                deparrtm = self.leg2deparrtm[k]
-                deptm = time2mins(r["DEPDT_UTC"], "".join(str(deparrtm[0]).split(":")[:2]))
-                arrtm = time2mins(r["ARRDT_UTC"], "".join(str(deparrtm[1]).split(":")[:2]))
-                assert arrtm > deptm, "deparrtm = {}".format(deparrtm)
-                leg = [orgn, dstn, fltnum, depdt, arrdt, deptm, arrtm, at]
-                if at == "WF8":
-                    # This is DH4 aircraft. Skip it, because we do not manage it.
-                    continue
-                if at == "32I":
-                    # This is Iberia aircraft. Skip it, because we do no manage it.
-                    continue
-                # Check that leg is in costs dataframe.
-                if self.costs_df[
-                        (self.costs_df["ORGN"] == orgn) &
-                        (self.costs_df["DSTN"] == dstn)
-                   ].shape[0] == 0:
-                    print("WARNING: {}-{} not found in costs file.".format(orgn, dstn))
-                    continue
-                if leg not in self.legs:
-                    self.legs.append(leg)
+        for i, r in self.pairings_df.iterrows():
+            flids = r["FlId"].strip().split()
+            flids = [e for e in flids if e != ""]
+            assert len(flids) == 2, "flids = {}".format(flids)
+
+            cc, fltnum = flids[0], flids[1]
+            orgn = r["Orig"].strip()
+            dstn = r["Dest"].strip()
+            depdt = datetime.strftime(r["Date"], "%Y%m%d")
+            arrdt = datetime.strftime(r["ArrDate"], "%Y%m%d")
+            deptm = r["STD"]
+            arrtm = r["STA"]
+            at = r["A/C"]
+            leg = [orgn, dstn, fltnum, depdt, arrdt, deptm, arrtm, at]
+
+            # Check that leg is in costs dataframe.
+            if self.costs_df[
+                (self.costs_df["ORGN"] == orgn) &
+                (self.costs_df["DSTN"] == dstn)
+            ].shape[0] == 0:
+                print("WARNING: {}-{} not found in costs file.".format(orgn, dstn))
+                continue
+
+            # Check that leg is in inventory.
+            if self.inv_df[
+                (self.inv_df["CC"] == cc) &
+                (self.inv_df["ORGN"] == orgn) &
+                (self.inv_df["DSTN"] == dstn) &
+                (self.inv_df["FLTNUM"] == int(fltnum)) &
+                (self.inv_df["DEPDT_UTC"] == depdt)
+            ].shape[0] == 0:
+                print("WARNING: {}-{}-{}-{}-{} not found in inventory.".format(cc, orgn, dstn, int(fltnum), depdt))
+                self.missing_fcst_legs.append(leg)
+
+            if leg not in self.legs:
+                self.legs.append(leg)
+
         assert len(self.legs) != 0
 
         # Create mapping orgn, dstn, fltnum, depdt -> leg_id.
@@ -662,16 +666,16 @@ if __name__ == "__main__":
                 "20250815", "20250816", "20250817", "20250818", "20250819", "20250820", "20250821",
                 "20250822", "20250823", "20250824", "20250825", "20250826", "20250827", "20250828",
                 "20250829", "20250830", "20250831"]
-    costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
-    fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
-    cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
-    leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
-    subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/AUG.ssim"
-    airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/leg_pairings.xlsx"
-    turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
-    restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
+    costs_file = "s3://ay-rmp-home/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
+    fleet_file = "s3://ay-rmp-home/fleet_assigner/input/aircraft_inventory.csv"
+    cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
+    leg_distance_file = "s3://ay-rmp-home/fleet_assigner/input/leg_distances.csv"
+    subfleet_ranges_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_ranges.csv"
+    maintenance_file = "s3://ay-rmp-home/fleet_assigner/input/AUG.ssim"
+    airport_allowance_file = "s3://ay-rmp-home/fleet_assigner/input/airport_allowance.csv"
+    leg_pairings_file = "s3://ay-rmp-home/fleet_assigner/input/leg_pairings.xlsx"
+    turnaround_times_file = "s3://ay-rmp-home/fleet_assigner/input/turnaround_times.csv"
+    restrictions_file = "s3://ay-rmp-home/fleet_assigner/input/restrictions.csv"
 
     dr = DataReader(fcstdate,
                     depdates,

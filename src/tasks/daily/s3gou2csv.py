@@ -12,13 +12,13 @@ from s3utils import *
 
 def process(depdt):
     print('depdt = ', depdt)
-    csv2check = 'ay-emr-job/nrm/gou/'+depdt[:4]+'/'+depdt[4:6]+'/gou_'+depdt+'.csv.gz'
+    csv2check = 'ay-rmp-home/nrm/gou/'+depdt[:4]+'/'+depdt[4:6]+'/gou_'+depdt+'.csv.gz'
     if s3fileexists(csv2check):
         return 0 
 
     # Reading bof.
     print('Reading bof...')
-    bof = pd.read_csv('s3://ay-emr-job/nrm/bof/'+depdt[:4]+'/'+depdt[4:6]+'/BKG_OD_'+depdt+'.csv.gz', low_memory = False)
+    bof = pd.read_csv('s3://ay-rmp-home/nrm/bof/'+depdt[:4]+'/'+depdt[4:6]+'/BKG_OD_'+depdt+'.csv.gz', low_memory = False)
     bof['ISO_COUNTRY'] = bof['ISO_COUNTRY'].replace(np.nan, 'ZZ')
     bof['ISO_REGION'] = bof['ISO_REGION'].replace(np.nan, '')
     bof['TDIRECTION'] = bof['TDIRECTION'].replace(np.nan, '')
@@ -34,7 +34,7 @@ def process(depdt):
 
     # Reading pag.
     print('Reading pag...')
-    pag = pd.read_csv('s3://ay-emr-job/nrm/pa/'+depdt[:4]+'/'+depdt[4:6]+'/pag_'+depdt+'.csv.gz', low_memory = False)
+    pag = pd.read_csv('s3://ay-rmp-home/nrm/pa/'+depdt[:4]+'/'+depdt[4:6]+'/pag_'+depdt+'.csv.gz', low_memory = False)
     pag = pag.loc[pag['BASE_OD_DEPT_DATE'] == int(depdt)]
     pag['CREV'] = pag['MP'] * pag['LPC_AMD']
     pag = pag.groupby(['BASE_OD_ORGN','BASE_OD_DSTN','BASE_OPR_CC','BASE_OPR_FLTNUM',\

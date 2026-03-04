@@ -46,7 +46,7 @@ class FDCReader:
         depdateday = self.depdate[6:8]
 
         # Read forecast dataframe.
-        fcstcsv = "s3://ay-emr-job/nrm/bff/{}/{}/{}/FCST_OD_{}_{}.csv.gz".format(fcstdateyear,
+        fcstcsv = "s3://ay-rmp-home/nrm/bff/{}/{}/{}/FCST_OD_{}_{}.csv.gz".format(fcstdateyear,
                                                                                  fcstdatemonth,
                                                                                  fcstdateday,
                                                                                  self.fcstdate,

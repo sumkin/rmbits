@@ -15,7 +15,7 @@ def send_multipart(frm, to, sbj, txt, files):
 
 
 def send_multipart_or(sbj, txt, files):
-    df = pd.read_csv('s3://ay-emr-job/static/emails.csv')
+    df = pd.read_csv('s3://ay-rmp-home/static/emails.csv')
     df = df.loc[df['ROLE'] == 'OR']
     for idx,r in df.iterrows():
         try:

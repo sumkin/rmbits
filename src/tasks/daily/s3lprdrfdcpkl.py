@@ -17,7 +17,7 @@ def process(fname, dtstr):
         depdt = fname.split('/')[5].split('.')[0].split('_')[2]
         ndepdt = datetime.strftime(datetime.strptime(depdt, "%Y%m%d") + timedelta(days=1),"%Y%m%d")
 
-        pkl2check = "ay-emr-job/nrm/lprdrfdcpkl/{}/{}/{}/lprdrfdcpkl_{}_{}_{}.pkl.gz".format(dtstr[:4],
+        pkl2check = "ay-rmp-home/nrm/lprdrfdcpkl/{}/{}/{}/lprdrfdcpkl_{}_{}_{}.pkl.gz".format(dtstr[:4],
                                                                                              dtstr[4:6],
                                                                                              dtstr[6:8],
                                                                                              dtstr,
@@ -28,12 +28,12 @@ def process(fname, dtstr):
             print(pkl2check, " exists")
             return 0
 
-        fdc2check = "ay-emr-job/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(dtstr[:4],
+        fdc2check = "ay-rmp-home/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(dtstr[:4],
                                                                           dtstr[4:6],
                                                                           dtstr[6:8],
                                                                           dtstr,
                                                                           depdt)
-        nfdc2check = "ay-emr-job/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(dtstr[:4],
+        nfdc2check = "ay-rmp-home/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(dtstr[:4],
                                                                            dtstr[4:6],
                                                                            dtstr[6:8],
                                                                            dtstr,
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         dty, dtm, dtd = dtstr[:4], dtstr[4:6], dtstr[6:8]
 
         try:
-            fnames = gets3files("ay-emr-job/nrm/fdc/{}/{}/{}".format(dty, dtm, dtd))
+            fnames = gets3files("ay-rmp-home/nrm/fdc/{}/{}/{}".format(dty, dtm, dtd))
             if len(fnames) != 0:
                 num = 0
                 try:

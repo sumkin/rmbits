@@ -28,7 +28,7 @@ class POS:
         fnames = s3getlastfcstfiles()
         for fname in fnames:
             print fname
-            df = pd.read_csv('s3://ay-emr-job/'+fname)
+            df = pd.read_csv('s3://ay-rmp-home/'+fname)
             if res is None:
                 res = df[['POS']].drop_duplicates()
             else:

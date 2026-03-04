@@ -8,7 +8,7 @@ for i in range(365):
     dt = dt - timedelta(days = 1)
     dts = datetime.strftime(dt, '%Y%m%d')
     try:
-        bdf = pd.read_csv('s3://ay-emr-job/nrm/bof/' + dts[:4] + '/' + dts[4:6] +\
+        bdf = pd.read_csv('s3://ay-rmp-home/nrm/bof/' + dts[:4] + '/' + dts[4:6] +\
                                                  '/BKG_OD_' + dts +'.csv.gz', low_memory = False)
     except:
         break

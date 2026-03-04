@@ -12,7 +12,7 @@ class ROMCalculator:
         self.fcstdate = fcstdate
         self.depdate = depdate
         
-        orig = "s3://ay-emr-job/nrm/lprdrfdcpkl/{}/{}/{}/lprdrfdcpkl_{}_{}_final.pkl.gz".format(self.fcstdate[:4],
+        orig = "s3://ay-rmp-home/nrm/lprdrfdcpkl/{}/{}/{}/lprdrfdcpkl_{}_{}_final.pkl.gz".format(self.fcstdate[:4],
                                                                                                 self.fcstdate[4:6],
                                                                                                 self.fcstdate[6:8],
                                                                                                 self.fcstdate,

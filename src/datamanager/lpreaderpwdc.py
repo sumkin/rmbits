@@ -38,9 +38,9 @@ class LPReaderPWDC:
         depday   = self.depdate[6:8]  
 
         # Demand curve data frame.
-        dccsv = 's3://ay-emr-job/nrm/pwdc/'+toyear+'/'+tomonth+'/'+today+\
+        dccsv = 's3://ay-rmp-home/nrm/pwdc/'+toyear+'/'+tomonth+'/'+today+\
                                         '/dc_' + self.fromdate + '_' + self.todate + '_' + self.depdate + '.csv.gz'
-        next_dccsv = 's3://ay-emr-job/nrm/pwdc/'+toyear+'/'+tomonth+'/'+today+\
+        next_dccsv = 's3://ay-rmp-home/nrm/pwdc/'+toyear+'/'+tomonth+'/'+today+\
                                         '/dc_' + self.fromdate + '_' + self.todate + '_' + self.next_depdate + '.csv.gz'
         self.dccsv = dccsv
         self.next_dccsv = next_dccsv
@@ -90,7 +90,7 @@ class LPReaderPWDC:
         self.dc_df = self.dc_df.reset_index(0)
 
         # Inventory data frame.
-        invcsv = 's3://ay-emr-job/nrm/bif/'+toyear+'/'+tomonth+\
+        invcsv = 's3://ay-rmp-home/nrm/bif/'+toyear+'/'+tomonth+\
                                         '/INV_'+self.todate+'.csv.gz'
         self.inv_df = pd.read_csv(invcsv, low_memory = False).fillna('')
         self.inv_df = self.inv_df.loc[self.inv_df['DEPDT'] == int(self.depdate)] # flights for forecast date only.
@@ -101,7 +101,7 @@ class LPReaderPWDC:
 
 
         # Yield data frame.
-        yldcsv = 's3://ay-emr-job/nrm/yield/' + toyear + '/' + tomonth +\
+        yldcsv = 's3://ay-rmp-home/nrm/yield/' + toyear + '/' + tomonth +\
                                           '/YIELD_' + self.todate + '.csv.gz'
         self.yld_df = pd.read_csv(yldcsv, low_memory = False).fillna('')
        

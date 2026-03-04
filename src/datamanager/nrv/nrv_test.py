@@ -9,7 +9,7 @@ def main():
         year = str(dt.year).zfill(2)
         month = str(dt.month).zfill(2)
         day = str(dt.day).zfill(2)
-        fname = "s3://ay-emr-job/nrm/nrv_exp/2024/10/14/nrv_exp_20241014_{}.csv.gz".format(dt.strftime("%Y%m%d"))
+        fname = "s3://ay-rmp-home/nrm/nrv_exp/2024/10/14/nrv_exp_20241014_{}.csv.gz".format(dt.strftime("%Y%m%d"))
         try:
             df = pd.read_csv(fname)
             nrv_min = df["NRV"].min()

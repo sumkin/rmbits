@@ -12,10 +12,10 @@ class ROMAnalyzer:
         yyyy, mm, dd = dt[:4], dt[4:6], dt[6:8] 
 
         # Read dataframes.
-        self.min_df = pd.read_csv("s3://ay-emr-job/nrm/rom/{}/{}/rom_min_{}.csv.gz".format(yyyy, mm, self.dt))
-        self.max_df = pd.read_csv("s3://ay-emr-job/nrm/rom/{}/{}/rom_max_{}.csv.gz".format(yyyy, mm, self.dt))
-        self.act_df = pd.read_csv("s3://ay-emr-job/nrm/rom/{}/{}/rom_act_{}.csv.gz".format(yyyy, mm, self.dt))
-        self.load_df = pd.read_csv("s3://ay-emr-job/nrm/rom/{}/{}/rom_load_{}.csv.gz".format(yyyy, mm, self.dt))
+        self.min_df = pd.read_csv("s3://ay-rmp-home/nrm/rom/{}/{}/rom_min_{}.csv.gz".format(yyyy, mm, self.dt))
+        self.max_df = pd.read_csv("s3://ay-rmp-home/nrm/rom/{}/{}/rom_max_{}.csv.gz".format(yyyy, mm, self.dt))
+        self.act_df = pd.read_csv("s3://ay-rmp-home/nrm/rom/{}/{}/rom_act_{}.csv.gz".format(yyyy, mm, self.dt))
+        self.load_df = pd.read_csv("s3://ay-rmp-home/nrm/rom/{}/{}/rom_load_{}.csv.gz".format(yyyy, mm, self.dt))
 
         # Aggregate and filter data.
         self.min_df = self.min_df.groupby(['GEO_OD_TS_KEY','POS','FF'], as_index = False).agg({'SOL': 'sum', 'D': 'sum'})

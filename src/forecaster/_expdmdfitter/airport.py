@@ -4,7 +4,7 @@ import pandas as pd
 class Airport:
 
     def __init__(self):
-        self.df = pd.read_csv('s3://ay-emr-job/static/ff_airports.csv', sep=';')
+        self.df = pd.read_csv('s3://ay-rmp-home/static/ff_airports.csv', sep=';')
         self.df['CODE'] = self.df['CODE'].astype('category')
         self.df.set_index('CODE')
         # Caches for country, region.

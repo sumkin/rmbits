@@ -16,7 +16,7 @@ class YieldLookupLoader:
         srcmonth = self.srcdate[4:6]
         srcday = self.srcdate[6:8]
 
-        bucket = 'ay-emr-job'
+        bucket = 'ay-rmp-home'
         fname = 'yldlkppkl_' + self.srcdate + '.pkl.gz'
         lfname = '/tmp/' + fname
 

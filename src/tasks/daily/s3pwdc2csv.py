@@ -16,7 +16,7 @@ def process(fname, dtstr_prev, dtstr):
     print('dtstr = ', dtstr)
     depdt = fname.split('/')[5].split('.')[0].split('_')[3]
 
-    csv2check = 'ay-emr-job/nrm/pwdc/' + dtstr[:4] +\
+    csv2check = 'ay-rmp-home/nrm/pwdc/' + dtstr[:4] +\
                                    '/' + dtstr[4:6] +\
                                    '/' + dtstr[6:8] +\
                                    '/dc_' + dtstr_prev + '_' + dtstr + '_' + depdt + '.csv.gz'
@@ -24,10 +24,10 @@ def process(fname, dtstr_prev, dtstr):
         print(csv2check, ' exists')
         return 0
 
-    if not s3fileexists('s3://ay-emr-job/nrm/bff/' + dtstr[:4] + '/' + dtstr[4:6] +\
+    if not s3fileexists('s3://ay-rmp-home/nrm/bff/' + dtstr[:4] + '/' + dtstr[4:6] +\
                                                '/FCST_OD_' + dtstr + '_' + depdt + '.csv.gz'):
         return 0
-    if not s3fileexists('s3://ay-emr-job/nrm/bff/' + dtstr_prev[:4] + '/' + dtstr_prev[4:6] +\
+    if not s3fileexists('s3://ay-rmp-home/nrm/bff/' + dtstr_prev[:4] + '/' + dtstr_prev[4:6] +\
                                                '/FCST_OD_' + dtstr_prev + '_' + depdt + '.csv.gz'):
         return 0
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         dtd = dtstr[6:8]
 
         try:        
-            fnames = gets3files('ay-emr-job/nrm/bff/'+dty+'/'+dtm+'/'+dtd)
+            fnames = gets3files('ay-rmp-home/nrm/bff/'+dty+'/'+dtm+'/'+dtd)
             if len(fnames) != 0:
                 dt_s = datetime.now()
                 for i in range(1,10):
@@ -93,7 +93,7 @@ if __name__ == "__main__":
                     dty_prev = dtstr_prev[:4]
                     dtm_prev = dtstr_prev[4:6]
                     dtd_prev = dtstr_prev[6:8]
-                    fnames_prev = gets3files('ay-emr-job/nrm/bff/'+dty_prev+'/'+dtm_prev+'/'+dtd_prev)
+                    fnames_prev = gets3files('ay-rmp-home/nrm/bff/'+dty_prev+'/'+dtm_prev+'/'+dtd_prev)
                     if len(fnames_prev) > 0:
                         break
                 num = process_parallel(fnames, dtstr_prev, dtstr)

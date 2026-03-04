@@ -14,7 +14,7 @@ def ignored_demand_check(fcstdate, depdate):
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:8]
 
     # Read demand curve data frame.
-    dccsv = 's3://ay-emr-job/nrm/fdc/' + fcstyear + '/' + fcstmonth + '/' + fcstday +\
+    dccsv = 's3://ay-rmp-home/nrm/fdc/' + fcstyear + '/' + fcstmonth + '/' + fcstday +\
                                    '/fdc_' + fcstdate + '_' + depdate + '.csv.gz'  
     dcdf = pd.read_csv(dccsv, low_memory = False).fillna('')
     dcdf['SREV'] = dcdf['SMPWA'] * dcdf['SFD']
@@ -22,7 +22,7 @@ def ignored_demand_check(fcstdate, depdate):
 
     # Read inventory data frame.
     next_depdt = datetime.strftime(datetime.strptime(depdate, '%Y%m%d') + timedelta(days = 1), '%Y%m%d')
-    invcsv = 's3://ay-emr-job/nrm/bif/' + fcstyear + '/' + fcstmonth + '/INV_' + fcstdate + '.csv.gz'
+    invcsv = 's3://ay-rmp-home/nrm/bif/' + fcstyear + '/' + fcstmonth + '/INV_' + fcstdate + '.csv.gz'
     invdf = pd.read_csv(invcsv, low_memory = False).fillna('')
     invdf = invdf.loc[(invdf['DEPDT'] == int(depdate)) | (invdf['DEPDT'] == int(next_depdate))]
     invdf = invdf.loc[(invdf['ORGN'] == 'HEL') | (invdf['DSTN'] == 'HEL')]

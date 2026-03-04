@@ -34,7 +34,7 @@ class PostAnalysis:
         print('solve_groups() called')
         print('self.depdate = ', self.depdate)
 
-        bkgcsv = 's3://ay-emr-job/nrm/bof/'+depyear+'/'+depmonth+'/BKG_OD_'+self.depdate+'.csv.gz'
+        bkgcsv = 's3://ay-rmp-home/nrm/bof/'+depyear+'/'+depmonth+'/BKG_OD_'+self.depdate+'.csv.gz'
         bkgdf = pd.read_csv(bkgcsv, low_memory = False).fillna('')
         bkgdf = bkgdf.loc[bkgdf['BASE_OD_DEPT_DATE'] == int(self.depdate)]
         bkgdf = bkgdf.loc[bkgdf['SELL_CLS'] == 'G']

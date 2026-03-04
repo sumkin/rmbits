@@ -5,11 +5,11 @@ from s3utils import *
 def main():
     # Base case.
     base_df = None
-    files = gets3files("s3://ay-emr-job/nrm/partnership_base_cf/2024/03/05/")
+    files = gets3files("s3://ay-rmp-home/nrm/partnership_base_cf/2024/03/05/")
     num = 0
     for file in files:
         num += 1
-        df = pd.read_csv("s3://ay-emr-job/" + file, low_memory=False)
+        df = pd.read_csv("s3://ay-rmp-home/" + file, low_memory=False)
         df = df[["MP", "D", "LPC_D"]]
         if base_df is None:
             base_df = df
@@ -28,11 +28,11 @@ def main():
 
     # Scenario 1.
     sce1_df = None
-    files = gets3files("s3://ay-emr-job/nrm/partnership_sce1_cf/2024/03/05/")
+    files = gets3files("s3://ay-rmp-home/nrm/partnership_sce1_cf/2024/03/05/")
     num = 0
     for file in files:
         num += 1
-        df = pd.read_csv("s3://ay-emr-job/" + file, low_memory=False)
+        df = pd.read_csv("s3://ay-rmp-home/" + file, low_memory=False)
         df = df[["MP", "D", "LPC_D"]]
         if sce1_df is None:
             sce1_df = df
@@ -51,11 +51,11 @@ def main():
 
     # Scenario 2.
     sce2_df = None
-    files = gets3files("s3://ay-emr-job/nrm/partnership_sce2_cf/2024/03/05/")
+    files = gets3files("s3://ay-rmp-home/nrm/partnership_sce2_cf/2024/03/05/")
     num = 0
     for file in files:
         num += 1
-        df = pd.read_csv("s3://ay-emr-job/" + file, low_memory=False)
+        df = pd.read_csv("s3://ay-rmp-home/" + file, low_memory=False)
         df = df[["MP", "D", "LPC_D"]]
         if sce2_df is None:
             sce2_df = df

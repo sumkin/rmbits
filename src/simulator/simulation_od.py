@@ -21,7 +21,7 @@ with open(fname + '_od.csv', 'w') as fout:
         depdate = datetime.strftime(depdt, '%Y%m%d')
         print 'depdate = ', depdate
         try:
-            dfw = pd.read_csv('s3://ay-emr-job/nrm/'+prefix_w+'/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+            dfw = pd.read_csv('s3://ay-rmp-home/nrm/'+prefix_w+'/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                                  '/'+prefix_w+'_'+fcstdate+'_'+depdate+'.csv.gz', low_memory = False)
             assert dfw[['MP','LPC_D']].isnull().sum().sum() == 0
             dfw['REV'] = dfw['MP'] * dfw['LPC_D']
@@ -33,7 +33,7 @@ with open(fname + '_od.csv', 'w') as fout:
             else:
                 dfwsum = dfwsum.append(dfw)
 
-            dfwo = pd.read_csv('s3://ay-emr-job/nrm/'+prefix_wo+'/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+            dfwo = pd.read_csv('s3://ay-rmp-home/nrm/'+prefix_wo+'/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                                   '/'+prefix_wo+'_'+fcstdate+'_'+depdate+'.csv.gz', low_memory = False)
             assert dfwo[['MP','LPC_D']].isnull().sum().sum() == 0
             dfwo['REV'] = dfwo['MP'] * dfwo['LPC_D']

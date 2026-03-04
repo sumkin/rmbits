@@ -45,11 +45,11 @@ def prepare_data():
         print 'CF files found.'
 
     # Class dataframe.
-    clsdf = pd.read_csv('s3://ay-emr-job/static/clsorder.csv').fillna('')
+    clsdf = pd.read_csv('s3://ay-rmp-home/static/clsorder.csv').fillna('')
     print 'Class order dataframe shape = ', clsdf.shape
 
     # Bookings dataframe.
-    bkgdf = pd.read_csv('s3://ay-emr-job/nrm/bof/'+frcstyear+'/'+frcstmonth+'/BKG_OD_'+frcstdate+'.csv.gz', low_memory = False).fillna('')
+    bkgdf = pd.read_csv('s3://ay-rmp-home/nrm/bof/'+frcstyear+'/'+frcstmonth+'/BKG_OD_'+frcstdate+'.csv.gz', low_memory = False).fillna('')
     bkgdf['BASE_OD_ORGN'] = bkgdf['BASE_OD_ORGN'].astype(str)
     bkgdf['BASE_OD_DSTN'] = bkgdf['BASE_OD_DSTN'].astype(str)
     bkgdf['ISO_COUNTRY'] = bkgdf['ISO_COUNTRY'].astype(str)
@@ -57,13 +57,13 @@ def prepare_data():
     print 'Booking dataframe shape = ', bkgdf.shape
 
     # Availability dataframe.
-    adf = pd.read_csv('s3://ay-emr-job/nrm/baf/'+frcstyear+'/'+frcstmonth+'/AV_OD_'+frcstdate+'.csv.gz', low_memory = False).fillna('')
+    adf = pd.read_csv('s3://ay-rmp-home/nrm/baf/'+frcstyear+'/'+frcstmonth+'/AV_OD_'+frcstdate+'.csv.gz', low_memory = False).fillna('')
     print 'Availability dataframe shape = ', adf.shape
 
     print 'Reading constrained forecast...'
     def reads3df(depdate):
         try:
-            df = pd.read_csv('s3://ay-emr-job/nrm/cf/'+frcstyear+'/'+frcstmonth+'/'+frcstday+\
+            df = pd.read_csv('s3://ay-rmp-home/nrm/cf/'+frcstyear+'/'+frcstmonth+'/'+frcstday+\
                              '/cf_'+frcstdate+'_'+depdate+'.csv.gz', low_memory = False).fillna('')
             df = df.groupby(['BASE_OD_ORGN','BASE_OD_DSTN','BASE_OD_VIA',\
                              'BASE_OD_ORGN_COUNTRY','BASE_OD_ORGN_REGION',\
@@ -79,7 +79,7 @@ def prepare_data():
         except Exception as e:
             print e
             # Fix for missing data.
-            df = pd.read_csv('s3://ay-emr-job/nrm/cf/'+frcstyear+'/'+frcstmonth+'/'+frcstday+\
+            df = pd.read_csv('s3://ay-rmp-home/nrm/cf/'+frcstyear+'/'+frcstmonth+'/'+frcstday+\
                              '/cf_'+frcstdate+'_'+frcstdate+'.csv.gz', low_memory = False).fillna('')
             df = df.groupby(['BASE_OD_ORGN','BASE_OD_DSTN','BASE_OD_VIA',\
                              'BASE_OD_ORGN_COUNTRY','BASE_OD_ORGN_REGION',\
@@ -251,7 +251,7 @@ def gen_report(orgn_ap, orgn_cntr, orgn_rgn,\
 
     lclfname = '/home/ay49514/tmp/constr_frcst_' + tfrom + '-' + tto + '_' + frcstdate + '.html'
     plot(fig, filename = lclfname, auto_open = False)
-    rmtfname = 's3://ay-emr-job/nrm/reporting/cf/'+frcstdate[:4]+'/'+frcstdate[4:6]+'/'+frcstdate[6:8]+'/'+\
+    rmtfname = 's3://ay-rmp-home/nrm/reporting/cf/'+frcstdate[:4]+'/'+frcstdate[4:6]+'/'+frcstdate[6:8]+'/'+\
                'constr_frcst_' + tfrom + '-' + tto + '_' + frcstdate + '.html'
     copy2s3(lclfname, rmtfname)
 

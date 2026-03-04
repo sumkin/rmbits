@@ -22,7 +22,7 @@ def process(fname):
     depdt = datetime.strptime(fname.rsplit('/',1)[1].split('.')[8][2:], '%y%m%d')
     depdt_s = depdt.strftime('%Y%m%d')
 
-    csv2check = 'ay-emr-job/nrm/fullbff/'+str(dt.year)+'/'+str(dt.month).zfill(2)+'/'+str(dt.day).zfill(2)+\
+    csv2check = 'ay-rmp-home/nrm/fullbff/'+str(dt.year)+'/'+str(dt.month).zfill(2)+'/'+str(dt.day).zfill(2)+\
                 '/FCST_'+dt.strftime('%Y%m%d')+'_'+depdt_s+'_'+depdt_s+'.csv.gz'
 
     csv_exists = s3fileexists(csv2check)
@@ -90,7 +90,7 @@ def process(fname):
 
         print("Copying file to s3...")
         subfolder = str(src_date.year) + '/' + str(src_date.month).zfill(2) + '/' + str(src_date.day).zfill(2)
-        s3fname = 's3://ay-emr-job/nrm/fullbff/'+subfolder+'/'+csv_fnames[k]
+        s3fname = 's3://ay-rmp-home/nrm/fullbff/'+subfolder+'/'+csv_fnames[k]
         subprocess.check_output(['aws','s3','cp',csv_fname_fps[k],s3fname])
         subprocess.check_output(['rm', csv_fname_fps[k]])
         time.sleep(random.randint(0,3))

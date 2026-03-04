@@ -61,7 +61,7 @@ class FleetReader:
         res = {}
         fleet_types = self.get_fleet_types()
         for fleet_type in fleet_types:
-            df = self.fleet_df[self.fleet_df["SUBFLEET"] == fleet_type]
+            df = self.fleet_df[self.fleet_df["SUBFLEET"] == fleet_type].copy()
             df["NUM_AIRCRAFTS"] = df["NUM_AIRCRAFTS"].astype(int)
             res[fleet_type] = [fleet_type + "_" + str(e) for e in list(range(df["NUM_AIRCRAFTS"].iloc[0]))]
         return res
@@ -86,9 +86,9 @@ class FleetReader:
 
 if __name__ == "__main__":
     depdates = ["20220401", "20220402"]
-    fname = "s3://ay-emr-job/fleet_assigner/aircraft_inventory.csv"
-    cap_file = "s3://ay-emr-job/fleet_assigner/subfleet_capacities.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/december2023/W23_dec_190923.ssim"
+    fname = "s3://ay-rmp-home/fleet_assigner/aircraft_inventory.csv"
+    cap_file = "s3://ay-rmp-home/fleet_assigner/subfleet_capacities.csv"
+    maintenance_file = "s3://ay-rmp-home/fleet_assigner/december2023/W23_dec_190923.ssim"
     fr = FleetReader(depdates, fname, cap_file, maintenance_file)
     fr.read()
     fleet_types = fr.get_fleet_types()

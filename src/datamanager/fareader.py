@@ -32,7 +32,7 @@ class FAReader:
         print('Reading dataframes...')
         # Read pwdc dataframe.
         s3prefix, startdt, enddt, within = s3getpwdcprefix(self.bkgdate)
-        self.pwdf = pd.read_csv('s3://ay-emr-job/'+s3prefix+\
+        self.pwdf = pd.read_csv('s3://ay-rmp-home/'+s3prefix+\
                                 '_'+self.depdate+'.csv.gz', low_memory = False)
         # Take only base flows, because for others we don't know availability.
         self.pwdf = self.pwdf.loc[(self.pwdf['PREV_OPR_CC'].isnull()) & (self.pwdf['NEXT_OPR_CC'].isnull())]
@@ -82,12 +82,12 @@ class FAReader:
                   'LOCY_WOSC': str,
                   'LOCIY_WOSC': int,
                   'SRC_DATE': int}
-        self.avdf = pd.read_csv('s3://ay-emr-job/nrm/baf/'+bkgyear+'/'+bkgmonth+\
+        self.avdf = pd.read_csv('s3://ay-rmp-home/nrm/baf/'+bkgyear+'/'+bkgmonth+\
                                 '/AV_OD_'+self.bkgdate+'.csv.gz', dtype = dtypes)
         self.avdf = self.avdf[self.avdf['OD_DEPT_DATE'] == int(self.depdate)]
 
         # Read bkg dataframe.
-        self.bkgdf = pd.read_csv('s3://ay-emr-job/nrm/bcd/'+bkgyear+'/'+bkgmonth+\
+        self.bkgdf = pd.read_csv('s3://ay-rmp-home/nrm/bcd/'+bkgyear+'/'+bkgmonth+\
                                  '/bkgd_'+self.pbkgdate+'_'+self.bkgdate+'.csv.gz', low_memory = False)
         self.bkgdf = self.bkgdf[self.bkgdf['BASE_OD_DEPT_DATE'] == int(self.depdate)]
 
@@ -139,7 +139,7 @@ class FAReader:
         self.df['COUNT'] = self.df['COUNT'].fillna(0)
         self.df['FF'] = self.df['FF'].fillna('')
         # Join class dataframe.
-        clsdf = pd.read_csv('s3://ay-emr-job/static/clsorder.csv')
+        clsdf = pd.read_csv('s3://ay-rmp-home/static/clsorder.csv')
         self.df = self.df.merge(clsdf, left_on = ['BC'], right_on = ['CLS'])
         self.df = self.df.sort_values(['BASE_OD_ORGN','BASE_OD_DSTN','BASE_OPR_CC','BASE_OPR_FLTNUM',\
                                        'BASE_OD_DEPT_DATE','POS','FF','ORDER']) 

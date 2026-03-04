@@ -20,7 +20,7 @@ class YieldLookup:
         NUM_TRIES = 3
         for i in range(NUM_TRIES):
             try:
-                self.ydf = pd.read_csv('s3://ay-emr-job/nrm/yield/'+dtyear+'/'+dtmonth+\
+                self.ydf = pd.read_csv('s3://ay-rmp-home/nrm/yield/'+dtyear+'/'+dtmonth+\
                                        '/YIELD_'+dt+'.csv.gz',
                                        usecols = ['TRVLFROM','TRVLTO',\
                                                   'ORGN','DSTN','POS','CLS','GBL_AM'])
@@ -44,7 +44,7 @@ class YieldLookup:
 
         for i in range(NUM_TRIES):
             try:
-                self.gdf = pd.read_csv('s3://ay-emr-job/static/geoset_mapping.csv', sep=';')
+                self.gdf = pd.read_csv('s3://ay-rmp-home/static/geoset_mapping.csv', sep=';')
                 break
             except Exception as e:
                 if i == NUM_TRIES - 1:

@@ -2,6 +2,8 @@ import sys
 import yaml
 import gzip
 import pickle
+
+(self.)
 import pandas as pd
 import numpy as np
 from datetime import datetime as dt
@@ -35,7 +37,7 @@ class LPReaderFDC:
         fcstyear, fcstmonth, fcstday = self.fcstdate[:4], self.fcstdate[4:6], self.fcstdate[6:8]
 
         # Inventory data frame.
-        invcsv = "s3://ay-emr-job/nrm/bif/{}/{}/INV_{}.csv.gz".format(fcstyear, fcstmonth, self.fcstdate)
+        invcsv = "s3://ay-rmp-home/nrm/bif/{}/{}/INV_{}.csv.gz".format(fcstyear, fcstmonth, self.fcstdate)
         self.invdf = pd.read_csv(invcsv, low_memory=False).fillna("")
         self.invdf = self.invdf.loc[self.invdf["DECOMPOSITION_DT"] == int(self.decompdate)]
         self.invdf = self.invdf.loc[(self.invdf["CABIN"] == "J") | (self.invdf["CABIN"] == "Y")]
@@ -49,17 +51,17 @@ class LPReaderFDC:
         fcstyear, fcstmonth, fcstday  = self.fcstdate[:4], self.fcstdate[4:6], self.fcstdate[6:8]
 
         # Demand curve dataframe.
-        prev_dccsv = "s3://ay-emr-job/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(fcstyear,
+        prev_dccsv = "s3://ay-rmp-home/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(fcstyear,
                                                                                 fcstmonth,
                                                                                 fcstday,
                                                                                 self.fcstdate,
                                                                                 self.prev_depdate)
-        dccsv = "s3://ay-emr-job/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(fcstyear,
+        dccsv = "s3://ay-rmp-home/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(fcstyear,
                                                                            fcstmonth,
                                                                            fcstday,
                                                                            self.fcstdate,
                                                                            self.depdate)
-        next_dccsv = "s3://ay-emr-job/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(fcstyear,
+        next_dccsv = "s3://ay-rmp-home/nrm/fdc/{}/{}/{}/fdc_{}_{}.csv.gz".format(fcstyear,
                                                                                 fcstmonth,
                                                                                 fcstday,
                                                                                 self.fcstdate,
@@ -110,7 +112,7 @@ class LPReaderFDC:
         assert bofdf is not None
 
         # Merge class order.
-        clsdf = pd.read_csv("s3://ay-emr-job/static/clsorder.csv")
+        clsdf = pd.read_csv("s3://ay-rmp-home/static/clsorder.csv")
         self.dcdf = self.dcdf.merge(clsdf, left_on=["BC"], right_on=["CLS"], how="left")
 
         # Merge bookings dataframe.

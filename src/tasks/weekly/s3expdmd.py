@@ -12,7 +12,7 @@ from expdmdfitter import *
 def process(fname: str, dtstr: str) -> int:
     depdt = fname.split("/")[5].split(".")[0].split("_")[3]
 
-    csv2check = "ay-emr-job/nrm/expdmd/" + dtstr[:4] +\
+    csv2check = "ay-rmp-home/nrm/expdmd/" + dtstr[:4] +\
                                      "/" + dtstr[4:6] +\
                                      "/" + dtstr[6:8] +\
                                      "/expdmd_" + dtstr + "_" + depdt + ".csv.gz"
@@ -36,7 +36,7 @@ def process(fname: str, dtstr: str) -> int:
     s3_client = boto3.client("s3")
     subfolder = dtstr[:4] + "/" + dtstr[4:6] + "/" + dtstr[6:8]
     csvfname = csv2check.split("/")[-1]
-    s3_client.upload_file(fname_out + ".gz", "ay-emr-job", "nrm/expdmd/" + subfolder + "/" + csvfname)
+    s3_client.upload_file(fname_out + ".gz", "ay-rmp-home", "nrm/expdmd/" + subfolder + "/" + csvfname)
 
     # Remove send file.
     subprocess.check_output(["rm", fname_out + ".gz"])
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         src_date = dt - timedelta(days = i)
         dtstr = datetime.strftime(src_date, "%Y%m%d")
         dty, dtm, dtd = dtstr[:4], dtstr[4:6], dtstr[6:8]
-        fnames = gets3files(f"ay-emr-job/nrm/bff/{dty}/{dtm}/{dtd}")
+        fnames = gets3files(f"ay-rmp-home/nrm/bff/{dty}/{dtm}/{dtd}")
         if len(fnames) != 0:
             num = process_non_parallel(fnames, dtstr)
 

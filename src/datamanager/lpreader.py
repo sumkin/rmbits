@@ -31,7 +31,7 @@ class LPReader:
         fcstextday   = self.fcstextdate[6:8]  
 
         # Forecast data frame.
-        fcstcsv = 's3://ay-emr-job/nrm/bff/'+fcstextyear+'/'+fcstextmonth+'/'+fcstextday+\
+        fcstcsv = 's3://ay-rmp-home/nrm/bff/'+fcstextyear+'/'+fcstextmonth+'/'+fcstextday+\
                                          '/FCST_OD_'+self.fcstextdate+'_'+self.fcstdate+'.csv.gz'
         self.fcstcsv = fcstcsv
         self.fcst_df = pd.read_csv(fcstcsv).fillna('')
@@ -43,7 +43,7 @@ class LPReader:
         self.fcst_df = self.fcst_df[self.fcst_df['BC'] != 'U']
         
         # Inventory data frame.
-        invcsv = 's3://ay-emr-job/nrm/bif/'+extyear+'/'+extmonth+\
+        invcsv = 's3://ay-rmp-home/nrm/bif/'+extyear+'/'+extmonth+\
                                         '/INV_'+self.extdate+'.csv.gz'
         self.inv_df = pd.read_csv(invcsv).fillna('')
         self.inv_df = self.inv_df.loc[self.inv_df['DEPDT'] == int(self.fcstdate)] # flights for forecast date only.
@@ -53,7 +53,7 @@ class LPReader:
                                       (self.inv_df['CABIN'] == 'Y')]
 
         # Booking data frame.
-        bkgcsv = 's3://ay-emr-job/nrm/bof/'+extyear+'/'+extmonth+\
+        bkgcsv = 's3://ay-rmp-home/nrm/bof/'+extyear+'/'+extmonth+\
                                         '/BKG_OD_'+self.extdate+'.csv.gz'
         self.bkg_df = pd.read_csv(bkgcsv).fillna('')
         self.bkg_df = self.bkg_df.loc[self.bkg_df['BASE_OD_DEPT_DATE'] == int(self.fcstdate)] # flights for forecast data only.
@@ -65,7 +65,7 @@ class LPReader:
         self.bkg_df = self.bkg_df[self.bkg_df['SELL_CLS'] != 'U']
 
         # Yield data frame.
-        yldcsv = 's3://ay-emr-job/nrm/yield/'+extyear+'/'+extmonth+\
+        yldcsv = 's3://ay-rmp-home/nrm/yield/'+extyear+'/'+extmonth+\
                                           '/YIELD_'+self.extdate+'.csv.gz'
         self.yld_df = pd.read_csv(yldcsv).fillna('')
         

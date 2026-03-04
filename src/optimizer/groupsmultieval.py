@@ -36,7 +36,7 @@ class GroupsMultiEvaluator:
         self.depdates = list(depdates)
         self.depdates.sort()
 
-        self.invdf = pd.read_csv("s3://ay-emr-job/nrm/bif/{}/{}/INV_{}.csv.gz".format(self.fcstyear, self.fcstmonth, self.fcstdate))
+        self.invdf = pd.read_csv("s3://ay-rmp-home/nrm/bif/{}/{}/INV_{}.csv.gz".format(self.fcstyear, self.fcstmonth, self.fcstdate))
         self.invdf = self.invdf.loc[(self.invdf['ORGN'] == 'HEL') | (self.invdf['DSTN'] == 'HEL')]
         self.invdf = self.invdf.loc[(self.invdf['CABIN'] == 'J') | (self.invdf['CABIN'] == 'Y')]
         self.invdf = self.invdf.loc[self.invdf['CAPO'] < 900]

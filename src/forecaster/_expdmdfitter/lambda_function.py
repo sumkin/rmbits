@@ -30,7 +30,7 @@ def lambda_handler(event, context):
         }
 
     srcdate, depdate = pcs[2], pcs[3]
-    csvfname3 = 'ay-emr-job/nrm/expdmd/' + srcdate[:4] + '/' + srcdate[4:6] + '/' + srcdate[6:8] +\
+    csvfname3 = 'ay-rmp-home/nrm/expdmd/' + srcdate[:4] + '/' + srcdate[4:6] + '/' + srcdate[6:8] +\
                                      '/expdmd_' + srcdate + '_' + depdate + '.csv.gz'
     csvfname = 'expdmd_' + srcdate + '_' + depdate + '.csv'
     csvfname_fp = '/tmp/' + csvfname
@@ -50,7 +50,7 @@ def lambda_handler(event, context):
     # Copy file to s3.
     s3_client = boto3.client('s3')
     subfolder = srcdate[:4] + '/' + srcdate[4:6] + '/' + srcdate[6:8] 
-    s3_client.upload_file(csvfname_fp + '.gz', 'ay-emr-job', 'nrm/expdmd/' + subfolder + '/' + csvfname + '.gz')
+    s3_client.upload_file(csvfname_fp + '.gz', 'ay-rmp-home', 'nrm/expdmd/' + subfolder + '/' + csvfname + '.gz')
 
     # Remove sent file.
     subprocess.check_output(['rm',csvfname_fp+'.gz'])

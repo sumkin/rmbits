@@ -26,18 +26,18 @@ class NRVReader:
 
     def read_dfs(self):
         # Read product dual values.
-        fname = "s3://ay-emr-job/nrm/cf/{}/{}/{}/cf_prdt_sens_{}_{}.csv.gz".format(self.srcdate[:4],
+        fname = "s3://ay-rmp-home/nrm/cf/{}/{}/{}/cf_prdt_sens_{}_{}.csv.gz".format(self.srcdate[:4],
                                                                                     self.srcdate[4:6],
                                                                                     self.srcdate[6:8],
                                                                                     self.srcdate,
                                                                                     self.depdate)
         self.df = pd.read_csv(fname, low_memory=False)
         self.df = self.df.replace(np.nan, '')
-        clsdf = pd.read_csv("s3://ay-emr-job/static/clsorder.csv")
+        clsdf = pd.read_csv("s3://ay-rmp-home/static/clsorder.csv")
         self.df = self.df.merge(clsdf, left_on=['BC'], right_on=['CLS'], how='left')
  
         # Read exponential demand. 
-        fname = "s3://ay-emr-job/nrm/expdmd/{}/{}/{}/expdmd_{}_{}.csv.gz".format(self.srcdate[:4],
+        fname = "s3://ay-rmp-home/nrm/expdmd/{}/{}/{}/expdmd_{}_{}.csv.gz".format(self.srcdate[:4],
                                                                                   self.srcdate[4:6],
                                                                                   self.srcdate[6:8],
                                                                                   self.srcdate,
@@ -50,7 +50,7 @@ class NRVReader:
                                      how="left")
 
         # Read constrained forecast.
-        fname = "s3://ay-emr-job/nrm/cf/{}/{}/{}/cf_{}_{}.csv.gz".format(self.srcdate[:4],
+        fname = "s3://ay-rmp-home/nrm/cf/{}/{}/{}/cf_{}_{}.csv.gz".format(self.srcdate[:4],
                                                                          self.srcdate[4:6],
                                                                          self.srcdate[6:8],
                                                                          self.srcdate,

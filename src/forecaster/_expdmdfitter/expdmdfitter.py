@@ -46,7 +46,7 @@ class ExpDmdFitter:
         NUM_TRIES = 10
         for i in range(NUM_TRIES):
             try:
-                df = pd.read_csv('s3://ay-emr-job/nrm/bff/'+self.srcdate[:4]+'/'+self.srcdate[4:6]+'/'+self.srcdate[6:8]+\
+                df = pd.read_csv('s3://ay-rmp-home/nrm/bff/'+self.srcdate[:4]+'/'+self.srcdate[4:6]+'/'+self.srcdate[6:8]+\
                                                        '/FCST_OD_'+self.srcdate+'_'+self.depdate+'.csv.gz',\
                                                         usecols = ['GEO_OD_TS_KEY','BASE_OD_ORGN','BASE_OD_DSTN',\
                                                                    'POS','TP','FF','BC','SRDSUM','ARDSUM'])
@@ -57,7 +57,7 @@ class ExpDmdFitter:
         df = df.replace(np.nan, '')
         for i in range(NUM_TRIES):
             try:
-                clsdf = pd.read_csv('s3://ay-emr-job/static/clsorder.csv')
+                clsdf = pd.read_csv('s3://ay-rmp-home/static/clsorder.csv')
                 break
             except Exception as e:
                 print(e)

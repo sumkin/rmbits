@@ -27,7 +27,7 @@ class Simulator:
 
     def process(self, fname, fcstdate):
         depdate = fname.split('/')[5].split('.')[0].split('_')[2]
-        csv2check = 'ay-emr-job/nrm/' + self.prefix + 'cf/' + fcstdate[:4] +\
+        csv2check = 'ay-rmp-home/nrm/' + self.prefix + 'cf/' + fcstdate[:4] +\
                                                         '/' + fcstdate[4:6] +\
                                                         '/' + fcstdate[6:8] +\
                                                         '/' + self.prefix + 'cf_' + fcstdate + '_' + depdate + '.csv.gz'
@@ -117,7 +117,7 @@ class Simulator:
         fcstm = self.fcstdate[4:6]
         fcstd = self.fcstdate[6:8]
 
-        fnames = gets3files('ay-emr-job/nrm/fdc/'+fcsty+'/'+fcstm+'/'+fcstd)
+        fnames = gets3files('ay-rmp-home/nrm/fdc/'+fcsty+'/'+fcstm+'/'+fcstd)
 
         dt_s = datetime.now()
         num = 0

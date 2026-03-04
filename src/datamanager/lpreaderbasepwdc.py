@@ -38,7 +38,7 @@ class LPReaderBasePWDC:
         depday   = self.depdate[6:8]  
 
         # Demand curve data frame.
-        dccsv = 's3://ay-emr-job/nrm/pwdc/'+toyear+'/'+tomonth+'/'+today+\
+        dccsv = 's3://ay-rmp-home/nrm/pwdc/'+toyear+'/'+tomonth+'/'+today+\
                                         '/dc_' + self.fromdate + '_' + self.todate + '_' + self.depdate + '.csv.gz'
         self.dccsv = dccsv
         dc_dfo = pd.read_csv(dccsv, low_memory = False)
@@ -61,7 +61,7 @@ class LPReaderBasePWDC:
 
 
         # Inventory data frame.
-        invcsv = 's3://ay-emr-job/nrm/bif/'+toyear+'/'+tomonth+\
+        invcsv = 's3://ay-rmp-home/nrm/bif/'+toyear+'/'+tomonth+\
                                         '/INV_'+self.todate+'.csv.gz'
         self.inv_df = pd.read_csv(invcsv, low_memory = False)
         self.inv_df = self.inv_df.loc[self.inv_df['DEPDT'] == int(self.depdate)] # flights for forecast date only.
@@ -71,7 +71,7 @@ class LPReaderBasePWDC:
                                       (self.inv_df['CABIN'] == 'Y')]
 
         # Booking data frame.
-        bkgcsv = 's3://ay-emr-job/nrm/bof/' + toyear + '/' + tomonth+\
+        bkgcsv = 's3://ay-rmp-home/nrm/bof/' + toyear + '/' + tomonth+\
                                         '/BKG_OD_' + self.todate + '.csv.gz'
         bkg_dfo = pd.read_csv(bkgcsv, low_memory = False)
         self.bkg_df = bkg_dfo.groupby(['BASE_OD_ORGN','BASE_OD_DSTN','BASE_OD_DEPT_DATE','ISO_COUNTRY','SELL_CLS'])\
@@ -87,7 +87,7 @@ class LPReaderBasePWDC:
         self.bkg_df = self.bkg_df[self.bkg_df['SELL_CLS'] != 'U']
 
         # Yield data frame.
-        yldcsv = 's3://ay-emr-job/nrm/yield/' + toyear + '/' + tomonth +\
+        yldcsv = 's3://ay-rmp-home/nrm/yield/' + toyear + '/' + tomonth +\
                                           '/YIELD_' + self.todate + '.csv.gz'
         self.yld_df = pd.read_csv(yldcsv, low_memory = False)
         

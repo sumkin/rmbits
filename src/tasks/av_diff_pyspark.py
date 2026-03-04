@@ -33,14 +33,14 @@ if __name__ == '__main__':
 
     spark = SparkSession.builder.appName('AVDiff').getOrCreate()
 
-    s3df1fname = 's3n://ay-emr-job/nrm/baf/' +\
+    s3df1fname = 's3n://ay-rmp-home/nrm/baf/' +\
                  str(dt1.year) + '/' + str(dt1.month).zfill(2) +\
                  '/AV_OD_' + dt1.strftime('%Y%m%d') + '.json.gz'
     print tmpstmp(), 'Reading data frame ', s3df1fname
     df1 = spark.read.format('json').load(s3df1fname)
 
 
-    s3df2fname = 's3n://ay-emr-job/nrm/baf/' +\
+    s3df2fname = 's3n://ay-rmp-home/nrm/baf/' +\
                  str(dt2.year) + '/' + str(dt2.month).zfill(2) +\
                  '/AV_OD_' + dt2.strftime('%Y%m%d') + '.json.gz'
     print tmpstmp(), 'Reading data frame ', s3df2fname
@@ -60,7 +60,7 @@ if __name__ == '__main__':
                        df1.X-df2.X, df1.E-df2.E)
 
     suffix = dt1.strftime('%Y%m%d') + '-' + dt2.strftime('%Y%m%d')
-    cd_csvname = 's3://ay-emr-job/nrm/baf/'+str(dt1.year)+'/'+str(dt1.month).zfill(2) +\
+    cd_csvname = 's3://ay-rmp-home/nrm/baf/'+str(dt1.year)+'/'+str(dt1.month).zfill(2) +\
                  '/AV_OD_DIFF_'+dt1.strftime('%Y%m%d')+'-'+dt2.strftime('%Y%m%d')+'.csv'
     print tmpstmp(), 'Writing class difference to s3 CSV file'
     cd_sdf.repartition(1).write.mode('overwrite').format('com.databricks.spark.csv').\
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     print tmpstmp(), 'Taking last-open-class difference'
     locd_sdf = df.select(df.ORIG, df.DSTN, df.DPTDT, df.OD_DEPT_DATE, df.CC, df.POS, df.POSTYPE, df.OD_DEPT_DOW,\
                          df1.LOCIJ_WOSC-df2.LOCIJ_WOSC, df1.LOCIY_WOSC-df2.LOCIY_WOSC)
-    locd_csvname = 's3://ay-emr-job/nrm/baf/'+str(dt1.year)+'/'+str(dt1.month).zfill(2)+\
+    locd_csvname = 's3://ay-rmp-home/nrm/baf/'+str(dt1.year)+'/'+str(dt1.month).zfill(2)+\
                    '/AV_OD_LOCDIFF_'+dt1.strftime('%Y%m%d')+'-'+dt2.strftime('%Y%m%d')+'.csv'
     print tmpstmp(), 'Writing last-open-class difference s3 CSV file'
     locd_sdf.repartition(1).write.mode('overwrite').format('com.databricks.spark.csv').\

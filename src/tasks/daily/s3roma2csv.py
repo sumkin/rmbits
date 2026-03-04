@@ -15,10 +15,10 @@ if __name__ == "__main__":
         dtm = dtstr[4:6]
         dtd = dtstr[6:8]
 
-        csv_tmtf = "ay-emr-job/nrm/roma/{}/{}/roma_tmtf_{}.csv.gz".format(dty, dtm, dtstr)
-        csv_tnf = "ay-emr-job/nrm/roma/{}/{}/roma_tnf_{}.csv.gz".format(dty, dtm, dtstr)
-        csv_tlto = "ay-emr-job/nrm/roma/{}/{}/roma_tlto_{}.csv.gz".format(dty, dtm, dtstr)
-        csv_tmto = "ay-emr-job/nrm/roma/{}/{}/roma_tmto_{}.csv.gz".format(dty, dtm, dtstr)
+        csv_tmtf = "ay-rmp-home/nrm/roma/{}/{}/roma_tmtf_{}.csv.gz".format(dty, dtm, dtstr)
+        csv_tnf = "ay-rmp-home/nrm/roma/{}/{}/roma_tnf_{}.csv.gz".format(dty, dtm, dtstr)
+        csv_tlto = "ay-rmp-home/nrm/roma/{}/{}/roma_tlto_{}.csv.gz".format(dty, dtm, dtstr)
+        csv_tmto = "ay-rmp-home/nrm/roma/{}/{}/roma_tmto_{}.csv.gz".format(dty, dtm, dtstr)
         
         tmtf_out = "/home/ay49514/tmp/roma_tmtf_{}.csv".format(dtstr)
         tnf_out = "/home/ay49514/tmp/roma_tnf_{}.csv".format(dtstr)

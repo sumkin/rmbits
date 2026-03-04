@@ -10,7 +10,7 @@ from fareader import *
 
 
 def process(bkgdate, depdate):
-    csv2check = 'ay-emr-job/nrm/fa/' + bkgdate[:4] +\
+    csv2check = 'ay-rmp-home/nrm/fa/' + bkgdate[:4] +\
                                  '/' + bkgdate[4:6] +\
                                  '/' + bkgdate[6:8] +\
                                  '/fa_' + bkgdate + '_' + depdate + '.csv.gz'

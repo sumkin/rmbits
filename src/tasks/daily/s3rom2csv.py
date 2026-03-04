@@ -14,10 +14,10 @@ if __name__ == "__main__":
         dtm = dtstr[4:6]
         dtd = dtstr[6:8]
 
-        csv_load = "ay-emr-job/nrm/rom/" + dty + "/" + dtm + "/rom_load_" + dtstr + ".csv.gz"
-        csv_max = "ay-emr-job/nrm/rom/" + dty + "/" + dtm + "/rom_max_" + dtstr + ".csv.gz"
-        csv_min = "ay-emr-job/nrm/rom/" + dty + "/" + dtm + "/rom_min_" + dtstr + ".csv.gz"
-        csv_act = "ay-emr-job/nrm/rom/" + dty + "/" + dtm + "/rom_act_" + dtstr + ".csv.gz"
+        csv_load = "ay-rmp-home/nrm/rom/" + dty + "/" + dtm + "/rom_load_" + dtstr + ".csv.gz"
+        csv_max = "ay-rmp-home/nrm/rom/" + dty + "/" + dtm + "/rom_max_" + dtstr + ".csv.gz"
+        csv_min = "ay-rmp-home/nrm/rom/" + dty + "/" + dtm + "/rom_min_" + dtstr + ".csv.gz"
+        csv_act = "ay-rmp-home/nrm/rom/" + dty + "/" + dtm + "/rom_act_" + dtstr + ".csv.gz"
         
         load_out = "/home/ay49514/tmp/rom_load_" + dtstr + ".csv"
         max_out = "/home/ay49514/tmp/rom_max_" + dtstr + ".csv"

@@ -17,12 +17,12 @@ def process(fname):
     dt = datetime.strptime(fname.rsplit('/',1)[1].split('.')[4][1:], '%y%m%d')
     dtstr = datetime.strftime(dt, '%Y%m%d')
     depdt = datetime.strptime(fname.rsplit('/',1)[1].split('.')[8][2:], '%y%m%d')
-    csv2check = 'ay-emr-job/nrm/bff/'+str(dt.year)+\
+    csv2check = 'ay-rmp-home/nrm/bff/'+str(dt.year)+\
                 '/'+str(dt.month).zfill(2)+\
                 '/'+str(dt.day).zfill(2)+\
                 '/FCST_OD_'+dt.strftime('%Y%m%d')+'_'+\
                 depdt.strftime('%Y%m%d')+'.csv.gz'
-    csv2checkdcp = 'ay-emr-job/nrm/bff/'+str(dt.year)+\
+    csv2checkdcp = 'ay-rmp-home/nrm/bff/'+str(dt.year)+\
                    '/'+str(dt.month).zfill(2)+\
                    '/'+str(dt.day).zfill(2)+\
                    '/FCST_OD_DCP_'+dt.strftime('%Y%m%d')+'_'+\
@@ -92,7 +92,7 @@ def process(fname):
 
         print("Copying file to s3...")
         subfolder = str(src_date.year) + '/' + str(src_date.month).zfill(2) + '/' + str(src_date.day).zfill(2)
-        s3fname = 's3://ay-emr-job/nrm/bff/'+subfolder+'/'+csv_fname+'.gz'
+        s3fname = 's3://ay-rmp-home/nrm/bff/'+subfolder+'/'+csv_fname+'.gz'
         s3copy(csv_fname_fp+'.gz',s3fname)
 
     if not csv_exists_dcp:
@@ -128,7 +128,7 @@ def process(fname):
 
         print("Copying file to s3...")
         subfolder = str(src_date.year) + '/' + str(src_date.month).zfill(2) + '/' + str(src_date.day).zfill(2)
-        s3fname = 's3://ay-emr-job/nrm/bff/'+subfolder+'/'+csv_fname_dcp+'.gz'
+        s3fname = 's3://ay-rmp-home/nrm/bff/'+subfolder+'/'+csv_fname_dcp+'.gz'
         s3copy(csv_fname_fp_dcp+'.gz',s3fname)
 
     print("Cleaning-up...")

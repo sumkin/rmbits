@@ -16,7 +16,7 @@ class LPModelLoader:
         fcstday = self.fcstdate[6:8]
 
         # Copy file.
-        orig = "s3://ay-emr-job/nrm/lprdrfdcpkl/{}/{}/{}/lprdrfdcpkl_{}_{}_{}.pkl.gz".format(fcstyear,
+        orig = "s3://ay-rmp-home/nrm/lprdrfdcpkl/{}/{}/{}/lprdrfdcpkl_{}_{}_{}.pkl.gz".format(fcstyear,
                                                                                              fcstmonth,
                                                                                              fcstday,
                                                                                              self.fcstdate,

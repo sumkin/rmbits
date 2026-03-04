@@ -17,7 +17,7 @@ def produce_country_7(country, dpl, dph):
         prevdt = dt - timedelta(days = 1)
         dts = datetime.strftime(dt, '%Y%m%d')
         prevdts = datetime.strftime(prevdt, '%Y%m%d')
-        df = pd.read_csv('s3://ay-emr-job/nrm/bcd/'+dts[:4]+'/'+dts[4:6]+'/cnld_'+prevdts+'_'+dts+'.csv.gz', low_memory = False).fillna('')
+        df = pd.read_csv('s3://ay-rmp-home/nrm/bcd/'+dts[:4]+'/'+dts[4:6]+'/cnld_'+prevdts+'_'+dts+'.csv.gz', low_memory = False).fillna('')
         df = df.loc[df['ISO_COUNTRY'] == country]
         dfg = df.loc[(df['SELL_CLS'] == 'G') & (df['DAYSPRIOR'] >= dpl) & (df['DAYSPRIOR'] <= dph)]
         if i == 0:
@@ -26,7 +26,7 @@ def produce_country_7(country, dpl, dph):
             df7 = df7.append(dfg)
 
         # Read booking dataframe.
-        bdf = pd.read_csv('s3://ay-emr-job/nrm/bof/'+dts[:4]+'/'+dts[4:6]+'/BKG_OD_'+dts+'.csv.gz', low_memory = False).fillna('')
+        bdf = pd.read_csv('s3://ay-rmp-home/nrm/bof/'+dts[:4]+'/'+dts[4:6]+'/BKG_OD_'+dts+'.csv.gz', low_memory = False).fillna('')
         bdf = bdf.loc[bdf['ISO_COUNTRY'] == country]
         bdfg = bdf.loc[(bdf['SELL_CLS'] == 'G') & (bdf['DAYSPRIOR'] >= dpl) & (bdf['DAYSPRIOR'] <= dph)]
         if i == 0:
@@ -84,7 +84,7 @@ def produce_region_7(region, dpl, dph):
         prevdt = dt - timedelta(days = 1)
         dts = datetime.strftime(dt, '%Y%m%d')
         prevdts = datetime.strftime(prevdt, '%Y%m%d')
-        df = pd.read_csv('s3://ay-emr-job/nrm/bcd/'+dts[:4]+'/'+dts[4:6]+'/cnld_'+prevdts+'_'+dts+'.csv.gz', low_memory = False).fillna('')
+        df = pd.read_csv('s3://ay-rmp-home/nrm/bcd/'+dts[:4]+'/'+dts[4:6]+'/cnld_'+prevdts+'_'+dts+'.csv.gz', low_memory = False).fillna('')
         df = df.loc[df['ISO_REGION'] == region]
         dfg = df.loc[(df['SELL_CLS'] == 'G') & (df['DAYSPRIOR'] >= dpl) & (df['DAYSPRIOR'] <= dph)]
         if i == 0:
@@ -93,7 +93,7 @@ def produce_region_7(region, dpl, dph):
             df7 = df7.append(dfg)
 
         # Read booking dataframe.
-        bdf = pd.read_csv('s3://ay-emr-job/nrm/bof/'+dts[:4]+'/'+dts[4:6]+'/BKG_OD_'+dts+'.csv.gz', low_memory = False).fillna('')
+        bdf = pd.read_csv('s3://ay-rmp-home/nrm/bof/'+dts[:4]+'/'+dts[4:6]+'/BKG_OD_'+dts+'.csv.gz', low_memory = False).fillna('')
         bdf = bdf.loc[bdf['ISO_REGION'] == region]
         bdfg = bdf.loc[(bdf['SELL_CLS'] == 'G') & (bdf['DAYSPRIOR'] >= dpl) & (bdf['DAYSPRIOR'] <= dph)]
         if i == 0:
@@ -158,7 +158,7 @@ def produce_country(country):
     f.close()
 
     print 'Saving plot to s3...'
-    s3name = 's3://ay-emr-job/nrm/reporting/gc/'+currdts[:4]+'/'+currdts[4:6]+'/GC_7_60_' + country + '_' + currdts + '.html'
+    s3name = 's3://ay-rmp-home/nrm/reporting/gc/'+currdts[:4]+'/'+currdts[4:6]+'/GC_7_60_' + country + '_' + currdts + '.html'
     copy2s3(fname, s3name)
     return fname
 
@@ -184,7 +184,7 @@ def produce_region(region):
     f.close()
 
     print 'Saving plot to s3...'
-    s3name = 's3://ay-emr-job/nrm/reporting/gc/'+currdts[:4]+'/'+currdts[4:6]+'/GC_7_60_' + region + '_'+currdts+'.html'
+    s3name = 's3://ay-rmp-home/nrm/reporting/gc/'+currdts[:4]+'/'+currdts[4:6]+'/GC_7_60_' + region + '_'+currdts+'.html'
     copy2s3(fname, s3name)
 
     return fname

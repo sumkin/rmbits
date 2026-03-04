@@ -17,10 +17,10 @@ with open('brexit_5th_us.csv', 'w') as fout:
     for i in range(400):
         depdt = depdt + timedelta(days = 1)
         depdate = datetime.strftime(depdt, '%Y%m%d')
-        df = pd.read_csv('s3://ay-emr-job/nrm/cf/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+        df = pd.read_csv('s3://ay-rmp-home/nrm/cf/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                             '/cf_'+fcstdate+'_'+depdate+'.csv.gz', low_memory = False)
         df['REV'] = df['MP'] * df['LPC_D']
-        bdf = pd.read_csv('s3://ay-emr-job/nrm/brexit_5th_uscf/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+        bdf = pd.read_csv('s3://ay-rmp-home/nrm/brexit_5th_uscf/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                                     '/brexit_5th_uscf_'+fcstdate+'_'+depdate+'.csv.gz', low_memory = False)
         bdf['REV'] = bdf['MP'] * bdf['LPC_D']
     

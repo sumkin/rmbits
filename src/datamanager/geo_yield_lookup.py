@@ -19,13 +19,13 @@ class GeoYieldLookup:
 
         # Read yield dataframe.
         print('Reading yield dataframe...')
-        self.ydf = pd.read_csv('s3://ay-emr-job/nrm/yield/'+dtyear+'/'+dtmonth+\
+        self.ydf = pd.read_csv('s3://ay-rmp-home/nrm/yield/'+dtyear+'/'+dtmonth+\
                                                         '/YIELD_'+dt+'.csv.gz').fillna('')
         self.ydf = self.ydf.loc[(self.ydf['TRVLFROM'] <= int(dt)) & (int(dt) <= self.ydf['TRVLTO'])]
 
         # Read geo dataframe.
         print('Reading geo dataframe...')
-        self.geodf = pd.read_csv('s3://ay-emr-job/static/geoset_mapping.csv', delimiter=';', low_memory = False)
+        self.geodf = pd.read_csv('s3://ay-rmp-home/static/geoset_mapping.csv', delimiter=';', low_memory = False)
 
         self.geoydf = self.ydf.merge(self.geodf, left_on = ['POS'], right_on = ['GEO_SET'], how = 'left')
 

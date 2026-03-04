@@ -70,7 +70,7 @@ class MaintenanceReader(SSIMReader):
         return df
 
 if __name__ == "__main__":
-    s3fname = "s3://ay-emr-job/fleet_assigner/december2023/W23_dec_190923.ssim"
+    s3fname = "s3://ay-rmp-home/fleet_assigner/december2023/W23_dec_190923.ssim"
     start_date = "20231230"
     mr = MaintenanceReader(s3fname, start_date)
     df = mr.load()

@@ -82,7 +82,7 @@ def s3getlastavfile():
     dt = datetime.now()
     s3fname = []
     while True:
-        s3fname = 'ay-emr-job/nrm/baf/' + str(dt.year).zfill(2) + '/' + \
+        s3fname = 'ay-rmp-home/nrm/baf/' + str(dt.year).zfill(2) + '/' + \
                                           str(dt.month).zfill(2) + '/' + \
                                           'AV_OD_' + datetime.strftime(dt,'%Y%m%d') + '.csv.gz'
         if s3fileexists(s3fname):
@@ -94,7 +94,7 @@ def s3getlastinvfile():
     dt = datetime.now()
     s3fname = None
     while True:
-        s3fname = 'ay-emr-job/nrm/bif/' + str(dt.year).zfill(2) + '/' + \
+        s3fname = 'ay-rmp-home/nrm/bif/' + str(dt.year).zfill(2) + '/' + \
                                           str(dt.month).zfill(2) + '/' + \
                                           'INV_' + datetime.strftime(dt,'%Y%m%d') + '.csv.gz'
         if s3fileexists(s3fname):
@@ -111,12 +111,12 @@ def s3getlastfcstfiles(dt = None):
         month = str(dt.month).zfill(2)
         day = str(dt.day).zfill(2)
         dts = datetime.strftime(dt, '%Y%m%d')
-        s3fname = 'ay-emr-job/nrm/bff/' + year + '/' + \
+        s3fname = 'ay-rmp-home/nrm/bff/' + year + '/' + \
                                           month + '/' + \
                                           day + '/' + \
                                           'FCST_OD_' + dts + '_' + dts + '.csv.gz'
         if s3fileexists(s3fname):
-            s3fnames = gets3files('ay-emr-job/nrm/bff/' + year + '/' + \
+            s3fnames = gets3files('ay-rmp-home/nrm/bff/' + year + '/' + \
                                                           month + '/' + \
                                                           day + '/')
             return dt,s3fnames
@@ -124,7 +124,7 @@ def s3getlastfcstfiles(dt = None):
     return datetime(1970,1,1), []
 
 def s3getpwdcprefix(valdate):
-    fnames = gets3files('ay-emr-job/nrm/pwdc/')
+    fnames = gets3files('ay-rmp-home/nrm/pwdc/')
 
     latest_parts = None
     latest_nms = '00000000'
@@ -145,7 +145,7 @@ def s3getpwdcprefix(valdate):
 def s3yieldfilepresent(dtstr):
     year = dtstr[:4]
     month = dtstr[4:6]
-    s3fname = 'ay-emr-job/nrm/yield/' + year + '/' + month + '/YIELD_' + dtstr + '.csv.gz'
+    s3fname = 'ay-rmp-home/nrm/yield/' + year + '/' + month + '/YIELD_' + dtstr + '.csv.gz'
     if s3fileexists(s3fname):
         return True
     else:
@@ -154,7 +154,7 @@ def s3yieldfilepresent(dtstr):
 def s3boffilepresent(dtstr):
     year  = dtstr[:4]
     month = dtstr[4:6]
-    s3fname = 'ay-emr-job/nrm/bof/' + year + '/' + month + '/BKG_OD_' + dtstr + '.csv.gz'
+    s3fname = 'ay-rmp-home/nrm/bof/' + year + '/' + month + '/BKG_OD_' + dtstr + '.csv.gz'
     if s3fileexists(s3fname):
         return True
     else:
@@ -163,7 +163,7 @@ def s3boffilepresent(dtstr):
 def s3baffilepresent(dtstr):
     year  = dtstr[:4]
     month = dtstr[4:6]
-    s3fname = 'ay-emr-job/nrm/baf/' + year + '/' + month + '/AV_OD_' + dtstr + '.csv.gz'
+    s3fname = 'ay-rmp-home/nrm/baf/' + year + '/' + month + '/AV_OD_' + dtstr + '.csv.gz'
     if s3fileexists(s3fname):
         return True
     else:
@@ -182,13 +182,13 @@ def s3cffilespresent(dtstr, daysahead = 350):
         s3fnames.append(s3fname)
         #if not s3fileexists(s3fname):
         #    return False
-    s3fldr = 'ay-emr-job/nrm/cf/' + year + '/' + month + '/' + day
+    s3fldr = 'ay-rmp-home/nrm/cf/' + year + '/' + month + '/' + day
     if not s3filesexists(s3fnames, s3fldr):
         return False
     return True
                                          
 if __name__ == '__main__':
-    gets3files('ay-emr-job/nrm/bff/2019/02/13/')
+    gets3files('ay-rmp-home/nrm/bff/2019/02/13/')
 
   
 

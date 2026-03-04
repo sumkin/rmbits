@@ -5,7 +5,7 @@ from ff_mapper import *
 
 tqdm.pandas()
 
-TST_FILE = 's3n://ay-emr-job/nrm/baf/2018/05/AV_OD_20180523.csv.gz'
+TST_FILE = 's3n://ay-rmp-home/nrm/baf/2018/05/AV_OD_20180523.csv.gz'
 
 print 'Reading data frame from s3...'
 df = pd.read_csv(TST_FILE)

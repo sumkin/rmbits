@@ -19,7 +19,7 @@ class YieldLookup:
         NUM_TRIES = 3
         for i in range(NUM_TRIES):
             try:
-                self.ydf = pd.read_csv('s3://ay-emr-job/nrm/yield/'+dtyear+'/'+dtmonth+\
+                self.ydf = pd.read_csv('s3://ay-rmp-home/nrm/yield/'+dtyear+'/'+dtmonth+\
                                        '/YIELD_'+dt+'.csv.gz').fillna('')
                 break
             except Exception as e:

@@ -20,12 +20,12 @@ with open(fname + '_sim.csv', 'w') as fout:
     for i in range(357):
         depdate = datetime.strftime(depdt, '%Y%m%d')
         try:
-            dfw = pd.read_csv('s3://ay-emr-job/nrm/'+prefix_w+'/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+            dfw = pd.read_csv('s3://ay-rmp-home/nrm/'+prefix_w+'/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                                  '/'+prefix_w+'_'+fcstdate+'_'+depdate+'.csv.gz', low_memory = False)
             assert dfw[['MP','LPC_D']].isnull().sum().sum() == 0
             dfw['REV'] = dfw['MP'] * dfw['LPC_D']
 
-            dfwo = pd.read_csv('s3://ay-emr-job/nrm/'+prefix_wo+'/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+            dfwo = pd.read_csv('s3://ay-rmp-home/nrm/'+prefix_wo+'/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                                   '/'+prefix_wo+'_'+fcstdate+'_'+depdate+'.csv.gz', low_memory = False)
             assert dfwo[['MP','LPC_D']].isnull().sum().sum() == 0
             dfwo['REV'] = dfwo['MP'] * dfwo['LPC_D']

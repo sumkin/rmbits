@@ -62,7 +62,7 @@ class WetleaseReader(SSIMReader):
         return df
 
 if __name__ == "__main__":
-    s3fname = "s3://ay-emr-job/fleet_assigner/input/SSIM_MAR_19FEB.ssim"
+    s3fname = "s3://ay-rmp-home/fleet_assigner/input/SSIM_MAR_19FEB.ssim"
     start_date = "20250901"
     mr = WetleaseReader(s3fname, start_date)
     df = mr.load()

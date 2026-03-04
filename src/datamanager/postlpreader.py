@@ -45,7 +45,7 @@ class PostLPReader:
             dtmonth = datetime.strftime(dt, '%m')
             dtday = datetime.strftime(dt, '%d')
             dts = dtyear + dtmonth + dtday
-            fname = 'ay-emr-job/nrm/bff/' + dtyear + '/' + dtmonth+'/' + dtday + '/FCST_OD_' + dts+'_' + self.depdate+'.csv.gz'
+            fname = 'ay-rmp-home/nrm/bff/' + dtyear + '/' + dtmonth+'/' + dtday + '/FCST_OD_' + dts+'_' + self.depdate+'.csv.gz'
             if s3fileexists(fname):
                 daysdelta = 1
                 print('dts = ', dts)
@@ -69,9 +69,9 @@ class PostLPReader:
         last_fcstdate = last_fcstyear + last_fcstmonth + last_fcstday
 
         # Read demand curves dataframes and union them.
-        dccsv = 's3://ay-emr-job/nrm/fdc/'+last_fcstyear+'/'+last_fcstmonth+'/'+last_fcstday+\
+        dccsv = 's3://ay-rmp-home/nrm/fdc/'+last_fcstyear+'/'+last_fcstmonth+'/'+last_fcstday+\
                                        '/fdc_'+last_fcstdate+'_'+self.depdate+'.csv.gz'
-        next_dccsv = 's3://ay-emr-job/nrm/fdc/'+last_fcstyear+'/'+last_fcstmonth+'/'+last_fcstday+\
+        next_dccsv = 's3://ay-rmp-home/nrm/fdc/'+last_fcstyear+'/'+last_fcstmonth+'/'+last_fcstday+\
                                             '/fdc_'+last_fcstdate+'_'+self.next_depdate + '.csv.gz'
         ldc_df = pd.read_csv(dccsv, low_memory = False).fillna('')
         next_ldc_df = pd.read_csv(next_dccsv, low_memory = False).fillna('')
@@ -106,7 +106,7 @@ class PostLPReader:
             fcstmonth = fcstdate[4:6]
             fcstday   = fcstdate[6:8]
 
-            dccsv = 's3://ay-emr-job/nrm/pwdc/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
+            dccsv = 's3://ay-rmp-home/nrm/pwdc/'+fcstyear+'/'+fcstmonth+'/'+fcstday+\
                                            '/dc_'+prev_fcstdate+'_'+fcstdate+'_'+self.depdate+'.csv.gz'
             dc_df = pd.read_csv(dccsv, low_memory = False).fillna('')
             dc_df = dc_df.loc[dc_df['MP'] > 0]
@@ -157,7 +157,7 @@ class PostLPReader:
         # Read inventory data frame for the first forecasting date.
         first_fcstyear = self.first_fcstdate[:4]
         first_fcstmonth = self.first_fcstdate[4:6]
-        invcsv = 's3://ay-emr-job/nrm/bif/'+first_fcstyear+'/'+first_fcstmonth+\
+        invcsv = 's3://ay-rmp-home/nrm/bif/'+first_fcstyear+'/'+first_fcstmonth+\
                                         '/INV_'+self.first_fcstdate+'.csv.gz'
         self.inv_df = pd.read_csv(invcsv, low_memory = False).fillna('')
         self.inv_df = self.inv_df.replace(np.nan, '', regex = True)

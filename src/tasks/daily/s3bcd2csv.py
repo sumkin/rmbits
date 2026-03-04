@@ -10,7 +10,7 @@ from s3utils import *
 
 def process(dt):
 
-    currcsvfname = 'ay-emr-job/nrm/bof/' + dt[:4] + '/' + dt[4:6] + '/BKG_OD_' + dt + '.csv.gz' 
+    currcsvfname = 'ay-rmp-home/nrm/bof/' + dt[:4] + '/' + dt[4:6] + '/BKG_OD_' + dt + '.csv.gz'
     if not s3fileexists(currcsvfname):
         print(currcsvfname, ' does not exist')
         return 0
@@ -22,7 +22,7 @@ def process(dt):
     prevdtd = prevdt[6:8]
     num = 10
     for i in range(num):
-        prevcsvfname = 'ay-emr-job/nrm/bof/' + prevdt[:4] + '/' + prevdt[4:6] + '/BKG_OD_' + prevdt + '.csv.gz'
+        prevcsvfname = 'ay-rmp-home/nrm/bof/' + prevdt[:4] + '/' + prevdt[4:6] + '/BKG_OD_' + prevdt + '.csv.gz'
         if not s3fileexists(prevcsvfname):
             print(prevcsvfname, ' does not exist')
             prevdt = datetime.strftime(datetime.strptime(prevdt,'%Y%m%d') - timedelta(days=1), '%Y%m%d')
@@ -34,11 +34,11 @@ def process(dt):
         else:
             break
 
-    ncsv2check = 'ay-emr-job/nrm/bcd/' + dt[:4] + '/' + dt[4:6] + '/bkgd_' + prevdt + '_' + dt + '.csv.gz'
+    ncsv2check = 'ay-rmp-home/nrm/bcd/' + dt[:4] + '/' + dt[4:6] + '/bkgd_' + prevdt + '_' + dt + '.csv.gz'
     if s3fileexists(ncsv2check):
         print(ncsv2check, ' exists')
         return 0
-    ccsv2check = 'ay-emr-job/nrm/bcd/' + dt[:4] + '/' + dt[4:6] + '/cnld_' + prevdt + '_' + dt + '.csv.gz'
+    ccsv2check = 'ay-rmp-home/nrm/bcd/' + dt[:4] + '/' + dt[4:6] + '/cnld_' + prevdt + '_' + dt + '.csv.gz'
     if s3fileexists(ccsv2check):
         print(ccsv2check, ' exists')
         return 0

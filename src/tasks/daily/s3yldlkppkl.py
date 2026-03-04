@@ -14,7 +14,7 @@ from funcutils import *
 def process(fname, dtstr):
     print('Processing ', fname)
 
-    pkl2check = 'ay-emr-job/nrm/yldlkppkl/' + dtstr[:4] +'/' + dtstr[4:6] +\
+    pkl2check = 'ay-rmp-home/nrm/yldlkppkl/' + dtstr[:4] +'/' + dtstr[4:6] +\
                                           '/yldlkppkl_' + dtstr + '.pkl.gz'
     if s3fileexists(pkl2check):
         print(pkl2check, ' exists')
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         dtstr = datetime.strftime(dt, '%Y%m%d')
         dty,dtm,dtd = dtstr[:4],dtstr[4:6],dtstr[6:8]
 
-        fname = 'ay-emr-job/nrm/yield/'+dty+'/'+dtm+'/YIELD_' + dtstr + '.csv.gz'
+        fname = 'ay-rmp-home/nrm/yield/'+dty+'/'+dtm+'/YIELD_' + dtstr + '.csv.gz'
         if s3fileexists(fname):
             process(fname, dtstr)
         dt = dt - timedelta(days = 1)

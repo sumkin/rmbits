@@ -6,9 +6,9 @@ from tqdm import tqdm
 
 tqdm.pandas()
 
-ARPT_FILE = 's3n://ay-emr-job/static/ff_airports.csv'
-MRKT_FILE = 's3n://ay-emr-job/static/ff_markets.csv'
-FMLS_FILE = 's3n://ay-emr-job/static/ff_families.csv'
+ARPT_FILE = 's3n://ay-rmp-home/static/ff_airports.csv'
+MRKT_FILE = 's3n://ay-rmp-home/static/ff_markets.csv'
+FMLS_FILE = 's3n://ay-rmp-home/static/ff_families.csv'
 
 
 class FFMapper:
@@ -203,7 +203,7 @@ class FFMapper:
 
 
 if __name__ == '__main__':
-    #s3fname = 's3n://ay-emr-job/nrm/baf/2018/05/AV_OD_20180523.csv.gz'
+    #s3fname = 's3n://ay-rmp-home/nrm/baf/2018/05/AV_OD_20180523.csv.gz'
     #print 'Reading availability...'
     #df = pd.read_csv(s3fname)
     #df2 = pd.melt(df, id_vars=['ORGN','DSTN','VIA','CC','FLTNUM',\

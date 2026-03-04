@@ -329,15 +329,15 @@ if __name__ == "__main__":
                 "20250515", "20250516", "20250517", "20250518", "20250519", "20250520", "20250521",
                 "20250522", "20250523", "20250524", "20250525", "20250526", "20250527", "20250528",
                 "20250529", "20250530", "20250531"]
-    costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
-    fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
-    cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
-    leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
-    subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/MAY.ssim"
-    airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/leg_pairings_MAY.xlsx"
-    turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
+    costs_file = "s3://ay-rmp-home/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
+    fleet_file = "s3://ay-rmp-home/fleet_assigner/input/aircraft_inventory.csv"
+    cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
+    leg_distance_file = "s3://ay-rmp-home/fleet_assigner/input/leg_distances.csv"
+    subfleet_ranges_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_ranges.csv"
+    maintenance_file = "s3://ay-rmp-home/fleet_assigner/input/MAY.ssim"
+    airport_allowance_file = "s3://ay-rmp-home/fleet_assigner/input/airport_allowance.csv"
+    leg_pairings_file = "s3://ay-rmp-home/fleet_assigner/input/leg_pairings_MAY.xlsx"
+    turnaround_times_file = "s3://ay-rmp-home/fleet_assigner/input/turnaround_times.csv"
 
     mnam = MinNumberAircraftsModel(opt_id,
                                    fcstdate,
@@ -361,4 +361,4 @@ if __name__ == "__main__":
     y, m = mnam.get_solution()
     debug_info_writer.write_fa_diagram(month, mnam.dr, y, m)
     s3copy("../output/min_number_aircrafts.xlsx",
-           "s3://ay-emr-job/fleet_assigner/{}/output/min_number_aircrafts.xlsx".format(month))
+           "s3://ay-rmp-home/fleet_assigner/{}/output/min_number_aircrafts.xlsx".format(month))

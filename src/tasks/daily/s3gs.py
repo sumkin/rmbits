@@ -124,7 +124,7 @@ def process(fname, parallel = True):
     fnames = fname.split('/')
     origfname = fnames[1]
     lfname = '/mnt/data/tmp/' + fnames[1]
-    subprocess.check_output(['aws','s3','cp','s3://ay-emr-job/'+fname,lfname])
+    subprocess.check_output(['aws','s3','cp','s3://ay-rmp-home/'+fname,lfname])
 
     print("Generating csv...")
     csv_fname = 'GS_' + fnames[1].split('.')[0] + '.csv'
@@ -274,20 +274,20 @@ def process(fname, parallel = True):
         return
 
     print("Copying csv file to s3...")
-    s3fname = 's3://ay-emr-job/gs/' + csv_fname + '.gz'
+    s3fname = 's3://ay-rmp-home/gs/' + csv_fname + '.gz'
     subprocess.check_output(['aws','s3','cp',csv_fname_fp+'.gz',s3fname])
 
     print("Copying Excel file back...")
-    subprocess.check_output(['aws','s3','cp',lfname,'s3://ay-emr-job/' + fname_p])
+    subprocess.check_output(['aws','s3','cp',lfname,'s3://ay-rmp-home/' + fname_p])
 
     subprocess.check_output(['rm',lfname])
     subprocess.check_output(['rm',csv_fname_fp + '.gz'])
-    subprocess.check_output(['aws','s3','rm','s3://ay-emr-job/' + fname])
+    subprocess.check_output(['aws','s3','rm','s3://ay-rmp-home/' + fname])
 
 
 if __name__ == "__main__":
     # Get files in folder.
-    fnames = gets3files('ay-emr-job/gs')
+    fnames = gets3files('ay-rmp-home/gs')
 
     # Filter out processed files.
     fnames = filter(lambda s: 'processed' not in s, fnames)

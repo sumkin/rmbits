@@ -841,16 +841,16 @@ if __name__ == "__main__":
                 "20260215", "20260216", "20260217", "20260218", "20260219", "20260220", "20260221",
                 "20260222", "20260223", "20260224", "20260225", "20260226", "20260227", "20260228",
                 "20260301"]
-    costs_file = "s3://ay-emr-job/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
-    fleet_file = "s3://ay-emr-job/fleet_assigner/input/aircraft_inventory.csv"
-    cap_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_capacities.csv"
-    leg_distance_file = "s3://ay-emr-job/fleet_assigner/input/leg_distances.csv"
-    subfleet_ranges_file = "s3://ay-emr-job/fleet_assigner/input/subfleet_ranges.csv"
-    maintenance_file = "s3://ay-emr-job/fleet_assigner/input/SSIM_FEB2days.ssim"
-    airport_allowance_file = "s3://ay-emr-job/fleet_assigner/input/airport_allowance.csv"
-    leg_pairings_file = "s3://ay-emr-job/fleet_assigner/input/FEB_Report.xlsx"
-    turnaround_times_file = "s3://ay-emr-job/fleet_assigner/input/turnaround_times.csv"
-    restrictions_file = "s3://ay-emr-job/fleet_assigner/input/restrictions.csv"
+    costs_file = "s3://ay-rmp-home/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
+    fleet_file = "s3://ay-rmp-home/fleet_assigner/input/aircraft_inventory.csv"
+    cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
+    leg_distance_file = "s3://ay-rmp-home/fleet_assigner/input/leg_distances.csv"
+    subfleet_ranges_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_ranges.csv"
+    maintenance_file = "s3://ay-rmp-home/fleet_assigner/input/SSIM_FEB2days.ssim"
+    airport_allowance_file = "s3://ay-rmp-home/fleet_assigner/input/airport_allowance.csv"
+    leg_pairings_file = "s3://ay-rmp-home/fleet_assigner/input/FEB_Report.xlsx"
+    turnaround_times_file = "s3://ay-rmp-home/fleet_assigner/input/turnaround_times.csv"
+    restrictions_file = "s3://ay-rmp-home/fleet_assigner/input/restrictions.csv"
 
     dill_fwoc_fname = "../cache/fwoc_{}_{}.dill".format(month, fcstdate)
     mps_fname = "../cache/model_{}_{}.mps".format(month, fcstdate)
@@ -949,10 +949,10 @@ if __name__ == "__main__":
                       excel_output_writer)
     lb.build()
     lb.write_csv("../output/lines.csv")
-    s3copy("../output/lines.csv", "s3://ay-emr-job/fleet_assigner/{}/output/lines.csv".format(month))
+    s3copy("../output/lines.csv", "s3://ay-rmp-home/fleet_assigner/{}/output/lines.csv".format(month))
 
     conv = Converter("../output/lines.csv", "../output/lines.ssim")
     conv.convert()
-    s3copy("../output/lines.ssim", "s3://ay-emr-job/fleet_assigner/{}/output/lines.ssim".format(month))
+    s3copy("../output/lines.ssim", "s3://ay-rmp-home/fleet_assigner/{}/output/lines.ssim".format(month))
 
-    s3copy("../output/{}".format(excel_fname), "s3://ay-emr-job/fleet_assigner/{}/output/{}".format(month, excel_fname))
+    s3copy("../output/{}".format(excel_fname), "s3://ay-rmp-home/fleet_assigner/{}/output/{}".format(month, excel_fname))

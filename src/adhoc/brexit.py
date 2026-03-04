@@ -12,17 +12,17 @@ def process(fname, dtstr):
     depdt = fname.split('/')[5].split('.')[0].split('_')[2]
     if depdt < '20190329':
         return
-    csvout = 'ay-emr-job/nrm/brexit_cf/' + dtstr[:4] + '/' + dtstr[4:6] + '/' + dtstr[6:8] +\
+    csvout = 'ay-rmp-home/nrm/brexit_cf/' + dtstr[:4] + '/' + dtstr[4:6] + '/' + dtstr[6:8] +\
                                      '/br_cf_' + dtstr + '_' + depdt + '.csv.gz'
     if s3fileexists(csvout):
         print csvout, ' exists'
         return 0
 
-    csv_sar_orig = 'ay-emr-job/nrm/brexit_cf/' + dtstr[:4] + '/' + dtstr[4:6] + '/' + dtstr[6:8] +\
+    csv_sar_orig = 'ay-rmp-home/nrm/brexit_cf/' + dtstr[:4] + '/' + dtstr[4:6] + '/' + dtstr[6:8] +\
                                            '/br_cf_sar_orig_' + dtstr + '_' + depdt + '.txt.gz'
-    csv_sar_rows = 'ay-emr-job/nrm/brexit_cf/' + dtstr[:4] + '/' + dtstr[4:6] + '/' + dtstr[6:8] +\
+    csv_sar_rows = 'ay-rmp-home/nrm/brexit_cf/' + dtstr[:4] + '/' + dtstr[4:6] + '/' + dtstr[6:8] +\
                                            '/br_cf_sar_rows_' + dtstr + '_' + depdt + '.csv.gz'
-    csv_sar_cols = 'ay-emr-job/nrm/brexit_cf/' + dtstr[:4] + '/' + dtstr[4:6] + '/' + dtstr[6:8] +\
+    csv_sar_cols = 'ay-rmp-home/nrm/brexit_cf/' + dtstr[:4] + '/' + dtstr[4:6] + '/' + dtstr[6:8] +\
                                            '/br_cf_sar_cols_' + dtstr + '_' + depdt + '.csv.gz'
 
     cf = ConstrFrcst(dtstr, depdt)
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     dtm = dtstr[4:6]
     dtd = dtstr[6:8]
 
-    fnames = gets3files("ay-emr-job/nrm/fdc/"+dty+"/"+dtm+"/"+dtd)
+    fnames = gets3files("ay-rmp-home/nrm/fdc/"+dty+"/"+dtm+"/"+dtd)
     num_cores = multiprocessing.cpu_count()
     results = Parallel(n_jobs = num_cores)(delayed(process)(fname, dtstr) for fname in fnames)
 
