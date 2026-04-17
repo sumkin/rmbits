@@ -261,21 +261,23 @@ class DataReader:
             return d * 1440 + int(h) * 60 + int(m)
 
         # Create list of legs.
-        # Go over inventory and take all AY flights departing on given departure dates.
         for i, r in self.pairings_df.iterrows():
             flids = r["FlId"].strip().split()
             flids = [e for e in flids if e != ""]
             assert len(flids) == 2, "flids = {}".format(flids)
 
-            cc, fltnum = flids[0], flids[1]
+            cc = flids[0] #r["Own"].strip()
+            fltnum = flids[1]
             orgn = r["Orig"].strip()
             dstn = r["Dest"].strip()
             depdt = datetime.strftime(r["Date"], "%Y%m%d")
             arrdt = datetime.strftime(r["ArrDate"], "%Y%m%d")
-            deptm = r["STD"]
-            arrtm = r["STA"]
+            deptm = r["STD"].strftime("%H%M")
+            arrtm = r["STA"].strftime("%H%M")
+            dep_mins = time2mins(depdt, deptm)
+            arr_mins = time2mins(arrdt, arrtm)
             at = r["A/C"]
-            leg = [orgn, dstn, fltnum, depdt, arrdt, deptm, arrtm, at]
+            leg = [orgn, dstn, fltnum, depdt, arrdt, dep_mins, arr_mins, at, cc]
 
             # Check that leg is in costs dataframe.
             if self.costs_df[
@@ -283,7 +285,6 @@ class DataReader:
                 (self.costs_df["DSTN"] == dstn)
             ].shape[0] == 0:
                 print("WARNING: {}-{} not found in costs file.".format(orgn, dstn))
-                continue
 
             # Check that leg is in inventory.
             if self.inv_df[
@@ -294,18 +295,39 @@ class DataReader:
                 (self.inv_df["DEPDT_UTC"] == depdt)
             ].shape[0] == 0:
                 print("WARNING: {}-{}-{}-{}-{} not found in inventory.".format(cc, orgn, dstn, int(fltnum), depdt))
-                self.missing_fcst_legs.append(leg)
-
-            if leg not in self.legs:
-                self.legs.append(leg)
+                if leg not in self.missing_fcst_legs:
+                    self.missing_fcst_legs.append(leg)
+            else:
+                if leg not in self.legs:
+                    self.legs.append(leg)
 
         assert len(self.legs) != 0
+        s1 = {tuple(e) for e in self.legs}
+        s2 = {tuple(e) for e in self.missing_fcst_legs}
+        assert len(s1) == len(self.legs)
+        assert len(s2) == len(self.missing_fcst_legs)
+        assert s1.isdisjoint(s2)
+
+        # Update rm_model.
+        cap = list(self.rm_model["cap"])
+        fcap = list(self.rm_model["fcap"])
+        for m_leg in self.missing_fcst_legs:
+            orgn, dstn, fltnum, depdt, _, _, _, _, _ = m_leg
+            rsrc_name = "AY" + orgn + dstn + str(fltnum).zfill(4) + "Y" + depdt
+            self.legs.append(m_leg)
+            cap.append(0)
+            fcap.append(0)
+            self.rm_model["rsrc_names"].append(rsrc_name)
+            k = str(int(fltnum)) + "Y" + depdt
+            self.rm_model["rownumd"][k] = max(self.rm_model["rownumd"].values())
+            self.rm_model["cap"] = np.array(cap)
+            self.rm_model["fcap"] = np.array(fcap)
 
         # Create mapping orgn, dstn, fltnum, depdt -> leg_id.
         for i in range(len(self.legs)):
-            orgn, dstn, fltnum, depdt, _, _, _, _ = self.legs[i]
+            orgn, dstn, fltnum, depdt, _, _, _, _, _ = self.legs[i]
             k = orgn + "-" + dstn + "-" + str(fltnum).zfill(4) + "-" + str(depdt)
-            assert k not in self.orgn_dstn_fltnum_depdt2leg_id.keys()
+            assert k not in self.orgn_dstn_fltnum_depdt2leg_id.keys(), "k = {}".format(k)
             self.orgn_dstn_fltnum_depdt2leg_id[k] = i
 
     def build_duties2(self):
@@ -453,6 +475,8 @@ class DataReader:
                 pass
             elif ac_type == "31E":
                 pass
+            elif ac_type == "73Z":
+                pass
             else:
                 ac_type = None
             return ac_type
@@ -501,7 +525,7 @@ class DataReader:
 
         res = 0.0
         for leg_id in self.duties[d]:
-            orgn, dstn, _, depdt, _, _, _, _ = self.legs[leg_id]
+            orgn, dstn, _, depdt, _, _, _, _, _ = self.legs[leg_id]
             res += self.get_leg_costs(orgn, dstn, depdt, ac_type)
         return res
 

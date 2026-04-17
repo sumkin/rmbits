@@ -252,7 +252,7 @@ class FARMWoCancellations:
             duty = self.dr.duties[d]
             max_dist = -np.inf
             for leg_id in duty:
-                orgn, dstn, _, _, _, _, _, _ = self.dr.legs[leg_id]
+                orgn, dstn, _, _, _, _, _, _, _ = self.dr.legs[leg_id]
                 dist_df = self.dr.leg_distance_df[
                     (self.dr.leg_distance_df["ORIGIN"] == orgn) &
                     (self.dr.leg_distance_df["DESTINATION"] == dstn)

@@ -68,9 +68,13 @@ class FleetReader:
 
     def get_num_aircrafts(self, ac_type, t0_min, t1_min, _t0, _t1, wetlease_sequences):
         assert _t0 <= _t1
-        t0 = datetime.strftime(_t0, "%Y-%m-%d")
-        t1 = datetime.strftime(_t1, "%Y-%m-%d")
+        t0 = datetime.strftime(_t0, "%Y%m%d")
+        t1 = datetime.strftime(_t1, "%Y%m%d")
+        #print("t0, t1 = {}, {}".format(t0, t1))
+        #print(self.fleet_df.head(5))
         df = self.fleet_df[self.fleet_df.apply(lambda x: x["EFF_DATE"] <= t0 and t1 <= x["DIS_DATE"], axis=1)]
+        #print(df.shape)
+        #print(df.head(10))
         res = df[df["SUBFLEET"] == ac_type]["NUM_AIRCRAFTS"].sum()
 
         mdf = self.maint_df[self.maint_df.apply(lambda x: max(t0_min, x["from_mins"]) < min(t1_min - 1, x["to_mins"]), axis=1)]

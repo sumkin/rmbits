@@ -31,7 +31,7 @@ class AircraftRouter:
             duty_arrtime = -np.inf 
             for i in self.duties[d]:
                 leg = self.legs[i]
-                _, _, _, _, _, deptime, arrtime, _ = leg 
+                _, _, _, _, _, deptime, arrtime, _, _ = leg
                 duty_deptime = min(duty_deptime, deptime)
                 duty_arrtime = max(duty_arrtime, arrtime)
             return duty_deptime, duty_arrtime

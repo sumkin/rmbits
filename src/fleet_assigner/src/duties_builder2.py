@@ -33,7 +33,7 @@ class DutiesBuilder2:
         df = pd.read_excel(self.pairings_file, sheet_name="Data")
         #df = df.dropna()
         for i, r in df.iterrows():
-            if r["A/C"] == "73Z" or r["A/C"] == "32V":
+            if r["A/C"] == "32V":
                 # This is wetlease. Should be ignored.
                 continue
 

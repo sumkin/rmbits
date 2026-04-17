@@ -53,7 +53,8 @@ class LinesBuilder:
                    datetime.strftime(datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=r["to_mins"]), "%Y%m%d"),
                    r["from_mins_original"],
                    r["to_mins_original"],
-                   r["actype"]]
+                   r["actype"],
+                   "AY"]
             if ac_type == r["actype"]:
                 self.legs.append(leg)
                 leg_id = len(self.legs) - 1
@@ -124,8 +125,9 @@ class LinesBuilder:
                         else:
                             ground_time = leg_dep_mins - prev_leg_arr_mins
 
+                        cc = row[8]
                         row = row[:7] + [ac_type, line_num, ac_type + "/" + str(line_num), costs / num_legs]
-                        row += [capacities["J"], capacities["W"], capacities["Y"], ground_time, duty_id, "AY"]
+                        row += [capacities["J"], capacities["W"], capacities["Y"], ground_time, duty_id, cc]
                         csv_writer.writerow(row)
 
                         prev_leg_arr_mins = leg_arr_mins

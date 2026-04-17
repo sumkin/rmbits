@@ -129,7 +129,6 @@ if __name__ == "__main__":
                                          debug_info_writer,
                                          subfleets_to_fix)
         fwoc_fixed.load_data()
-        #fwoc.build_model(max_num_changes=1000)
         fwoc_fixed.build_model()
         fwoc_fixed.model.write(mps_fname)
 
@@ -163,7 +162,6 @@ if __name__ == "__main__":
                                    debug_info_writer,
                                    subfleets_to_fix)
         fwoc.load_data()
-        #fwoc.build_model(max_num_changes=1000)
         fwoc.build_model()
         fwoc.model.write(mps_fname)
 
