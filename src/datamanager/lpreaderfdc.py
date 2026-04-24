@@ -3,7 +3,6 @@ import yaml
 import gzip
 import pickle
 
-(self.)
 import pandas as pd
 import numpy as np
 from datetime import datetime as dt
@@ -85,12 +84,10 @@ class LPReaderFDC:
         with open("/home/ay49514/rmbits/config.yaml") as f:
             d = yaml.load(f)
             ctx = snowflake.connector.connect(
-                account=d["SNOWFLAKE_DATABASE"]["ACCOUNT"],
                 user=d["SNOWFLAKE_DATABASE"]["USER"],
-                password=d["SNOWFLAKE_DATABASE"]["PASSWORD"],
-                schema=d["SNOWFLAKE_DATABASE"]["SCHEMA"],
-                warehouse=d["SNOWFLAKE_DATABASE"]["WAREHOUSE"],
-                role=d["SNOWFLAKE_DATABASE"]["ROLE"]
+                private_key_file=d["SNOWFLAKE_DATABASE"]["PRIVATE_KEY_FILE"],
+                private_key_file_pwd=d["SNOWFLAKE_DATABASE"]["PRIVATE_KEY_FILE_PWD"],
+                account=d["SNOWFLAKE_DATABASE"]["ACCOUNT"]
             )
             cur = ctx.cursor()
             cur.execute("SELECT GEO_OD_TS_KEY, POC, BOOKING_CLASS, SUM(OD_PAX_COUNT), AVG(YIELD)\
@@ -382,7 +379,7 @@ class LPReaderFDC:
         return res
 
 if __name__ == "__main__":
-    lpreaderfdc = LPReaderFDC("20251215", "20260316")
+    lpreaderfdc = LPReaderFDC("20260226", "20261002")
     print("LPReaderFDC initialized")
     lpreaderfdc.read()
     po = lpreaderfdc.get_pkl_object()

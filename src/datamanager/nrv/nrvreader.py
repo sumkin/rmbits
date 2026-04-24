@@ -88,12 +88,10 @@ class NRVReader:
                 with open("/home/ay49514/rmbits/config.yaml") as f:
                     d = yaml.load(f)
                     ctx = snowflake.connector.connect(
-                        account=d["SNOWFLAKE_DATABASE"]["ACCOUNT"],
                         user=d["SNOWFLAKE_DATABASE"]["USER"],
-                        password=d["SNOWFLAKE_DATABASE"]["PASSWORD"],
-                        schema=d["SNOWFLAKE_DATABASE"]["SCHEMA"],
-                        warehouse=d["SNOWFLAKE_DATABASE"]["WAREHOUSE"],
-                        role=d["SNOWFLAKE_DATABASE"]["ROLE"]
+                        private_key_file=d["SNOWFLAKE_DATABASE"]["PRIVATE_KEY_FILE"],
+                        private_key_file_pwd=d["SNOWFLAKE_DATABASE"]["PRIVATE_KEY_FILE_PWD"],
+                        account=d["SNOWFLAKE_DATABASE"]["ACCOUNT"]
                     )
                     cur = ctx.cursor()
                     cur.execute("SELECT * FROM RMP_SANDBOX.REPORT.D_FF")
