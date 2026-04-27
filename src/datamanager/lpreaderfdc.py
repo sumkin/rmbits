@@ -184,11 +184,11 @@ class LPReaderFDC:
                 actcap = max(0, int(row["CAPO"]))
             if cap_infl is not None:
                 actcap = cap_infl(row, actcap)
-            fltnum, cabin = row["FLTNUM"], row["CABIN"]
-            self.fltnumdepdt2decompdt[str(fltnum) + str(row["DEPDT"])] = str(row["DECOMPOSITION_DT"])
+            cc, orgn, dstn, fltnum, cabin = row["CC"], row["ORGN"], row["DSTN"], row["FLTNUM"], row["CABIN"]
+            self.fltnumdepdt2decompdt[cc + str(fltnum) + str(row["DEPDT"])] = str(row["DECOMPOSITION_DT"])
             if str(row["DECOMPOSITION_DT"]) == self.decompdate and actcap > 0.0:
-                k = str(int(fltnum)) + cabin + str(row["DEPDT"])
-                k_utc = str(int(fltnum)) + cabin + str(row["DEPDT_UTC"])
+                k = cc + orgn + dstn + str(int(fltnum)) + cabin + str(row["DEPDT"])
+                k_utc = cc + orgn + dstn + str(int(fltnum)) + cabin + str(row["DEPDT_UTC"])
                 self.cap.append(actcap)
                 self.fcap.append(int(row["CAPO"]))
                 self.rownumd[k] = num
@@ -230,13 +230,16 @@ class LPReaderFDC:
 
             # Get decomposition dates.
             skip = False
+            base_od_orgn = row["BASE_OD_ORGN"]
+            base_od_dstn = row["BASE_OD_DSTN"]
             base_seg_dep_dates = str(row["BASE_SEG_DEP_DATE"]).split("-")
+            oprccs = str(row["BASE_OPR_CC"]).split("-")
             oprfltnums = str(row["BASE_OPR_FLTNUM"]).split("-")
             cmpt = get_cmpt(row["BC"])
             assert len(base_seg_dep_dates) == len(oprfltnums)
 
             for i in range(len(base_seg_dep_dates)):
-                k = str(oprfltnums[i]) + str(base_seg_dep_dates[i])
+                k = str(oprccs[i]) + str(oprfltnums[i]) + str(base_seg_dep_dates[i])
                 if k not in self.fltnumdepdt2decompdt.keys():
                     skip = True
                     break
@@ -244,11 +247,10 @@ class LPReaderFDC:
                     if self.fltnumdepdt2decompdt[k] != self.decompdate:
                         skip = True
                         break
-                k = str(oprfltnums[i]) + cmpt + str(base_seg_dep_dates[i])
+                k = str(oprccs[i]) + base_od_orgn + base_od_dstn + str(oprfltnums[i]) + cmpt + str(base_seg_dep_dates[i])
                 if k not in self.rownumd.keys():
                     skip = True
                     break
-
 
             if self.mode == "remainng":
                 d = row["ARD"]
@@ -269,7 +271,7 @@ class LPReaderFDC:
             if not skip:
                 # Check that all flights are present.
                 for i, fltnum in enumerate(oprfltnums):
-                    k = str(int(fltnum)) + cmpt + str(base_seg_dep_dates[i])
+                    k = oprccs[i] + base_od_orgn + base_od_dstn + str(int(fltnum)) + cmpt + str(base_seg_dep_dates[i])
                     self.Ai.append(self.rownumd[k])
                     self.Aj.append(num)
                     self.Adata.append(1)

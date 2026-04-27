@@ -3,8 +3,6 @@ import numpy as np
 from datetime import datetime, timedelta
 
 from cls import *
-#from s3utils import *
-#from dfutils import *
 from db_connector import *
 from airport import *
 
@@ -93,9 +91,9 @@ class LPReaderFDCDB:
                 actcap = max(0, int(row['CAPO']))
             if cap_infl is not None:
                 actcap = cap_infl(row, actcap)
-            fltnum, cabin = row['FLTNUM'], row['CABIN']
+            cc, orgn, dstn, fltnum, cabin = row['CC'], row['ORGN'], row['DSTN'], row['FLTNUM'], row['CABIN']
             if actcap > 0.0:
-                k = str(int(fltnum)) + cabin + str(row['DEPDT'])
+                k = cc + orgn + dstn + str(int(fltnum)) + cabin + str(row['DEPDT'])
                 self.cap.append(actcap)
                 self.fcap.append(int(row['CAPO']))
                 self.rownumd[k] = num

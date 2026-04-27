@@ -132,7 +132,7 @@ class LPReaderPWDC:
             actcap = max(0, int(row['CAPO']) - int(row['ESB'])
             fltnum, cabin = row['FLTNUM'], row['CABIN']
             if actcap > 0.0:
-                k = str(int(fltnum)) + cabin + str(row['DEPDT'])
+                k = row['CC'] + row['ORGN'] + row['DSTN'] + str(int(fltnum)) + cabin + str(row['DEPDT'])
                 self.cap.append(actcap)
                 self.rownumd[k] = num
                 lbl = row['CC'] + str(fltnum).zfill(4) + cabin + str(row['CABIN'])
@@ -190,12 +190,12 @@ class LPReaderPWDC:
             for fltnum in oprfltnums:
                 try:
                     cmpt = get_cmpt(row['BC'])
-                    k = str(fltnum) + cmpt
+                    k = base_opr_cc + base_od_orgn + base_od_dstn + str(fltnum) + cmpt + str(base_od_dept_date)
                     if k in self.rownumd.keys():
                         self.A[self.rownumd[k],num] = 1
                     else:
                         # Some leg might not have J cabin.
-                        k = str(fltnum) + 'Y'
+                        k = base_opr_cc + base_od_orgn + base_od_dstn + str(fltnum) + 'Y' + str(base_od_dept_date)
                         self.A[self.rownumd[k],num] = 1
                 except Exception as e:
                     # There could be no flight on this date.

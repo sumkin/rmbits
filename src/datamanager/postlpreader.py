@@ -193,7 +193,7 @@ class PostLPReader:
             except:
                 continue
             if actcap > 0:
-                k = row['CC'] + str(int(row['FLTNUM'])) + cabin + str(row['DEPDT'])
+                k = row['CC'] + row['ORGN'] + row['DSTN'] + str(int(row['FLTNUM'])) + cabin + str(row['DEPDT'])
                 self.cap.append(actcap)
                 self.rownumd[k] = num
                 lbl = row['CC'] + str(fltnum).zfill(4) + cabin + str(row['DEPDT'])
@@ -283,7 +283,7 @@ class PostLPReader:
             cmpt = get_cmpt(bc)
             skip = False
             for i, fltnum in enumerate(oprfltnums):
-                k = oprccs[i] + str(int(fltnum)) + cmpt + str(base_seg_dep_dates[i])
+                k = oprccs[i] + base_od_orgn + base_od_dstn + str(int(fltnum)) + cmpt + str(base_seg_dep_dates[i])
                 if k in self.rownumd.keys():
                     self.A[self.rownumd[k], num] = 1
                 else:

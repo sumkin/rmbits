@@ -121,7 +121,7 @@ class LPReaderBaseFDC:
         self.rownumd = {}
         self.capl = []
         for index, row in self.inv_df.iterrows():
-            k = str(int(row['FLTNUM'])) + row['CABIN']
+            k = row['CC'] + row['ORGN'] + row['DSTN'] + str(int(row['FLTNUM'])) + row['CABIN'] + row['BASE_OD_DEP_DATE']
             self.capl.append(row['CAPO'])
             self.rownumd[k] = num
             num += 1
@@ -158,12 +158,12 @@ class LPReaderBaseFDC:
             for fltnum in fltnums:
                 try:
                     cmpt = get_cmpt(row['BC_dc'])
-                    k = str(fltnum) + cmpt
+                    k = row['CC_dc'] + base_od_orgn + base_od_dstn + str(fltnum) + cmpt + row['BASE_OD_DEP_DATE']
                     if k in self.rownumd.keys():
                         self.A[self.rownumd[k],num] = 1
                     else:
                         # Some leg might not have J cabin.
-                        k = str(fltnum) + 'Y'
+                        k = row['CC_dc'] + base_od_orgn + base_od_dstn + str(fltnum) + 'Y' + row['BASE_OD_DEP_DATE']
                         self.A[self.rownumd[k],num] = 1
                 except Exception as e:
                     # There could be no flight on this date.
