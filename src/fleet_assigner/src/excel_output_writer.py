@@ -119,6 +119,9 @@ class ExcelOutputWriter:
 
             leg_id = dr.get_leg_id(orgn, dstn, fltnum, depdt_utc)
             duty_id = dr.get_duty_id_by_leg_id(leg_id)
+
+            rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt_utc)
+
             if duty_id is None:
                 duty_id_vals.append("")
             else:
@@ -145,11 +148,9 @@ class ExcelOutputWriter:
                     deptm_vals.append("")
                     arrtm_vals.append("")
 
-                rsrc_name_idxs = dr.get_rsrc_name_indices_by_leg(orgn, dstn, fltnum, depdt_utc)
-
-                before_paxes = round(sum([paxes_fixed[i] for i in rsrc_name_idxs if i < len(paxes_fixed)]))
-                after_paxes = round(sum([paxes[i] for i in rsrc_name_idxs if i < len(paxes)]))
-                booked_paxes = round(sum([b_paxes[i] for i in rsrc_name_idxs if i < len(b_paxes)]))
+                before_paxes = sum([paxes_fixed[i] for i in rsrc_name_idxs if i < len(paxes_fixed)])
+                after_paxes = sum([paxes[i] for i in rsrc_name_idxs if i < len(paxes)])
+                booked_paxes = sum([b_paxes[i] for i in rsrc_name_idxs if i < len(b_paxes)])
 
                 before_rev = sum([rev_fixed[i] for i in rsrc_name_idxs if i < len(rev_fixed)])
                 after_rev = sum([rev[i] for i in rsrc_name_idxs if i < len(rev)])
@@ -239,15 +240,6 @@ class ExcelOutputWriter:
             (inv_df["DUTY_ID"].astype(str).str.strip() != "")
         ]
         inv_df = inv_df.drop("AIRCRAFT_TYPE", axis=1)
-        """
-        inv_df = inv_df[["CC", "FLTNUM", "ORGN", "DSTN", "DEPDT", "DEPTM", "ARRTM", "LEG_ID", "DUTY_ID",
-            "A/C before", "A/C after", "A/C change", "Costs before", "Costs after",
-            "Booked pax", "Pax before", "Pax after",
-            "Booked revenue", "Revenue before", "Revenue after",
-            "Booked profit before", "Booked profit after", "Profit before", "Profit after",
-            "Total pax before", "Total pax after", "Total revenue before", "Total revenue after",
-            "Total profit before", "Total profit after"]]
-        """
         inv_df["Forecast difference"] = inv_df["Total pax after"] - inv_df["Total pax before"]
         inv_df["Costs difference"] = inv_df["Costs after"] - inv_df["Costs before"]
         inv_df["Profit difference"] = inv_df["Profit after"] - inv_df["Profit before"]
@@ -261,12 +253,6 @@ class ExcelOutputWriter:
                          ]]
         inv_df["DEPDT"] = pd.to_datetime(inv_df["DEPDT"], format="%Y%m%d")
         inv_df["DEPDT"] = inv_df["DEPDT"].dt.strftime("%Y-%m-%d")
-
-        #inv_df["DEPTM"] = inv_df["DEPTM"].astype(str).str.zfill(4)
-        #inv_df["DEPTM"] = inv_df["DEPTM"].str[:2] + ":" + inv_df["DEPTM"].str[2:4]
-
-        #inv_df["ARRTM"] = inv_df["ARRTM"].astype(str).str.zfill(4)
-        #inv_df["ARRTM"] = inv_df["ARRTM"].str[:2] + ":" + inv_df["ARRTM"].str[2:4]
 
         cols_to_format = [
             "Booked pax",
