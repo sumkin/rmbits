@@ -279,6 +279,11 @@ class DataReader:
             at = r["A/C"]
             leg = [orgn, dstn, fltnum, depdt, arrdt, dep_mins, arr_mins, at, cc]
 
+            if orgn == "HEL" and dstn == "HEL":
+                # Skip HEL maintenance blocks. They are read from SSIM file.
+                # TLL maintenance blocks should be there.
+                continue
+
             # Check that leg is in costs dataframe.
             if self.costs_df[
                 (self.costs_df["ORGN"] == orgn) &
@@ -287,7 +292,8 @@ class DataReader:
                 print("WARNING: {}-{} not found in costs file.".format(orgn, dstn))
 
             # Check that leg is in inventory.
-            if self.inv_df[
+            #print("fltnum = {}".format(fltnum))
+            if fltnum.isdigit() and self.inv_df[
                 (self.inv_df["CC"] == cc) &
                 (self.inv_df["ORGN"] == orgn) &
                 (self.inv_df["DSTN"] == dstn) &
@@ -326,9 +332,23 @@ class DataReader:
         # Create mapping orgn, dstn, fltnum, depdt -> leg_id.
         for i in range(len(self.legs)):
             orgn, dstn, fltnum, depdt, _, _, _, _, _ = self.legs[i]
-            k = orgn + "-" + dstn + "-" + str(fltnum).zfill(4) + "-" + str(depdt)
+            if isinstance(fltnum, int) or fltnum.isdigit():
+                k = orgn + "-" + dstn + "-" + str(fltnum).zfill(4) + "-" + str(depdt)
+            else:
+                k = orgn + "-" + dstn + "-" + fltnum.strip() + "-" + str(depdt)
             assert k not in self.orgn_dstn_fltnum_depdt2leg_id.keys(), "k = {}".format(k)
             self.orgn_dstn_fltnum_depdt2leg_id[k] = i
+
+        """
+        for leg in self.legs:
+            fltnum = leg[2]
+            if fltnum.isdigit():
+                if int(fltnum) == 8921 or int(fltnum) == 8922:
+                    print(leg)
+            else:
+                print(leg)
+        assert False
+        """
 
     def build_duties2(self):
         self._create_legs()
@@ -561,7 +581,10 @@ class DataReader:
         """
         Returns index in the list of self.legs resource.
         """
-        k = orgn + "-" + dstn + "-" + str(fltnum).zfill(4) + "-" + str(depdt)
+        if isinstance(fltnum, int) or fltnum.isdigit():
+            k = orgn + "-" + dstn + "-" + str(fltnum).zfill(4) + "-" + str(depdt)
+        else:
+            k = orgn + "-" + dstn + "-" + fltnum.strip() + "-" + str(depdt)
         if k in self.orgn_dstn_fltnum_depdt2leg_id.keys():
             return self.orgn_dstn_fltnum_depdt2leg_id[k]
         else:
