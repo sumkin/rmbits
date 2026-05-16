@@ -90,18 +90,19 @@ class LPReaderFDC:
                 account=d["SNOWFLAKE_DATABASE"]["ACCOUNT"]
             )
             cur = ctx.cursor()
-            cur.execute("SELECT GEO_OD_TS_KEY, POC, BOOKING_CLASS, SUM(OD_PAX_COUNT), AVG(YIELD)\
-                         FROM RMP_SANDBOX.REPORT.NRM_BKG_CURVE\
-                         WHERE (\
-                            BASE_OD_DEPT_DATE = '{}-{}-{}' OR\
-                            BASE_OD_DEPT_DATE = '{}-{}-{}' OR\
-                            BASE_OD_DEPT_DATE = '{}-{}-{}'\
-                         )\
-                         GROUP BY GEO_OD_TS_KEY, BASE_OD_DEPT_DATE, POC, BOOKING_CLASS".format(
-                             self.prev_depdate[:4], self.prev_depdate[4:6], self.prev_depdate[6:8],
-                             self.depdate[:4], self.depdate[4:6], self.depdate[6:8],
-                             self.next_depdate[:4], self.next_depdate[4:6], self.next_depdate[6:8]
-                         ))
+            q = "SELECT GEO_OD_TS_KEY, POC, BOOKING_CLASS, SUM(OD_PAX_COUNT), AVG(YIELD)\
+                 FROM RMP_SANDBOX.REPORT.NRM_BKG_CURVE\
+                 WHERE (\
+                     BASE_OD_DEPT_DATE = '{}-{}-{}' OR\
+                     BASE_OD_DEPT_DATE = '{}-{}-{}' OR\
+                     BASE_OD_DEPT_DATE = '{}-{}-{}'\
+                 )\
+                 GROUP BY GEO_OD_TS_KEY, POC, BOOKING_CLASS".format(
+                self.prev_depdate[:4], self.prev_depdate[4:6], self.prev_depdate[6:8],
+                     self.depdate[:4], self.depdate[4:6], self.depdate[6:8],
+                     self.next_depdate[:4], self.next_depdate[4:6], self.next_depdate[6:8]
+            )
+            cur.execute(q)
             data = []
             for row in cur.fetchall():
                 data.append([row[0], row[1], row[2], row[3], row[4]])
@@ -117,7 +118,7 @@ class LPReaderFDC:
                                            right_on=["GEO_OD_TS_KEY", "ISO_COUNTRY", "SELL_CLS"], how="left")
         self.dcdf = self.dcdf.fillna(value={"REFERENCE": 0, "YIELD": 0})
 
-        # Create keys. 
+        # Create keys.
         self.dcdf = self.dcdf.sort_values(by=["GEO_OD_TS_KEY", "POS", "FF", "TP", "ORDER"])
         self.dcdf = self.dcdf.assign(flowsh=lambda x: x.GEO_OD_TS_KEY.astype(str) + "-" +
                                                       x.POS.astype(str) + "-" +
@@ -231,12 +232,27 @@ class LPReaderFDC:
             # Get decomposition dates.
             skip = False
             base_od_orgn = row["BASE_OD_ORGN"]
+            base_od_via = row["BASE_OD_VIA"]
             base_od_dstn = row["BASE_OD_DSTN"]
             base_seg_dep_dates = str(row["BASE_SEG_DEP_DATE"]).split("-")
             oprccs = str(row["BASE_OPR_CC"]).split("-")
             oprfltnums = str(row["BASE_OPR_FLTNUM"]).split("-")
             cmpt = get_cmpt(row["BC"])
             assert len(base_seg_dep_dates) == len(oprfltnums)
+
+            if self.mode == "remaining":
+                d = row["ARD"]
+            else:
+                d = row["AFD"]
+
+            b = row["REFERENCE"] / 2  # divide by 2, because bookings do not have TP and it is sum.
+            y = row["YIELD"]          # this is average yield.
+
+            assert len(base_seg_dep_dates) <= 3, "len(base_seg_dep_dates) = {}".format(len(base_seg_dep_dates))
+
+            base_od_orgns = [e for e in [base_od_orgn] + base_od_via.split("-") if e.strip() != ""]
+            base_od_dstns = [e for e in base_od_via.split("-") + [base_od_dstn] if e.strip() != ""]
+            assert len(base_od_orgns) == len(base_od_dstns) == len(base_seg_dep_dates), "{} {} {}".format(len(base_od_orgns), len(base_od_dstns), len(base_seg_dep_dates))
 
             for i in range(len(base_seg_dep_dates)):
                 k = str(oprccs[i]) + str(oprfltnums[i]) + str(base_seg_dep_dates[i])
@@ -247,18 +263,10 @@ class LPReaderFDC:
                     if self.fltnumdepdt2decompdt[k] != self.decompdate:
                         skip = True
                         break
-                k = str(oprccs[i]) + base_od_orgn + base_od_dstn + str(oprfltnums[i]) + cmpt + str(base_seg_dep_dates[i])
+                k = str(oprccs[i]) + base_od_orgns[i] + base_od_dstns[i] + str(oprfltnums[i]) + cmpt + str(base_seg_dep_dates[i])
                 if k not in self.rownumd.keys():
                     skip = True
                     break
-
-            if self.mode == "remainng":
-                d = row["ARD"]
-            else:
-                d = row["AFD"]
-
-            b = row["REFERENCE"] / 2  # divide by 2, because bookings do not have TP and it is sum.
-            y = row["YIELD"]          # this is average yield.
 
             if is_special_cls(row["BC"]):
                 d = max(b, d)
@@ -271,7 +279,7 @@ class LPReaderFDC:
             if not skip:
                 # Check that all flights are present.
                 for i, fltnum in enumerate(oprfltnums):
-                    k = oprccs[i] + base_od_orgn + base_od_dstn + str(int(fltnum)) + cmpt + str(base_seg_dep_dates[i])
+                    k = oprccs[i] + base_od_orgns[i] + base_od_dstns[i] + str(int(fltnum)) + cmpt + str(base_seg_dep_dates[i])
                     self.Ai.append(self.rownumd[k])
                     self.Aj.append(num)
                     self.Adata.append(1)
@@ -381,7 +389,7 @@ class LPReaderFDC:
         return res
 
 if __name__ == "__main__":
-    lpreaderfdc = LPReaderFDC("20260226", "20261002")
+    lpreaderfdc = LPReaderFDC("20260226", "20261003")
     print("LPReaderFDC initialized")
     lpreaderfdc.read()
     po = lpreaderfdc.get_pkl_object()
@@ -392,9 +400,9 @@ if __name__ == "__main__":
     for i in range(len(prdt_names)):
         prdt_name = prdt_names[i]
         b = bs[i]
-        if "LAXHEL20260315" in prdt_name:
+        if "DELHEL20261003" in prdt_name:
             sum_b += b
-            print(prdt_name, b)
+            #print(prdt_name, b)
     print("sum_b = {}".format(sum_b))
 
 
