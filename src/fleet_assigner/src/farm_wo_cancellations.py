@@ -808,6 +808,7 @@ class FARMWoCancellations:
             "y": y,
             "z": z,
             "m": m,
+            "d": self.dr.rm_model["d"],
             "b": self.dr.rm_model["b"],
             "f": self.dr.rm_model["f"],
             "Ai": self.dr.rm_model["Ai"],

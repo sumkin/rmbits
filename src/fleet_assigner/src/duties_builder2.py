@@ -31,7 +31,6 @@ class DutiesBuilder2:
 
     def read_parent_child_pairs(self):
         df = pd.read_excel(self.pairings_file, sheet_name="Data")
-        #df = df.dropna()
         for i, r in df.iterrows():
             if r["A/C"] == "32V":
                 # This is wetlease. Should be ignored.
@@ -40,7 +39,7 @@ class DutiesBuilder2:
             if pd.isna(r["OnwdEventService"]):
                 continue
 
-            if r["OnwdEventService"].strip() == "Z":
+            if r["OnwdEventService"].strip() == "Z" and r["OnwdEventDest"] != "TLL":
                 # This is maintenance. Ignore such entries for duty builder.
                 continue
 
@@ -58,14 +57,18 @@ class DutiesBuilder2:
 
             next_orgn = dstn
             next_dstn = r["OnwdEventDest"].strip()
-            next_fltnum = int(r["OnwdEventFlNo"].strip())
+            next_fltnum = r["OnwdEventFlNo"].strip()
             next_depdate_utc = datetime.strftime(r["OnwdEventDate"], "%Y%m%d")
             next_svc = r["OnwdEventService"].strip()
             ac = r["A/C"].strip()
 
             # Check that next leg is in file.
-            next_fltnum1 = cc + " " + str(next_fltnum).zfill(3)
-            next_fltnum2 = cc + "  " + str(next_fltnum).zfill(3)
+            if str(next_fltnum).strip().isdigit():
+                next_fltnum = str(next_fltnum).zfill(3)
+            else:
+                next_fltnum = next_fltnum.strip()
+            next_fltnum1 = cc + " " + next_fltnum
+            next_fltnum2 = cc + "  " + next_fltnum
             sub_df = df[
                 (df["Orig"] == next_orgn) &
                 (df["Dest"] == next_dstn) &
@@ -76,15 +79,11 @@ class DutiesBuilder2:
                 (df["Date"] == next_depdate_utc)
             ]
             if sub_df.shape[0] == 0:
-                if is_debug:
-                    print("cc = {}".format(cc))
-                    print("next_fltnum1 = {}".format(next_fltnum1))
-                    print("next_fltnum2 = {}".format(next_fltnum2))
-                    print("next_orgn = {}".format(next_orgn))
-                    print("next_dstn = {}".format(next_dstn))
-                    print("next_fltnum = {}".format(next_fltnum))
-                    print("next_depdate_utc = {}".format(next_depdate_utc))
-                    print("Skipped 1")
+                if orgn == "TLL" or dstn == "TLL":
+                    print("skipped 1")
+                    print(orgn, dstn, fltnum, depdate_utc)
+                    print(next_orgn, next_dstn, next_fltnum, next_depdate_utc)
+                    print("")
                 continue
 
             leg_id1 = self.dr.get_leg_id(orgn, dstn, fltnum, depdate_utc)
@@ -92,13 +91,13 @@ class DutiesBuilder2:
             if cc == "AY":
                 # Check this for AY flights only.
                 if leg_id1 is None or leg_id2 is None:
-                    if is_debug:
-                        print("next_orgn = {}".format(next_orgn))
-                        print("next_dstn = {}".format(next_dstn))
-                        print("next_fltnum = {}".format(next_fltnum))
-                        print("next_depdate_utc = {}".format(next_depdate_utc))
-                        print("leg_id1, leg_id2 = {}, {}".format(leg_id1, leg_id2))
-                        print("Skipped 2")
+                    if orgn == "TLL" or dstn == "TLL":
+                        print("skipped 2")
+                        print("leg_id1 = {}".format(leg_id1))
+                        print("leg_id2 = {}".format(leg_id2))
+                        print(orgn, dstn, fltnum, depdate_utc)
+                        print(next_orgn, next_dstn, next_fltnum, next_depdate_utc)
+                        print("")
                     continue
 
             leg1 = cc + orgn + dstn + str(fltnum).zfill(4) + depdate_utc + ac + svc
@@ -174,13 +173,27 @@ class DutiesBuilder2:
                     prev_l = sequence[i - 1]
 
                 cc, orgn, dstn, fltnum, depdate, ac, svc = l[:2], l[2:5], l[5:8], l[8:12], l[12:20], l[20:-1], l[-1]
-                leg_id = self.dr.get_leg_id(orgn, dstn, int(fltnum.lstrip("0")), depdate)
+                if isinstance(fltnum, int):
+                    pass
+                elif fltnum.isdigit():
+                    fltnum = int(fltnum.lstrip("0"))
+                else:
+                    #print("fltnum = {}".format(fltnum))
+                    #print("type(fltnum) = {}".format(type(fltnum)))
+                    fltnum = fltnum.lstrip("0").strip()
+                leg_id = self.dr.get_leg_id(orgn, dstn, fltnum, depdate)
+                assert leg_id is not None, f"Leg ID not found for {orgn}-{dstn}-{fltnum}-{depdate}"
                 leg = self.legs[leg_id]
 
                 if prev_l is not None:
                     prev_cc, prev_orgn, prev_dstn, prev_fltnum, prev_depdate, prev_ac, prev_svc =\
                         prev_l[:2], prev_l[2:5], prev_l[5:8], prev_l[8:12], prev_l[12:20], prev_l[20:-1], prev_l[-1]
-                    prev_leg_id = self.dr.get_leg_id(prev_orgn, prev_dstn, int(prev_fltnum.lstrip("0")), prev_depdate)
+                    prev_fltnum = prev_fltnum.lstrip("0")
+                    if prev_fltnum.isdigit():
+                        prev_fltnum = int(prev_fltnum)
+                    else:
+                        prev_fltnum = prev_fltnum.strip()
+                    prev_leg_id = self.dr.get_leg_id(prev_orgn, prev_dstn, prev_fltnum, prev_depdate)
                     prev_leg = self.legs[prev_leg_id]
                     assert prev_dstn == orgn
                     if prev_dstn == "HEL" and orgn == "HEL":
@@ -237,6 +250,21 @@ class DutiesBuilder2:
         self.merge()
         self.clean()
         self.create_duties()
+
+        """
+        for duty_id in self.duties:
+            for leg_id in duty_id:
+                leg = self.legs[leg_id]
+                fltnum = leg[2]
+                is_debug = False
+                if int(fltnum) == 8921:
+                    is_debug = True
+                if is_debug:
+                    print(leg)
+            print("")
+        assert False
+        """
+
         return self.duties,\
                self.duties_svc,\
                self.duties2startend,\
