@@ -79,6 +79,7 @@ class ExcelOutputWriter:
         leg_id_vals = []
         deptm_vals = []
         arrtm_vals = []
+        svc_vals = []
         duty_id_vals = []
         before_paxes_vals = []
         after_paxes_vals = []
@@ -131,6 +132,7 @@ class ExcelOutputWriter:
                 leg_id_vals.append("")
                 deptm_vals.append("")
                 arrtm_vals.append("")
+                svc_vals.append("")
 
                 before_paxes_vals.append(0.0)
                 after_paxes_vals.append(0.0)
@@ -147,6 +149,9 @@ class ExcelOutputWriter:
                 else:
                     deptm_vals.append("")
                     arrtm_vals.append("")
+
+                if (cc, orgn, dstn, int(fltnum), depdt_utc) in dr.leg2svc.keys():
+                    svc_vals.append(dr.leg2svc[(cc, orgn, dstn, int(fltnum), depdt_utc)])
 
                 before_paxes = sum([paxes_fixed[i] for i in rsrc_name_idxs if i < len(paxes_fixed)])
                 after_paxes = sum([paxes[i] for i in rsrc_name_idxs if i < len(paxes)])
@@ -195,6 +200,7 @@ class ExcelOutputWriter:
         assert n == len(leg_id_vals)
         assert n == len(deptm_vals)
         assert n == len(arrtm_vals)
+        assert n == len(svc_vals)
         assert n == len(duty_id_vals)
         assert n == len(before_paxes_vals)
         assert n == len(after_paxes_vals)
@@ -212,6 +218,7 @@ class ExcelOutputWriter:
         inv_df["DUTY_ID"] = duty_id_vals
         inv_df["A/C before"] = before_at_vals
         inv_df["A/C after"] = after_at_vals
+        inv_df["Booked pax (INV)"] = inv_df["BKC"]
         inv_df["A/C change"] = at_change_vals
         inv_df["Costs before"] = before_costs
         inv_df["Costs after"] = after_costs
@@ -234,6 +241,7 @@ class ExcelOutputWriter:
 
         inv_df["DEPTM"] = deptm_vals
         inv_df["ARRTM"] = arrtm_vals
+        inv_df["SVC"] = svc_vals
 
         inv_df = inv_df[
             (inv_df["LEG_ID"].astype(str).str.strip() != "") &
@@ -244,28 +252,38 @@ class ExcelOutputWriter:
         inv_df["Costs difference"] = inv_df["Costs after"] - inv_df["Costs before"]
         inv_df["Profit difference"] = inv_df["Profit after"] - inv_df["Profit before"]
 
-        inv_df = inv_df[["CC","FLTNUM","ORGN","DSTN","DEPDT","DEPTM","ARRTM",
+        inv_df = inv_df[["CC","FLTNUM","SVC","ORGN","DSTN","DEPDT","DEPTM","ARRDT", "ARRTM",
                          "A/C change", "A/C before", "A/C after",
-                         "Booked pax", "Total pax before", "Total pax after", "Forecast difference",
+                         "Booked pax", "Booked pax (INV)", "Total pax before", "Total pax after", "Forecast difference",
                          "Total revenue before", "Total revenue after",
                          "Costs before", "Costs after", "Costs difference",
                          "Total profit before", "Total profit after", "Profit difference"
                          ]]
         inv_df["DEPDT"] = pd.to_datetime(inv_df["DEPDT"], format="%Y%m%d")
         inv_df["DEPDT"] = inv_df["DEPDT"].dt.strftime("%Y-%m-%d")
+        inv_df["ARRDT"] = pd.to_datetime(inv_df["ARRDT"], format="%Y%m%d")
+        inv_df["ARRDT"] = inv_df["ARRDT"].dt.strftime("%Y-%m-%d")
 
-        cols_to_format = [
-            "Booked pax",
-            "Total pax before", "Total pax after", "Forecast difference",
-            "Total revenue before", "Total revenue after",
-            "Costs before", "Costs after", "Costs difference",
-            "Total profit before", "Total profit after", "Profit difference"
-        ]
-        for col in cols_to_format:
-            inv_df[col] = inv_df[col].fillna(0).astype(int)
-            inv_df[col] = inv_df[col].apply(lambda x: f"{x:,}".replace(",", " "))
+        inv_df = inv_df.groupby(["CC", "FLTNUM", "SVC", "ORGN", "DSTN", "DEPDT", "DEPTM", "ARRDT", "ARRTM",
+                                 "A/C change", "A/C before", "A/C after",
+                                 "Booked pax", "Total pax before", "Total pax after", "Forecast difference",
+                                 "Total revenue before", "Total revenue after",
+                                 "Costs before", "Costs after", "Costs difference",
+                                 "Total profit before", "Total profit after", "Profit difference"
+                                ])["Booked pax (INV)"].sum().reset_index()
 
         inv_df = inv_df.drop_duplicates()
+
+        # Find first and last departure dates and filter them out.
+        min_depdate = dr.depdates[0]
+        max_depdate = dr.depdates[-1]
+
+        min_depdate = min_depdate[0:4] + "-" + min_depdate[4:6] + "-" + min_depdate[6:8]
+        max_depdate = max_depdate[0:4] + "-" + max_depdate[4:6] + "-" + max_depdate[6:8]
+
+        inv_df = inv_df[
+            (inv_df["DEPDT"] > min_depdate) & (inv_df["DEPDT"] < max_depdate)
+        ]
 
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
             inv_df.to_excel(writer, index=False, sheet_name="Info per leg")
