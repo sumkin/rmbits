@@ -51,6 +51,7 @@ class DataReader:
         self.missing_fcst_legs = []
         self.orgn_dstn_fltnum_depdt2leg_id = {}  # Map to speed-up querying for leg id.
         self.leg2deparrtm = {}
+        self.leg2svc = {}
 
     def read(self):
         print(time_now() + " Loading inventory dataframe...")
@@ -107,15 +108,14 @@ class DataReader:
     def load_inv_df(self):
         fcstyear, fcstmonth = self.fcstdate[:4], self.fcstdate[4:6]
         self.inv_df = pd.read_csv("s3://ay-rmp-home/nrm/bif/{}/{}/INV_{}.csv.gz".format(fcstyear, fcstmonth, self.fcstdate),
-                                   dtype={"ARRDT": str, "DEPTM": str, "ARRTM": str}
-        )
+                                   dtype={"ARRDT": str, "DEPTM": str, "ARRTM": str})
         self.next_depdate = datetime.strptime(self.depdates[len(self.depdates) - 1], "%Y%m%d") + timedelta(days=1)
         self.next_depdate = datetime.strftime(self.next_depdate, "%Y%m%d")
         self.inv_df["DEPDT"] = self.inv_df["DEPDT"].astype(str) 
         self.inv_df = self.inv_df.loc[self.inv_df["DEPDT"].isin(self.depdates + [self.next_depdate])]
         self.inv_df = self.inv_df[["CC", "FLTNUM", "ORGN", "DSTN", "CABIN",
                                    "DEPDT", "DEPTM", "ARRDT", "ARRTM",
-                                   "DEPDT_UTC", "DEPTM_UTC", "ARRDT_UTC", "ARRTM_UTC", "AIRCRAFT_TYPE"]]
+                                   "DEPDT_UTC", "DEPTM_UTC", "ARRDT_UTC", "ARRTM_UTC", "AIRCRAFT_TYPE", "BKC"]]
         self.inv_df = self.inv_df.drop_duplicates()
 
         self.inv_df["DEPDT"] = self.inv_df["DEPDT"].astype(str)
@@ -130,7 +130,7 @@ class DataReader:
         self.inv_df = self.inv_df[["CC", "FLTNUM", "ORGN", "DSTN", "CABIN",
                                    "DEPDT", "DEPTM", "ARRDT", "ARRTM",
                                    "DEPDT_UTC", "DEPTM_UTC", "ARRDT_UTC",
-                                   "ARRTM_UTC", "AIRCRAFT_TYPE"]]
+                                   "ARRTM_UTC", "AIRCRAFT_TYPE", "BKC"]]
         self.inv_df = self.inv_df[
             (
                 self.inv_df["FLTNUM"] <= 1999
@@ -249,7 +249,9 @@ class DataReader:
             depdate_utc = datetime.strftime(r["Date"], "%Y%m%d")
             deptm_utc = r["STD"]
             arrtm_utc = r["STA"]
-            self.leg2deparrtm[(cc, orgn, dstn, int(fltnum), depdate_utc)] = (deptm_utc, arrtm_utc)
+            k = (cc, orgn, dstn, int(fltnum), depdate_utc)
+            self.leg2deparrtm[k] = (deptm_utc, arrtm_utc)
+            self.leg2svc[k] = r["Svc"]
 
     def _create_legs(self):
 
