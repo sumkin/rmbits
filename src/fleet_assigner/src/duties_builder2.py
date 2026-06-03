@@ -106,29 +106,42 @@ class DutiesBuilder2:
             self.sequences.append([leg1, leg2])
 
     def merge(self):
-        while True:
-            merged = False
-            n = len(self.sequences)
-            if n % 1000 == 0:
-                print("n = {}".format(n))
-            for i in range(n):
-                e1 = self.sequences[i]
-                for j in range(i + 1, n):
-                    e2 = self.sequences[j]
-                    if e1[len(e1) - 1] == e2[0]:
-                        self.sequences[i] = e1[:-1] + e2
-                        del self.sequences[j]
-                        merged = True
-                        break
-                    elif e1[0] == e2[len(e2) - 1]:
-                        self.sequences[i] = e2[:-1] + e1
-                        del self.sequences[j]
-                        merged = True
-                        break
-                if merged:
+        head_map = {}  # first element → seq index
+        tail_map = {}  # last element  → seq index
+        for i, seq in enumerate(self.sequences):
+            if seq:
+                head_map.setdefault(seq[0], i)
+                tail_map.setdefault(seq[-1], i)
+
+        used = [False] * len(self.sequences)
+        result = []
+
+        for i, seq in enumerate(self.sequences):
+            if used[i] or not seq:
+                continue
+            # skip sequences that have a predecessor — they'll be absorbed
+            pred_idx = tail_map.get(seq[0])
+            if pred_idx is not None and pred_idx != i:
+                continue
+
+            # walk the chain forward
+            chain = list(seq)
+            used[i] = True
+            while True:
+                next_idx = head_map.get(chain[-1])
+                if next_idx is None or used[next_idx]:
                     break
-            if not merged:
-                break
+                used[next_idx] = True
+                chain = chain[:-1] + self.sequences[next_idx]
+
+            result.append(chain)
+
+        # keep any sequences not reached (isolated or in cycles)
+        for i, seq in enumerate(self.sequences):
+            if not used[i] and seq:
+                result.append(list(seq))
+
+        self.sequences = result
 
     def clean(self):
         # Remove wrong ending legs.
