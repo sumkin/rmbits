@@ -247,34 +247,25 @@ class FARMWoCancellations:
         """
         Sets fleet range constraints.
         """
+        # Precompute max range per fleet type once (same for all duties)
+        fleet_max_ranges = [
+            self.dr.get_subfleet_max_range(self.dr.fleet_types[k])
+            for k in range(self.dr.get_num_fleet_types())
+        ]
+
         for d in range(self.dr.get_num_duties()):
             # Calculate maximum leg distance for duty.
             duty = self.dr.duties[d]
             max_dist = -np.inf
             for leg_id in duty:
                 orgn, dstn, _, _, _, _, _, _, _ = self.dr.legs[leg_id]
-                dist_df = self.dr.leg_distance_df[
-                    (self.dr.leg_distance_df["ORIGIN"] == orgn) &
-                    (self.dr.leg_distance_df["DESTINATION"] == dstn)
-                ]
-                if dist_df.shape[0] == 0:
-                    warnings.warn("{} {} in leg_distance.csv is not found".format(orgn, dstn))
-                    dist = 0
-                else:
-                    dist = dist_df["DISTANCE"].iloc[0]
+                dist = self.dr.get_leg_distance(orgn, dstn)
                 max_dist = max(max_dist, dist)
             assert max_dist > -np.inf
 
             # Go over aircraft types and if max leg distance exceeds range fix the variable.
             num = 0
-            for k in range(self.dr.get_num_fleet_types()):
-                fleet_type = self.dr.fleet_types[k]
-                dist_range_df = self.dr.subfleet_range_df[
-                    self.dr.subfleet_range_df["SUBFLEET"] == fleet_type
-                ]
-                assert dist_range_df.shape[0] > 0, \
-                    "Fleet type {} is not found in subfleet_range_df.".format(fleet_type)
-                dist_range = dist_range_df["MAX_RANGE"].iloc[0]
+            for k, dist_range in enumerate(fleet_max_ranges):
                 if dist_range < max_dist:
                     if (d, k) not in self.fixed_y_vars:
                         self.fix_y_var(d, k, 0, "max_distance_range")
@@ -348,15 +339,10 @@ class FARMWoCancellations:
 
             # Apply airport allowance constraints.
             for k in range(self.dr.get_num_fleet_types()):
-                if (d, k) not in self.fixed_y_vars.keys():
+                if (d, k) not in self.fixed_y_vars:
                     at = self.dr.fleet_types[k]
-                    df = self.dr.airport_allowance_df[
-                        (self.dr.airport_allowance_df["AIRPORT"] == airport) &
-                        (self.dr.airport_allowance_df["AT"] == at)
-                    ]
-                    if df.shape[0] == 0:
-                        if (d, k) not in self.fixed_y_vars:
-                            self.fix_y_var(d, k, 0, "airport_allowance")
+                    if not self.dr.is_airport_allowed(airport, at):
+                        self.fix_y_var(d, k, 0, "airport_allowance")
 
     def set_m_max_constr(self):
         """

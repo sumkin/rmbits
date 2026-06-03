@@ -153,6 +153,16 @@ class DataReader:
             )
         ]
         self.inv_df = self.inv_df.drop_duplicates()
+        self._build_inv_lookup()
+
+    def _build_inv_lookup(self):
+        self._inv_keys = set(zip(
+            self.inv_df["CC"].astype(str),
+            self.inv_df["ORGN"].astype(str),
+            self.inv_df["DSTN"].astype(str),
+            self.inv_df["FLTNUM"].astype(int),
+            self.inv_df["DEPDT_UTC"].astype(str),
+        ))
 
     def load_costs_df(self):
         self.costs_df = pd.read_csv(self.costs_file)
@@ -161,6 +171,16 @@ class DataReader:
         self.costs_df["DSTN"] = self.costs_df["DSTN"].astype("category")
         self.costs_df["DEPDT"] = self.costs_df["DEPDT"].astype("category")
         self.costs_df["AIRCRAFT"] = self.costs_df["AIRCRAFT"].astype("category")
+        self._build_costs_lookup()
+
+    def _build_costs_lookup(self):
+        df = self.costs_df.copy()
+        df["ORGN"] = df["ORGN"].astype(str)
+        df["DSTN"] = df["DSTN"].astype(str)
+        df["DEPDT"] = df["DEPDT"].astype(str)
+        df["AIRCRAFT"] = df["AIRCRAFT"].astype(str)
+        self._costs_exact = df.groupby(["ORGN", "DSTN", "DEPDT", "AIRCRAFT"])["PCI_COSTS"].mean().to_dict()
+        self._costs_no_date = df.groupby(["ORGN", "DSTN", "AIRCRAFT"])["PCI_COSTS"].mean().to_dict()
 
     def load_fleet_df(self):
         self.fr = FleetReader(self.depdates,
@@ -174,6 +194,21 @@ class DataReader:
 
     def load_leg_distance_df(self):
         self.leg_distance_df = pd.read_csv(self.leg_distance_file, sep=",")
+        self._build_leg_distance_lookup()
+
+    def _build_leg_distance_lookup(self):
+        self._leg_distance = {}
+        for _, row in self.leg_distance_df.iterrows():
+            key = (str(row["ORIGIN"]), str(row["DESTINATION"]))
+            if key not in self._leg_distance:
+                self._leg_distance[key] = row["DISTANCE"]
+
+    def get_leg_distance(self, orgn, dstn):
+        key = (orgn, dstn)
+        if key in self._leg_distance:
+            return self._leg_distance[key]
+        warnings.warn("{} {} in leg_distance.csv is not found".format(orgn, dstn))
+        return 0
 
     def load_subfleet_range_df(self):
         self.subfleet_range_df = pd.read_csv(self.subfleet_ranges_file, sep=";")
@@ -184,6 +219,19 @@ class DataReader:
             (self.subfleet_range_df["OWNER"] == "IB") |
             (self.subfleet_range_df["OWNER"] == "JP")
         ]
+        self._build_subfleet_range_lookup()
+
+    def _build_subfleet_range_lookup(self):
+        self._subfleet_max_range = {}
+        for _, row in self.subfleet_range_df.iterrows():
+            sf = str(row["SUBFLEET"])
+            if sf not in self._subfleet_max_range:
+                self._subfleet_max_range[sf] = row["MAX_RANGE"]
+
+    def get_subfleet_max_range(self, fleet_type):
+        assert fleet_type in self._subfleet_max_range, \
+            "Fleet type {} is not found in subfleet_range_df.".format(fleet_type)
+        return self._subfleet_max_range[fleet_type]
 
     def create_cabin_df(self):
         df = pd.read_csv(self.cap_file)
@@ -225,6 +273,16 @@ class DataReader:
 
     def load_airport_allowance(self):
         self.airport_allowance_df = pd.read_csv(self.airport_allowance_file)
+        self._build_airport_allowance_lookup()
+
+    def _build_airport_allowance_lookup(self):
+        self._airport_allowance = set(
+            zip(self.airport_allowance_df["AIRPORT"].astype(str),
+                self.airport_allowance_df["AT"].astype(str))
+        )
+
+    def is_airport_allowed(self, airport, at):
+        return (airport, at) in self._airport_allowance
 
     def load_pairings(self):
         self.pairings_df = pd.read_excel(self.leg_pairings_file, sheet_name="Data")
@@ -295,13 +353,7 @@ class DataReader:
 
             # Check that leg is in inventory.
             #print("fltnum = {}".format(fltnum))
-            if fltnum.isdigit() and self.inv_df[
-                (self.inv_df["CC"] == cc) &
-                (self.inv_df["ORGN"] == orgn) &
-                (self.inv_df["DSTN"] == dstn) &
-                (self.inv_df["FLTNUM"] == int(fltnum)) &
-                (self.inv_df["DEPDT_UTC"] == depdt)
-            ].shape[0] == 0:
+            if fltnum.isdigit() and (cc, orgn, dstn, int(fltnum), depdt) not in self._inv_keys:
                 print("WARNING: {}-{}-{}-{}-{} not found in inventory.".format(cc, orgn, dstn, int(fltnum), depdt))
                 if leg not in self.missing_fcst_legs:
                     self.missing_fcst_legs.append(leg)
@@ -389,36 +441,37 @@ class DataReader:
         self.ts.sort()
 
     def calculate_alphas(self):
+        # Precompute turnaround times once — avoids a DataFrame filter per (d, k)
+        turnaround_times = [self.get_turnaround_time(k) for k in range(len(self.fleet_types))]
 
-        def calc_duty_times(d, k):
-            turnaround_time = self.get_turnaround_time(k)
-            min_t = np.inf
-            max_t = -np.inf 
-            for i in self.duties[d]:
-                deptm = self.legs[i][5]
-                min_t = min(min_t, deptm)
-                max_t = max(max_t, deptm)
+        ts_arr = np.array(self.ts)
+        t0s = ts_arr[:-1]        # ts[t-1] for each interval
+        t1s_m1 = ts_arr[1:] - 1  # ts[t] - 1 for each interval
 
-                arrtm = self.legs[i][6]
-                min_t = min(min_t, arrtm)
-                max_t = max(max_t, arrtm)
-            return min_t - turnaround_time, max_t - 1
-
-        num = 0
+        D = len(self.duties)
         self.alphas = {}
         sys.stdout.write("\t\t    ")
-        for d in range(len(self.duties)):
-            num += 1
+        for d in range(D):
             if d % 100 == 0:
                 sys.stdout.write("\b\b\b\b")
-                sys.stdout.write("{:>3}%".format(int((100 * d)/num))) 
+                sys.stdout.write("{:>3}%".format(d * 100 // D))
                 sys.stdout.flush()
-            for k in range(len(self.fleet_types)):
-                min_t, max_t = calc_duty_times(d, k)
-                for t in range(1, len(self.ts)):
-                    t0, t1 = self.ts[t-1], self.ts[t]
-                    if max(min_t, t0) <= min(max_t, t1 - 1):
-                        self.alphas[(d, t, k)] = 1
+
+            # Compute base leg times once per duty — shared across all fleet types
+            leg_times = []
+            for i in self.duties[d]:
+                leg_times.append(self.legs[i][5])  # dep_mins
+                leg_times.append(self.legs[i][6])  # arr_mins
+            base_min = min(leg_times)
+            base_max = max(leg_times)
+            max_t = base_max - 1  # same for every k
+
+            for k, tt in enumerate(turnaround_times):
+                min_t = base_min - tt
+                # vectorised interval check: max(min_t, t0) <= min(max_t, t1-1)
+                active = np.where((min_t <= t1s_m1) & (max_t >= t0s))[0]
+                for idx in active:
+                    self.alphas[(d, int(idx) + 1, k)] = 1
 
         sys.stdout.write("\b\b\b\b\b\b")
         sys.stdout.write("\n")
@@ -508,37 +561,15 @@ class DataReader:
             print(f"ac_type = {ac_type}")
             assert False
 
-        res = 0.0
-        depdt = depdt[:4] + "-" + depdt[4:6] + "-" + depdt[6:8]
-        costs_df = self.costs_df[
-            (self.costs_df["ORGN"] == orgn) &
-            (self.costs_df["DSTN"] == dstn) &
-            (self.costs_df["DEPDT"] == depdt) &
-            (self.costs_df["AIRCRAFT"] == t_ac_type)
-            ]["PCI_COSTS"]
-        if costs_df.shape[0] == 1:
-            res += costs_df.iloc[0]
-        else:
-            # Skip flight number and take average.
-            costs_df = self.costs_df[
-                (self.costs_df["ORGN"] == orgn) &
-                (self.costs_df["DSTN"] == dstn) &
-                (self.costs_df["DEPDT"] == depdt) &
-                (self.costs_df["AIRCRAFT"] == t_ac_type)
-                ]
-            if costs_df.shape[0] < 1:
-                costs_df = self.costs_df[
-                    (self.costs_df["ORGN"] == orgn) &
-                    (self.costs_df["DSTN"] == dstn) &
-                    (self.costs_df["AIRCRAFT"] == t_ac_type)
-                    ]
-            if costs_df.shape[0] < 1:
-                print("orgn, dstn, t_ac_type = {}, {}, {}".format(orgn, dstn, t_ac_type))
-            if costs_df.shape[0] >= 1:
-                res += costs_df["PCI_COSTS"].mean()
-            else:
-                res += 0.0
-        return res
+        depdt_fmt = depdt[:4] + "-" + depdt[4:6] + "-" + depdt[6:8]
+        key = (orgn, dstn, depdt_fmt, t_ac_type)
+        if key in self._costs_exact:
+            return self._costs_exact[key]
+        key2 = (orgn, dstn, t_ac_type)
+        if key2 in self._costs_no_date:
+            return self._costs_no_date[key2]
+        print("orgn, dstn, t_ac_type = {}, {}, {}".format(orgn, dstn, t_ac_type))
+        return 0.0
 
     def get_duty_costs(self, d, k):
         assert d >= 0 and d <= self.get_num_duties()
