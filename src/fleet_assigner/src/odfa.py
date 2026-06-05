@@ -19,15 +19,11 @@ if __name__ == "__main__":
     debug_info_writer = DebugInfoWriter("../output/")
 
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
-    """
     depdates = ["20260930",
                 "20261001", "20261002", "20261003", "20261004", "20261005", "20261006", "20261007",
                 "20261008", "20261009", "20261010", "20261011", "20261012", "20261013", "20261014",
                 "20261015", "20261016", "20261017", "20261018", "20261019", "20261020", "20261021",
                 "20261022", "20261023", "20261024"]
-    """
-    depdates = ["20260930",
-                "20261001", "20261002", "20261003"]
     costs_file = "s3://ay-rmp-home/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
     fleet_file = "s3://ay-rmp-home/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
