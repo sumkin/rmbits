@@ -222,9 +222,9 @@ class ExcelOutputWriter:
         inv_df["A/C change"] = at_change_vals
         inv_df["Costs before"] = before_costs
         inv_df["Costs after"] = after_costs
-        inv_df["Booked pax"] = booked_paxes_vals
-        inv_df["Pax before"] = before_paxes_vals
-        inv_df["Pax after"] = after_paxes_vals
+        inv_df["Booked pax"] = [round(e) for e in booked_paxes_vals]
+        inv_df["Pax before"] = [round(e) for e in before_paxes_vals]
+        inv_df["Pax after"] = [round(e) for e in after_paxes_vals]
         inv_df["Booked revenue"] = booked_rev_vals
         inv_df["Revenue before"] = before_rev_vals
         inv_df["Revenue after"] = after_rev_vals
@@ -232,8 +232,8 @@ class ExcelOutputWriter:
         inv_df["Booked profit after"] = [a - b for a, b in zip(booked_rev_vals, after_costs)]
         inv_df["Profit before"] = [a - b for a, b in zip(before_rev_vals, before_costs)]
         inv_df["Profit after"] = [a - b for a, b in zip(after_rev_vals, after_costs)]
-        inv_df["Total pax before"] = [a + b for a, b in zip(booked_paxes_vals, before_paxes_vals)]
-        inv_df["Total pax after"] = [a + b for a, b in zip(booked_paxes_vals, after_paxes_vals)]
+        inv_df["Total pax before"] = [round(a + b) for a, b in zip(booked_paxes_vals, before_paxes_vals)]
+        inv_df["Total pax after"] = [round(a + b) for a, b in zip(booked_paxes_vals, after_paxes_vals)]
         inv_df["Total revenue before"] = [a + b for a, b in zip(booked_rev_vals, before_rev_vals)]
         inv_df["Total revenue after"] = [a + b for a, b in zip(booked_rev_vals, after_rev_vals)]
         inv_df["Total profit before"] = [a + b - c for a, b, c in zip(booked_rev_vals, before_rev_vals, before_costs)]
