@@ -112,10 +112,10 @@ class LinesBuilder:
                         num_legs = len(self.duties[duty_id])
                         row = copy.deepcopy(self.legs[leg_id])
                         leg_dep_mins, leg_arr_mins = row[5], row[6]
-                        row[5] = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_dep_mins)
-                        row[5] = datetime.strftime(row[5], "%H:%M")
-                        row[6] = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_arr_mins)
-                        row[6] = datetime.strftime(row[6], "%H:%M")
+                        row[3] = (datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_dep_mins)).strftime("%Y%m%d")
+                        row[4] = (datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_arr_mins)).strftime("%Y%m%d")
+                        row[5] = (datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_dep_mins)).strftime("%H:%M")
+                        row[6] = (datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=leg_arr_mins)).strftime("%H:%M")
                         if duty_id < self.num_regular_duties:
                             costs = self.dr.get_duty_costs(duty_id, k)
                         else:
