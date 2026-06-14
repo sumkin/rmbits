@@ -84,6 +84,7 @@ class ExcelOutputWriter:
         before_paxes_vals = []
         after_paxes_vals = []
         booked_paxes_vals = []
+        bif_booked_paxes_vals = []
         before_rev_vals = []
         after_rev_vals = []
         booked_rev_vals = []
@@ -114,6 +115,7 @@ class ExcelOutputWriter:
             dstn = r["DSTN"]
             fltnum = r["FLTNUM"]
             depdt_utc = r["DEPDT_UTC"]
+            bkc = r["BKC"]
 
             before_at = None
             after_at = None
@@ -137,6 +139,7 @@ class ExcelOutputWriter:
                 before_paxes_vals.append(0.0)
                 after_paxes_vals.append(0.0)
                 booked_paxes_vals.append(0.0)
+                bif_booked_paxes_vals.append(0.0)
 
                 before_rev_vals.append(0.0)
                 after_rev_vals.append(0.0)
@@ -152,6 +155,8 @@ class ExcelOutputWriter:
 
                 if (cc, orgn, dstn, int(fltnum), depdt_utc) in dr.leg2svc.keys():
                     svc_vals.append(dr.leg2svc[(cc, orgn, dstn, int(fltnum), depdt_utc)])
+                else:
+                    assert False
 
                 before_paxes = sum([paxes_fixed[i] for i in rsrc_name_idxs if i < len(paxes_fixed)])
                 after_paxes = sum([paxes[i] for i in rsrc_name_idxs if i < len(paxes)])
@@ -166,6 +171,7 @@ class ExcelOutputWriter:
                 before_paxes_vals.append(before_paxes)
                 after_paxes_vals.append(after_paxes)
                 booked_paxes_vals.append(booked_paxes)
+                bif_booked_paxes_vals.append(bkc)
 
                 before_rev_vals.append(before_rev)
                 after_rev_vals.append(after_rev)
@@ -205,6 +211,7 @@ class ExcelOutputWriter:
         assert n == len(before_paxes_vals)
         assert n == len(after_paxes_vals)
         assert n == len(booked_paxes_vals)
+        assert n == len(bif_booked_paxes_vals)
         assert n == len(before_rev_vals)
         assert n == len(after_rev_vals)
         assert n == len(booked_rev_vals)
@@ -218,11 +225,11 @@ class ExcelOutputWriter:
         inv_df["DUTY_ID"] = duty_id_vals
         inv_df["A/C before"] = before_at_vals
         inv_df["A/C after"] = after_at_vals
-        inv_df["Booked pax (INV)"] = inv_df["BKC"]
+        inv_df["Booked pax"] = bif_booked_paxes_vals
         inv_df["A/C change"] = at_change_vals
         inv_df["Costs before"] = before_costs
         inv_df["Costs after"] = after_costs
-        inv_df["Booked pax"] = [round(e) for e in booked_paxes_vals]
+        #inv_df["Booked pax"] = [round(e) for e in booked_paxes_vals]
         inv_df["Pax before"] = [round(e) for e in before_paxes_vals]
         inv_df["Pax after"] = [round(e) for e in after_paxes_vals]
         inv_df["Booked revenue"] = booked_rev_vals
@@ -232,8 +239,8 @@ class ExcelOutputWriter:
         inv_df["Booked profit after"] = [a - b for a, b in zip(booked_rev_vals, after_costs)]
         inv_df["Profit before"] = [a - b for a, b in zip(before_rev_vals, before_costs)]
         inv_df["Profit after"] = [a - b for a, b in zip(after_rev_vals, after_costs)]
-        inv_df["Total pax before"] = [round(a + b) for a, b in zip(booked_paxes_vals, before_paxes_vals)]
-        inv_df["Total pax after"] = [round(a + b) for a, b in zip(booked_paxes_vals, after_paxes_vals)]
+        inv_df["Total pax before"] = [round(a) for a in before_paxes_vals]
+        inv_df["Total pax after"] = [round(a) for a in after_paxes_vals]
         inv_df["Total revenue before"] = [a + b for a, b in zip(booked_rev_vals, before_rev_vals)]
         inv_df["Total revenue after"] = [a + b for a, b in zip(booked_rev_vals, after_rev_vals)]
         inv_df["Total profit before"] = [a + b - c for a, b, c in zip(booked_rev_vals, before_rev_vals, before_costs)]
@@ -254,7 +261,7 @@ class ExcelOutputWriter:
 
         inv_df = inv_df[["CC","FLTNUM","SVC","ORGN","DSTN","DEPDT","DEPTM","ARRDT", "ARRTM",
                          "A/C change", "A/C before", "A/C after",
-                         "Booked pax", "Booked pax (INV)", "Total pax before", "Total pax after", "Forecast difference",
+                         "Booked pax", "Total pax before", "Total pax after", "Forecast difference",
                          "Total revenue before", "Total revenue after",
                          "Costs before", "Costs after", "Costs difference",
                          "Total profit before", "Total profit after", "Profit difference"
@@ -266,12 +273,13 @@ class ExcelOutputWriter:
 
         inv_df = inv_df.groupby(["CC", "FLTNUM", "SVC", "ORGN", "DSTN", "DEPDT", "DEPTM", "ARRDT", "ARRTM",
                                  "A/C change", "A/C before", "A/C after",
-                                 "Booked pax", "Total pax before", "Total pax after", "Forecast difference",
+                                 "Total pax before", "Total pax after", "Forecast difference",
                                  "Total revenue before", "Total revenue after",
                                  "Costs before", "Costs after", "Costs difference",
                                  "Total profit before", "Total profit after", "Profit difference"
-                                ])["Booked pax (INV)"].sum().reset_index()
-
+                                ])["Booked pax"].sum().reset_index()
+        inv_df["Total pax before"] = inv_df["Total pax before"] + inv_df["Booked pax"]
+        inv_df["Total pax after"] = inv_df["Total pax after"] + inv_df["Booked pax"]
         inv_df = inv_df.drop_duplicates()
 
         # Find first and last departure dates and filter them out.
