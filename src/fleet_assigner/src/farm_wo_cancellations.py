@@ -182,7 +182,7 @@ class FARMWoCancellations:
                         # capacity of aircraft.
                         # Set corresponding variables to zero.
                         # TODO: how to handle overbooking. This may
-                        # contraditcs to other constraints,
+                        # contradicts to other constraints,
                         # e.g. subfleet optimization.
                         pass
                     else:
