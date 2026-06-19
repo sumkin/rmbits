@@ -174,17 +174,17 @@ class FARMWoCancellations:
             if d is None:
                 pass
             else:
+                curr_at = self.dr.duty2at[d]
+                curr_k = self.dr.fleet_types.index(curr_at)
                 for k in range(self.dr.get_num_fleet_types()):
                     assert b[nrow] >= 0
                     c = self.dr.get_capacity(k, l)
                     if c < b[nrow]:
                         # Current number of bookings is more than
                         # capacity of aircraft.
-                        # Set corresponding variables to zero.
-                        # TODO: how to handle overbooking. This may
-                        # contradicts to other constraints,
-                        # e.g. subfleet optimization.
-                        pass
+                        # If it is not current aircraft forbid usage of aircraft.
+                        if k != curr_k:
+                            self.fix_y_var(d, k, 0, "overbooking")
                     else:
                         rhs[nrow] += (c - b[nrow]) * self.y_vars[(d, k)]
 
@@ -295,7 +295,7 @@ class FARMWoCancellations:
                         if (d, new_at_ind) not in self.fixed_y_vars:
                             self.fix_y_var(d, new_at_ind, 0, "Jet-not-jet_swaps_not_allowed.")
 
-    def set_restrict_narrow2wide_body_constr(self):
+    def set_restrict_narrow_vs_wide_body_constr(self):
         """
         Sets constraints which do not allow change narrow to wide body.
         """
@@ -306,7 +306,6 @@ class FARMWoCancellations:
 
         for d in range(self.dr.get_num_duties()):
             at = self.dr.duty2at[d]
-            at_ind = self.dr.fleet_types.index(at)
             narrow = is_narrow_body(at)
             if at in self.dr.fleet_types:
                 for new_at_ind in range(self.dr.get_num_fleet_types()):
@@ -314,7 +313,10 @@ class FARMWoCancellations:
                     new_narrow = is_narrow_body(new_at)
                     if narrow and not new_narrow:
                         if (d, new_at_ind) not in self.fixed_y_vars:
-                            self.fix_y_var(d, new_at_ind, 0, "narrow2wide_body_restriction.")
+                            self.fix_y_var(d, new_at_ind, 0, "narrow_vs_wide_body_restriction.")
+                    if not narrow and new_narrow:
+                        if (d, new_at_ind) not in self.fixed_y_vars:
+                            self.fix_y_var(d, new_at_ind, 0, "narrow_vs_wide_body_restriction.")
 
     def set_airport_allowance_constr(self):
         """
@@ -499,7 +501,7 @@ class FARMWoCancellations:
         self.set_jet_not_jet_constr()
 
         print("\t", time_now(), "Setting narrow to wide body constraints...")
-        self.set_restrict_narrow2wide_body_constr()
+        self.set_restrict_narrow_vs_wide_body_constr()
 
         print("\t", time_now(), "Setting airport allowance constraints...")
         self.set_airport_allowance_constr()
