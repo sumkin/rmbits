@@ -256,13 +256,14 @@ class ExcelOutputWriter:
         ]
         inv_df = inv_df.drop("AIRCRAFT_TYPE", axis=1)
         inv_df["Forecast difference"] = inv_df["Total pax after"] - inv_df["Total pax before"]
+        inv_df["Total revenue difference"] = inv_df["Total revenue after"] - inv_df["Total revenue before"]
         inv_df["Costs difference"] = inv_df["Costs after"] - inv_df["Costs before"]
         inv_df["Profit difference"] = inv_df["Profit after"] - inv_df["Profit before"]
 
         inv_df = inv_df[["CC","FLTNUM","SVC","ORGN","DSTN","DEPDT","DEPTM","ARRDT", "ARRTM",
                          "A/C change", "A/C before", "A/C after",
                          "Booked pax", "Total pax before", "Total pax after", "Forecast difference",
-                         "Total revenue before", "Total revenue after",
+                         "Total revenue before", "Total revenue after", "Total revenue difference",
                          "Costs before", "Costs after", "Costs difference",
                          "Total profit before", "Total profit after", "Profit difference"
                          ]]
@@ -274,7 +275,7 @@ class ExcelOutputWriter:
         inv_df = inv_df.groupby(["CC", "FLTNUM", "SVC", "ORGN", "DSTN", "DEPDT", "DEPTM", "ARRDT", "ARRTM",
                                  "A/C change", "A/C before", "A/C after",
                                  "Total pax before", "Total pax after", "Forecast difference",
-                                 "Total revenue before", "Total revenue after",
+                                 "Total revenue before", "Total revenue after", "Total revenue difference",
                                  "Costs before", "Costs after", "Costs difference",
                                  "Total profit before", "Total profit after", "Profit difference"
                                 ])["Booked pax"].sum().reset_index()
