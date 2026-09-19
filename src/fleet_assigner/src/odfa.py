@@ -24,11 +24,13 @@ if __name__ == "__main__":
                 "20261008", "20261009", "20261010", "20261011", "20261012", "20261013", "20261014",
                 "20261015", "20261016", "20261017", "20261018", "20261019", "20261020", "20261021",
                 "20261022", "20261023", "20261024"]
+    #depdates = ["20261001"]
     costs_file = "s3://ay-rmp-home/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
     fleet_file = "s3://ay-rmp-home/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-rmp-home/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_ranges.csv"
+    subfleet_configurations_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_configurations.csv"
     maintenance_file = "s3://ay-rmp-home/fleet_assigner/input/SSIM_S26_OCT.ssim"
     airport_allowance_file = "s3://ay-rmp-home/fleet_assigner/input/airport_allowance.csv"
     leg_pairings_file = "s3://ay-rmp-home/fleet_assigner/input/OPT_Fedor_report.xlsx"
@@ -120,6 +122,7 @@ if __name__ == "__main__":
                                          cap_file,
                                          leg_distance_file,
                                          subfleet_ranges_file,
+                                         subfleet_configurations_file,
                                          maintenance_file,
                                          airport_allowance_file,
                                          leg_pairings_file,
@@ -153,6 +156,7 @@ if __name__ == "__main__":
                                    cap_file,
                                    leg_distance_file,
                                    subfleet_ranges_file,
+                                   subfleet_configurations_file,
                                    maintenance_file,
                                    airport_allowance_file,
                                    leg_pairings_file,
@@ -178,6 +182,7 @@ if __name__ == "__main__":
         # Get solution.
         sol = fwoc.get_solution()
         sol_y = fwoc.sol_y
+        sol_w = fwoc.sol_w
 
         debug_info_writer.write_fa_diagram(month, fwoc.dr, sol["y"], sol["m"])
 
@@ -185,15 +190,17 @@ if __name__ == "__main__":
         s["sol"] = sol
         s["sol_y"] = sol_y
         s["sol_y_fixed"] = sol_y_fixed
+        s["sol_w"] = sol_w
         with open(dill_sol_fname, "wb") as f:
             dill.dump(s, f)
 
-    fwoc.write_output_excel(s["sol_y_fixed"], s["sol"], s["sol_y"], fwoc.dr)
+    fwoc.write_output_excel(s["sol_y_fixed"], s["sol"], s["sol_y"], s["sol_w"], fwoc.dr)
 
     lb = LinesBuilder(depdates,
                       fwoc.dr.legs,
                       fwoc.dr.duties,
                       s["sol_y"],
+                      s["sol_w"],
                       fwoc.dr.fleet_types,
                       fwoc.dr.fleet_type2fleet_ids,
                       fwoc.dr.leg2duty,

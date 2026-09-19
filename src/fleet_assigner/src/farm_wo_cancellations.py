@@ -32,6 +32,7 @@ class FARMWoCancellations:
                  cap_file,
                  leg_distance_file,
                  subfleet_ranges_file,
+                 subfleet_configurations_file,
                  maintenance_file,
                  airport_allowance_file,
                  leg_pairings_file,
@@ -50,6 +51,7 @@ class FARMWoCancellations:
         self.turnaround_times_file = turnaround_times_file
         self.restrictions_file = restrictions_file
         self.subfleet_ranges_file = subfleet_ranges_file
+        self.subfleet_configurations_file = subfleet_configurations_file
         self.maintenance_file = maintenance_file
         self.airport_allowance_file = airport_allowance_file
         self.leg_pairings_file = leg_pairings_file
@@ -78,6 +80,7 @@ class FARMWoCancellations:
                         self.cap_file,
                         self.leg_distance_file,
                         self.subfleet_ranges_file,
+                        self.subfleet_configurations_file,
                         self.maintenance_file,
                         self.airport_allowance_file,
                         self.leg_pairings_file,
@@ -95,11 +98,12 @@ class FARMWoCancellations:
         """
         num_duties = self.dr.get_num_duties()
         num_fleet_types = self.dr.get_num_fleet_types()
+        num_legs = self.dr.get_num_legs()
         num_products = self.dr.get_num_products()
         num_time_indices = self.dr.get_num_time_indices()
 
         # Assignment variables.
-        self.y_vars = self.model.addMVar((num_duties, num_fleet_types), vtype=GRB.BINARY, name="y")
+        self.y_vars = self.model.addMVar(shape=(num_duties, num_fleet_types), vtype=GRB.BINARY, name="y")
 
         # Revenue variables.
         z_lb = np.zeros(num_products)
@@ -110,19 +114,24 @@ class FARMWoCancellations:
                 z_ub[j] = 0
             else:
                 z_ub[j] = self.dr.get_demand(j)
-        self.z_vars = self.model.addMVar(num_products, lb=z_lb, ub=z_ub, vtype=GRB.CONTINUOUS, name="z")
+        self.z_vars = self.model.addMVar(shape=(num_products), lb=z_lb, ub=z_ub, vtype=GRB.CONTINUOUS, name="z")
 
         # Change variables.
-        self.s_vars = self.model.addMVar((num_duties, num_fleet_types), vtype=GRB.BINARY, name="s")
+        self.s_vars = self.model.addMVar(shape=(num_duties, num_fleet_types), vtype=GRB.BINARY, name="s")
 
+        # Extra planes variables.
         if self.min_extra_planes:
             m_lb = np.zeros((num_fleet_types, num_time_indices))
-            self.m_vars = self.model.addMVar((num_fleet_types, num_time_indices),
+            self.m_vars = self.model.addMVar(shape=(num_fleet_types, num_time_indices),
                                              lb=m_lb,
                                              vtype=GRB.INTEGER,
                                              name="m")
             m_max_lb = np.zeros(num_fleet_types)
-            self.m_max_vars = self.model.addMVar(num_fleet_types, lb=m_max_lb, vtype=GRB.INTEGER, name="m_max")
+            self.m_max_vars = self.model.addMVar(shape=(num_fleet_types), lb=m_max_lb, vtype=GRB.INTEGER, name="m_max")
+
+        # Configuration variables.
+        max_num_configs = self.dr.get_max_num_configurations()
+        self.w_vars = self.model.addMVar(shape=(num_legs, num_fleet_types, max_num_configs), vtype=GRB.BINARY, name="w")
 
     def set_objective(self):
         """
@@ -163,6 +172,18 @@ class FARMWoCancellations:
         nrows = len(cap)
         assert len(self.dr.rm_model["rsrc_names"]) == nrows
 
+        # Pre-compute compartments lookups.
+        cs = {}
+        for k in range(self.dr.get_num_fleet_types()):
+            for l in range(len(self.dr.compartments)):
+                for q in range(self.dr.get_num_configurations(k)):
+                    cs[(k, l, q)] = self.dr.get_capacity(k, l, q)
+
+        # Pre-compute number of configurations lookups.
+        num_configs = {}
+        for k in range(self.dr.get_num_fleet_types()):
+            num_configs[k] = self.dr.get_num_configurations(k)
+
         # Right-hand side constraints.
         rhs = [0] * len(fcap)
         for nrow in range(nrows):
@@ -178,17 +199,19 @@ class FARMWoCancellations:
                 curr_k = self.dr.fleet_types.index(curr_at)
                 for k in range(self.dr.get_num_fleet_types()):
                     assert b[nrow] >= 0
-                    c = self.dr.get_capacity(k, l)
-                    if c < b[nrow]:
-                        # Current number of bookings is more than
-                        # capacity of aircraft.
-                        # If it is not current aircraft forbid usage of aircraft.
-                        if k != curr_k:
-                            self.fix_y_var(d, k, 0, "overbooking")
-                    else:
-                        rhs[nrow] += (c - b[nrow]) * self.y_vars[(d, k)]
+                    for q in range(num_configs[k]):
+                        c = cs[(k, l, q)]
+                        if c < b[nrow]:
+                            # Current number of bookings is more than
+                            # capacity of aircraft.
+                            # If it is not current aircraft forbid usage of aircraft.
+                            if k != curr_k:
+                                self.fix_y_var(d, k, 0, "overbooking")
+                        else:
+                            rhs[nrow] += (c - b[nrow]) * self.w_vars[(i, k, q)]
 
         lhs = (A @ self.z_vars)
+        
         for nrow in range(nrows):
             name = "leg_capacities_{}".format(nrow)
             self.model.addConstr(lhs[nrow] <= rhs[nrow], name=name)
@@ -196,7 +219,7 @@ class FARMWoCancellations:
             self.constr_name2id[name] = self.num_constrs
             self.num_constrs += 1
 
-    def set_duty_coverage(self):
+    def set_duty_coverage_constr(self):
         """
         Sets duty coverage constraints.
         """
@@ -210,6 +233,28 @@ class FARMWoCancellations:
             assert name not in self.constr_name2id
             self.constr_name2id[name] = self.num_constrs
             self.num_constrs += 1
+
+    def set_configurations_constr(self):
+        """
+        Set constraints that one and only one configuration is applicable.
+        """
+        for i in range(self.dr.get_num_legs()):
+            d = self.dr.get_duty_id_by_leg_id(i)
+            if d is None:
+                continue
+            for k in range(self.dr.get_num_fleet_types()):
+                num_configs = self.dr.get_num_configurations(k)
+                if num_configs == 0:
+                    continue
+                y = self.y_vars[d, k].item()
+                constr = -y
+                for q in range(num_configs):
+                    constr += self.w_vars[i, k, q].item()
+                name = "configurations_{}_{}".format(i, k)
+                self.model.addConstr(constr == 0, name=name)
+                assert name not in self.constr_name2id
+                self.constr_name2id[name] = self.num_constrs
+                self.num_constrs += 1
 
     def set_aircraft_types_constr(self):
         """
@@ -475,11 +520,11 @@ class FARMWoCancellations:
                 if self.dr.duty2at[duty_id] == subfleet:
                     k = self.dr.fleet_types.index(subfleet)
                     self.fix_y_var(duty_id, k, 1, "subfleets_to_fix")
-                    print("Duty {} fixed for {}".format(duty_id, subfleet))
+                    #print("Duty {} fixed for {}".format(duty_id, subfleet))
                 else:
                     k = self.dr.fleet_types.index(subfleet)
                     self.fix_y_var(duty_id, k, 0, "subfleets_to_fix")
-                    print("Subfleet {} is excluded for duty_id = {}.".format(subfleet, duty_id))
+                    #print("Subfleet {} is excluded for duty_id = {}.".format(subfleet, duty_id))
 
     def set_constraints(self, max_num_changes=None):
         """
@@ -489,7 +534,10 @@ class FARMWoCancellations:
         self.set_leg_capacities_constr()
 
         print("\t", time_now(), "Setting duty coverage constraints...")
-        self.set_duty_coverage()
+        self.set_duty_coverage_constr()
+
+        print("\t", time_now(), "Setting configurations constraints...")
+        self.set_configurations_constr()
 
         print("\t", time_now(), "Setting aircraft types constraints...")
         self.set_aircraft_types_constr()
@@ -611,6 +659,15 @@ class FARMWoCancellations:
                 else:
                     y[(d, k)] = 0
 
+        w = {}
+        for i in range(self.dr.get_num_legs()):
+            for k in range(self.dr.get_num_fleet_types()):
+                for q in range(self.dr.get_num_configurations(k)):
+                    if q == 0:
+                        w[(i, k, q)] = 1 
+                    else:
+                        w[(i, k, q)] = 0
+
         for constr in self.model.getConstrs():
             name = constr.ConstrName
             sense = constr.Sense
@@ -679,12 +736,14 @@ class FARMWoCancellations:
                                  datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=l[6]), l[7]] for l in duty]
                         print("\t{}".format(duty))
                     print("")
+                    assert False
             elif sense == ">":
                 if lhs < rhs:
                     print("VIOLATION: {}: {} >= {}".format(name, lhs, rhs))
                     print("ds = {}".format(ds))
                     print("ks = {}".format(ks))
                     print("")
+                    assert False
             else:
                 print(lhs, sense, rhs, name)
                 assert False
@@ -703,6 +762,9 @@ class FARMWoCancellations:
         self.model.setParam("MIPGap", 0.05)
         self.model.setParam("MIPFocus", 2)
         self.model.optimize()
+        if self.model.status == GRB.INFEASIBLE:
+            self.model.computeIIS()
+            self.model.write("model_fixed.ilp")
 
     def solve(self):
         self.model.setParam("Presolve", 2)
@@ -710,6 +772,9 @@ class FARMWoCancellations:
         self.model.setParam("MIPFocus", 2)
         self.model.setParam("Heuristics", 0.95)
         self.model.optimize()
+        if self.model.status == GRB.INFEASIBLE:
+            self.model.computeIIS()
+            self.model.write("model.ilp")
 
     def get_solution(self):
         """
@@ -717,9 +782,11 @@ class FARMWoCancellations:
         """
         D = self.dr.get_num_duties()
         K = self.dr.get_num_fleet_types()
+        L = self.dr.get_num_legs()
         M = self.dr.get_num_resources()
         N = self.dr.get_num_products()
         T = self.dr.get_num_time_indices()
+        Q = self.dr.get_max_num_configurations()
 
         y = np.zeros((D, K))
         self.sol_y = {}
@@ -751,6 +818,15 @@ class FARMWoCancellations:
         for j in range(N):
             val = self.z_vars[j].getAttr("x")
             self.sol_z.append(val)
+
+        w = np.zeros((L, K, Q))
+        self.sol_w = {}
+        for i in range(L):
+            for k in range(K):
+                for q in range(Q):
+                    val = self.w_vars[(i, k, q)].getAttr("x")
+                    self.sol_w[(i, k, q)] = val
+                    w[(i, k, q)] = val
 
         # Calculate pax.
         pax = 0.0
@@ -795,6 +871,7 @@ class FARMWoCancellations:
             "N": N,
             "y": y,
             "z": z,
+            "w": w,
             "m": m,
             "d": self.dr.rm_model["d"],
             "b": self.dr.rm_model["b"],
@@ -806,14 +883,9 @@ class FARMWoCancellations:
         }
         return res
 
-    def write_output_excel(self, sol_y_fixed, sol, y, dr):
+    def write_output_excel(self, sol_y_fixed, sol, y, w, dr):
         self.excel_output_writer.write_summary(sol_y_fixed, sol)
-        self.excel_output_writer.write_info_per_leg_df(self.dr.inv_df, sol_y_fixed, sol, y, dr)
-        #self.excel_output_writer.write_costs_df(self.dr.costs_df)
-        #self.excel_output_writer.write_leg_distance_df(self.dr.leg_distance_df)
-        #self.excel_output_writer.write_subfleet_range_df(self.dr.subfleet_range_df)
-        #self.excel_output_writer.write_maint_df(self.dr.maint_df)
-
+        self.excel_output_writer.write_info_per_leg_df(self.dr.inv_df, sol_y_fixed, sol, y, w, dr)
 
 if __name__ == "__main__":
     fcstdate = "20251006"
@@ -824,6 +896,7 @@ if __name__ == "__main__":
     debug_info_writer = DebugInfoWriter("../output/")
 
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
+
     depdates = ["20260131",
                 "20260201", "20260202", "20260203", "20260204", "20260205", "20260206", "20260207",
                 "20260208", "20260209", "20260210", "20260211", "20260212", "20260213", "20260214",
@@ -835,6 +908,7 @@ if __name__ == "__main__":
     cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-rmp-home/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_ranges.csv"
+    subfleet_configurations_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_configurations.csv"
     maintenance_file = "s3://ay-rmp-home/fleet_assigner/input/SSIM_FEB2days.ssim"
     airport_allowance_file = "s3://ay-rmp-home/fleet_assigner/input/airport_allowance.csv"
     leg_pairings_file = "s3://ay-rmp-home/fleet_assigner/input/FEB_Report.xlsx"
@@ -871,6 +945,15 @@ if __name__ == "__main__":
             d, k = var_name.split(',')
             d, k = int(d.lstrip("s[")), int(k.rstrip("]"))
             fwoc.s_vars[(d, k)] = s_var
+        
+        w_vars = [var for var in vars if "q" in var.VarName]
+        fwoc.w_vars = {}
+        for w_var in w_vars:
+            var_name = w_var.VarName
+            i, k, q = var_name.split(",")
+            i, d, k = int(i.lstrip("w[")), int(k), int(q.rstrip("]"))
+            fwoc.w_vars[(i, k, d)] = w_var
+
         fwoc.obj = fwoc.model.getObjective()
     else:
         subfleets_to_fix = ["A7A", "A70", "33S"]
@@ -882,6 +965,7 @@ if __name__ == "__main__":
                                    cap_file,
                                    leg_distance_file,
                                    subfleet_ranges_file,
+                                   subfleet_configurations_file,
                                    maintenance_file,
                                    airport_allowance_file,
                                    leg_pairings_file,
@@ -898,12 +982,14 @@ if __name__ == "__main__":
         y_vars = fwoc.y_vars
         z_vars = fwoc.z_vars
         s_vars = fwoc.s_vars
+        q_vars = fwoc.q_vars
         obj = fwoc.obj
 
         fwoc.model = None
         fwoc.y_vars = None
         fwoc.z_vars = None
         fwoc.s_vars = None
+        fwoc.q_vars = None
         fwoc.obj = None
         with open(dill_fwoc_fname, "wb") as f:
             dill.dump(fwoc, f)
@@ -912,6 +998,7 @@ if __name__ == "__main__":
         fwoc.y_vars = y_vars
         fwoc.z_vars = z_vars
         fwoc.s_vars = s_vars
+        fwoc.q_vars = q_vars
         fwoc.obj = obj
 
     fwoc.make_feasible()
@@ -931,6 +1018,7 @@ if __name__ == "__main__":
                       fwoc.dr.legs,
                       fwoc.dr.duties,
                       fwoc.sol_y,
+                      fwoc.sol_w,
                       fwoc.dr.fleet_types,
                       fwoc.dr.fleet_type2fleet_ids,
                       fwoc.dr.leg2duty,

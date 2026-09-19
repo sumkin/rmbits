@@ -10,7 +10,8 @@ class LinesBuilder:
                  depdates,
                  legs,
                  duties,
-                 sol,
+                 sol_y,
+                 sol_w,
                  fleet_types,
                  fleet_type2fleet_ids,
                  leg2duty,
@@ -26,7 +27,8 @@ class LinesBuilder:
         self.legs = legs
         self.duties = copy.deepcopy(duties)
         self.num_regular_duties = len(self.duties)  # Non-regular duties are maintenance duties.
-        self.sol = sol
+        self.sol_y = sol_y
+        self.sol_w = sol_w
         self.fleet_types = fleet_types
         self.fleet_type2fleet_ids = fleet_type2fleet_ids
         self.leg2duty = leg2duty
@@ -41,8 +43,8 @@ class LinesBuilder:
 
         # Add regular duties.
         k = self.fleet_types.index(ac_type)
-        for d in self.sol.keys():
-            if self.sol[d] == k:
+        for d in self.sol_y.keys():
+            if self.sol_y[d] == k:
                 subnetwork.append(d)
 
         # Add maintenance duties.
@@ -62,6 +64,7 @@ class LinesBuilder:
                 self.duties.append([leg_id])
                 duty_id = len(self.duties) - 1
                 self.leg2duty[leg_id] = duty_id
+                self.sol_y[duty_id] = k
                 subnetwork.append(duty_id)
 
         return subnetwork
@@ -94,10 +97,11 @@ class LinesBuilder:
             ac_type2num = {}
             for k in range(len(self.fleet_types)):
                 ac_type = self.fleet_types[k]
-                # Get compartment capacities.
-                capacities = {}
-                for l, cmpt in enumerate(self.dr.compartments):
-                    capacities[cmpt] = self.dr.get_capacity(k, l)
+                for q in range(self.dr.get_num_configurations(k)):
+                    # Get compartment capacities.
+                    capacities = {}
+                    for l, cmpt in enumerate(self.dr.compartments):
+                        capacities[(q, cmpt)] = self.dr.get_capacity(k, l, q)
 
                 subnetwork = self.get_subnetwork(ac_type)
                 if len(subnetwork) == 0:
@@ -109,6 +113,19 @@ class LinesBuilder:
                     prev_leg_arr_mins = None
                     for leg_id in line:
                         duty_id = self.leg2duty[leg_id]
+                        assert self.sol_y[duty_id] == k
+
+                        # Determine optimal config.
+                        try:
+                            q_opt = None
+                            for q in range(self.dr.get_num_configurations(k)):
+                                if self.sol_w[(leg_id, k, q)] == 1:
+                                    q_opt = q
+                            assert q_opt is not None, "leg_id = {}, k = {}, q = {}".format(leg_id, k, q)
+                        except:
+                            print("WARNING")
+                            q_opt = 0
+
                         num_legs = len(self.duties[duty_id])
                         row = copy.deepcopy(self.legs[leg_id])
                         leg_dep_mins, leg_arr_mins = row[5], row[6]
@@ -125,9 +142,21 @@ class LinesBuilder:
                         else:
                             ground_time = leg_dep_mins - prev_leg_arr_mins
 
+                        cap_j = 0
+                        if (q_opt, "J") in capacities.keys():
+                            cap_j = capacities[(q_opt, "J")]
+
+                        cap_w = 0
+                        if (q_opt, "W") in capacities.keys():
+                            cap_w = capacities[(q_opt, "W")]
+
+                        cap_y = 0
+                        if (q_opt, "Y") in capacities.keys():
+                            cap_y = capacities[(q_opt, "Y")] 
+
                         cc = row[8]
                         row = row[:7] + [ac_type, line_num, ac_type + "/" + str(line_num), costs / num_legs]
-                        row += [capacities["J"], capacities["W"], capacities["Y"], ground_time, duty_id, cc]
+                        row += [cap_j, cap_w, cap_y, ground_time, duty_id, cc]
                         csv_writer.writerow(row)
 
                         prev_leg_arr_mins = leg_arr_mins

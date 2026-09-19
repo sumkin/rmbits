@@ -75,7 +75,7 @@ class ExcelOutputWriter:
         with pd.ExcelWriter(self.fname, mode="a", if_sheet_exists="replace") as writer:
             df.to_excel(writer, header=False, index=False, sheet_name="Summary")
 
-    def write_info_per_leg_df(self, inv_df, sol_y_fixed, sol, y, dr):
+    def write_info_per_leg_df(self, inv_df, sol_y_fixed, sol, y, w, dr):
         leg_id_vals = []
         deptm_vals = []
         arrtm_vals = []
@@ -90,6 +90,7 @@ class ExcelOutputWriter:
         booked_rev_vals = []
         before_at_vals = []
         after_at_vals = []
+        configs = []
         at_change_vals = []
         before_costs = []
         after_costs = []
@@ -185,8 +186,15 @@ class ExcelOutputWriter:
                         after_at = dr.fleet_types[kk]
                         break
 
+            if leg_id is not None:
+                for kk in range(len(dr.fleet_types)):
+                    for qq in range(dr.get_num_configurations(kk)):
+                        if sol["w"][(leg_id, kk, qq)] == 1:
+                            config = dr.get_configuration_name(kk, qq)
+
             before_at_vals.append(before_at)
             after_at_vals.append(after_at)
+            configs.append(config)
             if before_at != after_at:
                 at_change_vals.append(True)
             else:
@@ -225,6 +233,7 @@ class ExcelOutputWriter:
         inv_df["DUTY_ID"] = duty_id_vals
         inv_df["A/C before"] = before_at_vals
         inv_df["A/C after"] = after_at_vals
+        inv_df["Config"] = configs
         inv_df["Booked pax"] = bif_booked_paxes_vals
         inv_df["A/C change"] = at_change_vals
         inv_df["Costs before"] = before_costs
@@ -261,7 +270,7 @@ class ExcelOutputWriter:
         inv_df["Profit difference"] = inv_df["Profit after"] - inv_df["Profit before"]
 
         inv_df = inv_df[["CC","FLTNUM","SVC","ORGN","DSTN","DEPDT","DEPTM","ARRDT", "ARRTM",
-                         "A/C change", "A/C before", "A/C after",
+                         "A/C change", "A/C before", "A/C after", "Config",
                          "Booked pax", "Total pax before", "Total pax after", "Forecast difference",
                          "Total revenue before", "Total revenue after", "Total revenue difference",
                          "Costs before", "Costs after", "Costs difference",
@@ -273,7 +282,7 @@ class ExcelOutputWriter:
         inv_df["ARRDT"] = inv_df["ARRDT"].dt.strftime("%Y-%m-%d")
 
         inv_df = inv_df.groupby(["CC", "FLTNUM", "SVC", "ORGN", "DSTN", "DEPDT", "DEPTM", "ARRDT", "ARRTM",
-                                 "A/C change", "A/C before", "A/C after",
+                                 "A/C change", "A/C before", "A/C after", "Config",
                                  "Total pax before", "Total pax after", "Forecast difference",
                                  "Total revenue before", "Total revenue after", "Total revenue difference",
                                  "Costs before", "Costs after", "Costs difference",
