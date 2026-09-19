@@ -26,6 +26,7 @@ class DataReader:
         cap_file,
         leg_distance_file,
         subfleet_ranges_file,
+        subfleet_configurations_file,
         maintenance_file,
         airport_allowance_file,
         leg_pairings_file,
@@ -40,6 +41,7 @@ class DataReader:
         self.cap_file = cap_file
         self.leg_distance_file = leg_distance_file
         self.subfleet_ranges_file = subfleet_ranges_file
+        self.subfleet_configurations_file = subfleet_configurations_file
         self.maintenance_file = maintenance_file
         self.airport_allowance_file = airport_allowance_file
         self.leg_pairings_file = leg_pairings_file
@@ -75,6 +77,9 @@ class DataReader:
         print(time_now() + " Loading subfleet range dataframe...")
         self.load_subfleet_range_df()
 
+        print(time_now() + " Loading subfleet configurations dataframe...")
+        self.load_subfleet_configurations_df()
+
         print(time_now() + " Creating cabin dataframe...")
         self.create_cabin_df()
 
@@ -96,7 +101,7 @@ class DataReader:
         print(time_now() + " Loading pairings...")
         self.load_pairings()
 
-        print(time_now() + " Buidling duties...")
+        print(time_now() + " Building duties...")
         self.build_duties2()
 
         print(time_now() + " Building time indices...")
@@ -207,7 +212,7 @@ class DataReader:
         key = (orgn, dstn)
         if key in self._leg_distance:
             return self._leg_distance[key]
-        warnings.warn("{} {} in leg_distance.csv is not found".format(orgn, dstn))
+        #warnings.warn("{} {} in leg_distance.csv is not found".format(orgn, dstn))
         return 0
 
     def load_subfleet_range_df(self):
@@ -220,6 +225,11 @@ class DataReader:
             (self.subfleet_range_df["OWNER"] == "JP")
         ]
         self._build_subfleet_range_lookup()
+
+    def load_subfleet_configurations_df(self):
+        self.subfleet_configurations_df = pd.read_csv(self.subfleet_configurations_file, sep=";")
+        self.subfleet_configurations_df.columns = ["MODEL", "SUBFLEET", "CONFIG", "CAP", "J", "W", "Y"]
+        self.subfleet_configurations_df.fillna(0, inplace=True)
 
     def _build_subfleet_range_lookup(self):
         self._subfleet_max_range = {}
@@ -289,12 +299,12 @@ class DataReader:
         for i, r in self.pairings_df.iterrows():
             if r["A/C"] == "32V":
                 # This is wetlease. Should be ignored.
-                print("WARNING: r = {} is ignored (wetlease).".format(r))
+                #print("WARNING: r = {} is ignored (wetlease).".format(r))
                 continue
 
             if r["Svc"].strip() == "Z":
                 # This is maintenance. Ignore such entries for duty builder.
-                print("WARNING: r = {} is ignored (maintenance).".format(r))
+                #print("WARNING: r = {} is ignored (maintenance).".format(r))
                 continue
 
             flids = r["FlId"].strip().split()
@@ -349,12 +359,13 @@ class DataReader:
                 (self.costs_df["ORGN"] == orgn) &
                 (self.costs_df["DSTN"] == dstn)
             ].shape[0] == 0:
-                print("WARNING: {}-{} not found in costs file.".format(orgn, dstn))
+                pass
+                #print("WARNING: {}-{} not found in costs file.".format(orgn, dstn))
 
             # Check that leg is in inventory.
             #print("fltnum = {}".format(fltnum))
             if fltnum.isdigit() and (cc, orgn, dstn, int(fltnum), depdt) not in self._inv_keys:
-                print("WARNING: {}-{}-{}-{}-{} not found in inventory.".format(cc, orgn, dstn, int(fltnum), depdt))
+                #print("WARNING: {}-{}-{}-{}-{} not found in inventory.".format(cc, orgn, dstn, int(fltnum), depdt))
                 if leg not in self.missing_fcst_legs:
                     self.missing_fcst_legs.append(leg)
             else:
@@ -495,6 +506,21 @@ class DataReader:
     def get_num_compartments(self):
         return len(self.compartments)
 
+    def get_num_configurations(self, k):
+        at = self.fleet_types[k]
+        subdf = self.subfleet_configurations_df[
+            self.subfleet_configurations_df["SUBFLEET"] == at
+        ]
+        return subdf.shape[0]
+
+    def get_max_num_configurations(self):
+        res = -np.inf
+        num_fleet_types = self.get_num_fleet_types()
+        for k in range(num_fleet_types):
+            num = self.get_num_configurations(k)
+            res = max(res, num)
+        return res
+
     def get_demand(self, j):
         assert j >= 0 and j <= self.get_num_products()
         return self.rm_model["d"][j]
@@ -568,7 +594,7 @@ class DataReader:
         key2 = (orgn, dstn, t_ac_type)
         if key2 in self._costs_no_date:
             return self._costs_no_date[key2]
-        print("orgn, dstn, t_ac_type = {}, {}, {}".format(orgn, dstn, t_ac_type))
+        #print("orgn, dstn, t_ac_type = {}, {}, {}".format(orgn, dstn, t_ac_type))
         return 0.0
 
     def get_duty_costs(self, d, k):
@@ -649,14 +675,28 @@ class DataReader:
         cmpt = rsrc_name[12]
         return self.compartments.index(cmpt)
 
-    def get_capacity(self, k, l):
+    def get_configuration_name(self, k, q):
+        df = self.subfleet_configurations_df
+        ac_type = self.fleet_types[k]
+        subdf = df[df["SUBFLEET"] == ac_type]
+        if q < subdf.shape[0]:
+            return subdf.iloc[q]["CONFIG"]
+        else:
+            return 0
+
+    def get_capacity(self, k, l, q):
+        df = self.subfleet_configurations_df
         ac_type = self.fleet_types[k]
         assert ac_type in self.capacities.keys()
         assert l < len(self.compartments)
         cmpt = self.compartments[l]
+        assert cmpt in ("J", "W", "Y")
         if cmpt in self.capacities[ac_type].keys():
-            res = self.capacities[ac_type][cmpt]
-            return res
+            subdf = df[df["SUBFLEET"] == ac_type]
+            if q < subdf.shape[0]:
+                return int(subdf.iloc[q][cmpt])
+            else:
+                return 0
         else:
             return 0
 
@@ -675,7 +715,6 @@ class DataReader:
         t0_min, t1_min = self.ts[t-1], self.ts[t]
         t0 = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=t0_min)
         t1 = datetime.strptime(self.depdates[0], "%Y%m%d") + timedelta(minutes=t1_min-1)
-        debug = False
         return self.fr.get_num_aircrafts(ac_type, t0_min, t1_min, t0, t1, self.wetlease_sequences)
 
     def get_solution_from_inv_df(self):
@@ -751,6 +790,7 @@ if __name__ == "__main__":
     cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
     leg_distance_file = "s3://ay-rmp-home/fleet_assigner/input/leg_distances.csv"
     subfleet_ranges_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_ranges.csv"
+    subfleet_configurations_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_configurations.csv"
     maintenance_file = "s3://ay-rmp-home/fleet_assigner/input/AUG.ssim"
     airport_allowance_file = "s3://ay-rmp-home/fleet_assigner/input/airport_allowance.csv"
     leg_pairings_file = "s3://ay-rmp-home/fleet_assigner/input/leg_pairings.xlsx"
@@ -764,6 +804,7 @@ if __name__ == "__main__":
                     cap_file,
                     leg_distance_file,
                     subfleet_ranges_file,
+                    subfleet_configurations_file,
                     maintenance_file,
                     airport_allowance_file,
                     leg_pairings_file,
