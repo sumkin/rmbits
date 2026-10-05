@@ -64,34 +64,6 @@ def process(fname):
             arrdt = datetime(arr_year, arr_month, arr_day, arr_hour, arr_min)
 
             orgn, dstn = l[7], l[8]
-            """
-            orgn_ap = Airport(orgn)
-            dstn_ap = Airport(dstn)
-            try:
-                orgn_offset = orgn_ap.get_gmt_offset()
-            except:
-                print("orgn = {}".format(orgn))
-                assert False
-            try:
-                dstn_offset = dstn_ap.get_gmt_offset()
-            except:
-                print("dstn = {}".format(dstn))
-                assert False
-
-            if orgn_offset.strip() != "":
-                orgn_offset = float(orgn_offset)
-                if orgn_offset > 0.0:
-                    depdt_utc = depdt - timedelta(minutes=int(60 * orgn_offset))
-                else:
-                    depdt_utc = depdt + timedelta(minutes=int(60 * abs(orgn_offset)))
-
-            if dstn_offset.strip() != "":
-                dstn_offset = float(dstn_offset)
-                if dstn_offset > 0.0:
-                    arrdt_utc = arrdt - timedelta(minutes=int(60 * dstn_offset))
-                else:
-                    arrdt_utc = arrdt + timedelta(minutes=int(60 * abs(dstn_offset)))
-            """
 
             def get_utc(dt, airport):
                 ap = Airport(airport)
