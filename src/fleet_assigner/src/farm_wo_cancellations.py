@@ -7,6 +7,7 @@ from scipy import sparse
 from gurobipy import *
 import warnings
 from datetime import datetime, timedelta
+from loguru import logger 
 
 from defs import *
 from utils import time_now
@@ -463,7 +464,6 @@ class FARMWoCancellations:
         """
         Sets restrictions constraints.
         """
-        #print(self.dr.restrictions_df.head(5))
         for _, r in self.dr.restrictions_df.iterrows():
             type = str(r["Type"]).strip()
             fltnum = str(r["Flight number"]).strip()
@@ -473,7 +473,6 @@ class FARMWoCancellations:
             discdate = str(r["Discontinuing Date"]).strip()
             dow = str(r["DOW"]).strip()
             sfgroup = str(r["Subfleet group"]).strip()
-            #print(type, fltnum, orgn, dstn, effdate, discdate, dow, sfgroup)
             effdate = datetime.strptime(effdate, "%Y%m%d")
             discdate = datetime.strptime(discdate, "%Y%m%d")
             curdate = effdate
@@ -520,116 +519,89 @@ class FARMWoCancellations:
                 if self.dr.duty2at[duty_id] == subfleet:
                     k = self.dr.fleet_types.index(subfleet)
                     self.fix_y_var(duty_id, k, 1, "subfleets_to_fix")
-                    #print("Duty {} fixed for {}".format(duty_id, subfleet))
                 else:
                     k = self.dr.fleet_types.index(subfleet)
                     self.fix_y_var(duty_id, k, 0, "subfleets_to_fix")
-                    #print("Subfleet {} is excluded for duty_id = {}.".format(subfleet, duty_id))
 
     def set_constraints(self, max_num_changes=None):
         """
         Sets constraints.
         """
-        print("\t", time_now(), "Setting leg capacities constraints...")
+        logger.info("Setting leg capacities constraints...")
         self.set_leg_capacities_constr()
 
-        print("\t", time_now(), "Setting duty coverage constraints...")
+        logger.info("Setting duty coverage constraints...")
         self.set_duty_coverage_constr()
 
-        print("\t", time_now(), "Setting configurations constraints...")
+        logger.info("Setting configurations constraints...")
         self.set_configurations_constr()
 
-        print("\t", time_now(), "Setting aircraft types constraints...")
+        logger.info("Setting aircraft types constraints...")
         self.set_aircraft_types_constr()
 
-        print("\t", time_now(), "Setting fleet range_constraints...")
+        logger.info("Setting fleet range_constraints...")
         self.set_fleet_range_constr()
 
-        print("\t", time_now(), "Setting jet-not-jet constraints...")
+        logger.info("Setting jet-not-jet constraints...")
         self.set_jet_not_jet_constr()
 
-        print("\t", time_now(), "Setting narrow to wide body constraints...")
+        logger.info("Setting narrow to wide body constraints...")
         self.set_restrict_narrow_vs_wide_body_constr()
 
-        print("\t", time_now(), "Setting airport allowance constraints...")
+        logger.info("Setting airport allowance constraints...")
         self.set_airport_allowance_constr()
 
         if self.min_extra_planes:
-            print("\t", time_now(), "Setting m max constraints...")
+            logger.info("Setting m max constraints...")
             self.set_m_max_constr()
 
-        print("\t", time_now(), "Setting y and s variables relation constraints...")
+        logger.info("Setting y and s variables relation constraints...")
         self.set_y_s_rel_constr()
 
         if max_num_changes is not None:
-            print("\t", time_now(), "Setting maximum number of swaps constraints...")
+            logger.info("Setting maximum number of swaps constraints...")
             self.set_max_num_changes_constr(max_num_changes)
 
-        print("\t", time_now(), "Setting fixed duites constraints...")
+        logger.info("Setting fixed duites constraints...")
         self.set_fixed_duties_constr()
 
-        print("\t", time_now(), "Setting restrictions constraints...")
+        logger.info("Setting restrictions constraints...")
         self.set_restrictions_constr()
 
-        print("\t", time_now(), "Setting 330_350 rule constraints...")
+        logger.info("Setting 330_350 rule constraints...")
         self.set_330_350_rule_constraints()
 
-        print("\t", time_now(), "Setting subfleets to fix constraints...")
+        logger.info("Setting subfleets to fix constraints...")
         self.set_subfleets_to_fix_constraints()
 
     def fix_y_var(self, d, k, val, reason=""):
         """
-        Fixes y variable, i.e. sets it to zero or one.
+        Fixes y variable, i.e. sets it to zero or one, by tightening its
+        bounds instead of adding an equality constraint. This is called
+        O(D*K) times across the restriction constraints and solve_with_y_fixed,
+        so avoiding an addConstr (and, on overwrite, a getConstrByName/remove)
+        per call matters for model-build time.
         """
         assert val == 0 or val == 1
-        name = "fixed_variable_y_{}_{}_{}".format(d, k, reason)
 
-        set = True
         if (d, k) in self.fixed_y_vars:
             old_val, old_reason = self.fixed_y_vars[(d, k)]
-            if old_val != val:
-                if val == 1 and reason == "solve_with_y_fixed" and old_val == 0 and old_reason == "max_distance_range":
-                    # Current solution violates maximum distance range. Overwrite constraint.
-
-                    # Remove old constraint.
-                    self.model.update()  # Update before querying.
-                    c = self.model.getConstrByName(name)
-                    self.model.remove(c)
-                    del self.constr_name2id[name]
-                    self.num_constrs -= 1
-                elif val == 1 and reason == "solve_with_y_fixed" and old_val == 0 and old_reason == "airport_allowance":
-                    # Current solution violates airport allowance. Overwrite constraint.
-
-                    # Remove old constraint.
-                    self.model.update()  # Update before querying.
-                    c = self.model.getConstrByName(name)
-                    try:
-                        self.model.remove(c)
-                        del self.constr_name2id[name]
-                        self.num_constrs -= 1
-                    except:
-                        print("Try to remove constraint, which is missing, name = {}".format(name))
-                else:
-                    set = False
-                    print("d = {}".format(d))
-                    print("k = {}".format(k))
-                    print("ac = {}".format(self.dr.fleet_types[k]))
-                    duty = self.dr.duties[d]
-                    print([self.dr.legs[l] for l in duty])
-                    print("old_val, old_reason = {}, {}".format(old_val, old_reason))
-                    print("val, reason = {}, {}".format(val, reason))
-
-                    assert False
-            else:
+            if old_val == val:
                 # Same value. Only reason could be different.
-                set = False
-        if set:
-            self.fixed_y_vars[(d, k)] = (val, reason)
-            constr = self.y_vars[(d, k)]
-            self.model.addConstr(constr == val, name=name)
-            assert name not in self.constr_name2id
-            self.constr_name2id[name] = self.num_constrs
-            self.num_constrs += 1
+                return
+            # Only known overwrite: a feasible solution found while solving
+            # with y fixed violates a max-distance-range or airport-allowance
+            # restriction that had previously forced y to 0.
+            allowed = (
+                val == 1 and reason == "solve_with_y_fixed" and old_val == 0 and
+                old_reason in ("max_distance_range", "airport_allowance")
+            )
+            assert allowed
+
+        self.fixed_y_vars[(d, k)] = (val, reason)
+        var = self.y_vars[(d, k)]
+        var.lb = val
+        var.ub = val
 
     def build_model(self, max_num_changes=None, min_extra_planes=False):
         self.max_num_changes = max_num_changes
@@ -639,15 +611,15 @@ class FARMWoCancellations:
         self.model = Model("farm_wo_cancellations")
 
         # Create variables.
-        print(time_now(), "Creating variables...")
+        logger.info("Creating variables...")
         self.create_variables()
 
         # Set objective.
-        print(time_now(), "Setting objective...")
+        logger.info("Setting objective...")
         self.set_objective()
 
         # Set constraints.
-        print(time_now(), "Setting constraints...")
+        logger.info("Setting constraints...")
         self.set_constraints(max_num_changes)
 
     def make_feasible(self):
@@ -1008,11 +980,11 @@ if __name__ == "__main__":
 
     debug_info_writer.write_fa_diagram(month, fwoc.dr, sol["y"], sol["m"])
     fwoc.write_output_excel(sol)
-    print("Revenue = {}".format(sol["rev"]))
-    print("Booked revenue = {}".format(sol["booked_rev"]))
-    print("Costs = {}".format(sol["costs"]))
-    print("Profit = {}".format(sol["rev"] - sol["costs"]))
-    print("Number of duties with changed aircraft = {}".format(sol["duties_changed_ac"]))
+    logger.info("Revenue = {}".format(sol["rev"]))
+    logger.info("Booked revenue = {}".format(sol["booked_rev"]))
+    logger.info("Costs = {}".format(sol["costs"]))
+    logger.info("Profit = {}".format(sol["rev"] - sol["costs"]))
+    logger.info("Number of duties with changed aircraft = {}".format(sol["duties_changed_ac"]))
 
     lb = LinesBuilder(depdates,
                       fwoc.dr.legs,

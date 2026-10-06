@@ -4,6 +4,7 @@ import pickle
 import time
 import pandas as pd
 import multiprocessing as mp 
+from loguru import logger
 
 from pyairport.airport import Airport
 from lpmodelloader import LPModelLoader
@@ -28,12 +29,12 @@ class LPModelMultiLoader:
 
     def get(self, mode = "remaining"):
         # Read models.
-        print("Reading models...")
+        logger.info("Reading models...")
         pool = mp.Pool(mp.cpu_count())
         models = pool.map(get_model, [(self.fcstdate, depdate) for depdate in self.depdates])
 
         # Combine models.
-        print("Combining models...")
+        logger.info("Combining models...")
         res_nrows = 0
         res_ncols = 0
 
@@ -54,7 +55,7 @@ class LPModelMultiLoader:
         num = 0
         for model in models:
             num += 1
-            print("\tnum = {}".format(num))
+            logger.info("\tnum = {}".format(num))
             Ai, Aj, Adata = model["Ai"], model["Aj"], model["Adata"] # matrix of constraints
             cap = model["cap"]                                       # vector of capacities
             fcap = model["fcap"]                                     # vector of full capacities
@@ -148,7 +149,6 @@ class LPModelMultiLoader:
                     try:
                         leg_dist = Airport(leg_ap1).distance(Airport(leg_ap2))
                     except:
-                        print("leg_ap1, leg_ap2 = {}, {}".format(leg_ap1, leg_ap2))
                         assert False
                 od_dist_cache[(leg_ap1, leg_ap2)] = leg_dist
             if (od_ap1, od_ap2) in od_dist_cache:
@@ -160,7 +160,6 @@ class LPModelMultiLoader:
                     try:
                         od_dist = Airport(od_ap1).distance(Airport(od_ap2))
                     except:
-                        print("od_ap1, od_ap2 = {}, {}".format(od_ap1, od_ap2))
                         assert False
                 od_dist_cache[(od_ap1, od_ap2)] = od_dist
             if od_dist < EPS:
@@ -176,7 +175,6 @@ if __name__ == "__main__":
     depdates = ["20220606","20220607","20220608","20220609","20220610","20220611","20220612"]
     lmml = LPModelMultiLoader("20220506", depdates)
     model = lmml.get()
-    print(model.keys())
 
 
 

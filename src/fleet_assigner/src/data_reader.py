@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import warnings
+from loguru import logger
 
 from utils import time_now
 from lpmodelmultiloader import LPModelMultiLoader 
@@ -12,6 +13,9 @@ from fleet_reader import FleetReader
 from maintenance_reader import MaintenanceReader
 from wetlease_reader import WetleaseReader
 from excel_output_writer import ExcelOutputWriter
+
+logger.remove()
+logger.add(sys.stderr, filter=lambda r: r["level"].name == "INFO")
 
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
@@ -56,58 +60,58 @@ class DataReader:
         self.leg2svc = {}
 
     def read(self):
-        print(time_now() + " Loading inventory dataframe...")
+        logger.info(" Loading inventory dataframe...")
         self.load_inv_df()
 
-        print(time_now() + " Loading costs dataframe...")
+        logger.info(" Loading costs dataframe...")
         self.load_costs_df()
 
-        print(time_now() + " Loading turnaround times..")
+        logger.info(" Loading turnaround times..")
         self.load_turnaround_times()
 
-        print(time_now() + " Loading restrictions...")
+        logger.info(" Loading restrictions...")
         self.load_restrictions()
 
-        print(time_now() + " Loading fleet dataframe...")
+        logger.info(" Loading fleet dataframe...")
         self.load_fleet_df()
 
-        print(time_now() + " Loading leg distance dataframe...")
+        logger.info(" Loading leg distance dataframe...")
         self.load_leg_distance_df()
 
-        print(time_now() + " Loading subfleet range dataframe...")
+        logger.info(" Loading subfleet range dataframe...")
         self.load_subfleet_range_df()
 
-        print(time_now() + " Loading subfleet configurations dataframe...")
+        logger.info(" Loading subfleet configurations dataframe...")
         self.load_subfleet_configurations_df()
 
-        print(time_now() + " Creating cabin dataframe...")
+        logger.info(" Creating cabin dataframe...")
         self.create_cabin_df()
 
-        print(time_now() + " Creating capacities map...")
+        logger.info(" Creating capacities map...")
         self.create_capacities_map()
 
-        print(time_now() + " Loading RM model...")
+        logger.info(" Loading RM model...")
         self.load_rm_model()
 
-        print(time_now() + " Loading bookings...")
+        logger.info(" Loading bookings...")
         self.load_bookings()
 
-        print(time_now() + " Loading maintenance...")
+        logger.info(" Loading maintenance...")
         self.load_maintenance()
 
-        print(time_now() + " Loading airport allowance...")
+        logger.info(" Loading airport allowance...")
         self.load_airport_allowance()
 
-        print(time_now() + " Loading pairings...")
+        logger.info(" Loading pairings...")
         self.load_pairings()
 
-        print(time_now() + " Building duties...")
+        logger.info(" Building duties...")
         self.build_duties2()
 
-        print(time_now() + " Building time indices...")
+        logger.info(" Building time indices...")
         self.build_time_indices()
 
-        print(time_now() + " Calculating alphas...")
+        logger.info(" Calculating alphas...")
         self.calculate_alphas()
 
     def load_inv_df(self):
@@ -299,12 +303,12 @@ class DataReader:
         for i, r in self.pairings_df.iterrows():
             if r["A/C"] == "32V":
                 # This is wetlease. Should be ignored.
-                #print("WARNING: r = {} is ignored (wetlease).".format(r))
+                logger.warning("r = {} is ignored (wetlease).".format(r))
                 continue
 
             if r["Svc"].strip() == "Z":
                 # This is maintenance. Ignore such entries for duty builder.
-                #print("WARNING: r = {} is ignored (maintenance).".format(r))
+                logger.warning("r = {} is ignored (maintenance).".format(r))
                 continue
 
             flids = r["FlId"].strip().split()
@@ -359,13 +363,11 @@ class DataReader:
                 (self.costs_df["ORGN"] == orgn) &
                 (self.costs_df["DSTN"] == dstn)
             ].shape[0] == 0:
-                pass
-                #print("WARNING: {}-{} not found in costs file.".format(orgn, dstn))
+                logger.warning("{}-{} not found in costs file.".format(orgn, dstn))
 
             # Check that leg is in inventory.
-            #print("fltnum = {}".format(fltnum))
             if fltnum.isdigit() and (cc, orgn, dstn, int(fltnum), depdt) not in self._inv_keys:
-                #print("WARNING: {}-{}-{}-{}-{} not found in inventory.".format(cc, orgn, dstn, int(fltnum), depdt))
+                logger.warning("{}-{}-{}-{}-{} not found in inventory.".format(cc, orgn, dstn, int(fltnum), depdt))
                 if leg not in self.missing_fcst_legs:
                     self.missing_fcst_legs.append(leg)
             else:
@@ -403,17 +405,6 @@ class DataReader:
                 k = orgn + "-" + dstn + "-" + fltnum.strip() + "-" + str(depdt)
             assert k not in self.orgn_dstn_fltnum_depdt2leg_id.keys(), "k = {}".format(k)
             self.orgn_dstn_fltnum_depdt2leg_id[k] = i
-
-        """
-        for leg in self.legs:
-            fltnum = leg[2]
-            if fltnum.isdigit():
-                if int(fltnum) == 8921 or int(fltnum) == 8922:
-                    print(leg)
-            else:
-                print(leg)
-        assert False
-        """
 
     def build_duties2(self):
         self._create_legs()
@@ -584,7 +575,6 @@ class DataReader:
 
         t_ac_type = transform_ac_type(ac_type)
         if t_ac_type is None:
-            print(f"ac_type = {ac_type}")
             assert False
 
         depdt_fmt = depdt[:4] + "-" + depdt[4:6] + "-" + depdt[6:8]
@@ -594,7 +584,6 @@ class DataReader:
         key2 = (orgn, dstn, t_ac_type)
         if key2 in self._costs_no_date:
             return self._costs_no_date[key2]
-        #print("orgn, dstn, t_ac_type = {}, {}, {}".format(orgn, dstn, t_ac_type))
         return 0.0
 
     def get_duty_costs(self, d, k):
@@ -812,9 +801,6 @@ if __name__ == "__main__":
                     restrictions_file,
                     excel_output_writer)
     dr.read()
-    print(dr.fleet_types)
-    print(dr.get_duty_costs(20, 4))
-    print(dr.get_duty_costs(21, 4))
 
 
 

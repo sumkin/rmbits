@@ -3,6 +3,7 @@ import os
 import uuid
 from gurobipy import *
 import warnings
+from loguru import logger
 
 from defs import *
 from utils import time_now
@@ -231,19 +232,19 @@ class MinNumberAircraftsModel:
         """
         Sets constraints.
         """
-        print("\t", time_now(), "Setting duty coverage constraints...")
+        logger.info("Setting duty coverage constraints...")
         self.set_duty_coverage()
 
-        print("\t", time_now(), "Setting aircraft types constraints...")
+        logger.info("Setting aircraft types constraints...")
         self.set_aircraft_types_constr()
 
-        print("\t", time_now(), "Setting fleet range constraints...")
+        logger.info("Setting fleet range constraints...")
         self.set_fleet_range_constr()
 
-        print("\t", time_now(), "Setting airport allowance constraints...")
+        logger.info("Setting airport allowance constraints...")
         self.set_airport_allowance_constr()
 
-        print("\t", time_now(), "Setting m max cosntraints...")
+        logger.info("Setting m max cosntraints...")
         self.set_m_max_constr()
 
     def fix_y_var(self, d, k, val, reason=""):
@@ -264,15 +265,15 @@ class MinNumberAircraftsModel:
         self.model = Model("min_number_aircrafts")
 
         # Create variables.
-        print(time_now(), "Creating variables...")
+        logger.info("Creating variables...")
         self.create_variables()
 
         # Set objective.
-        print(time_now(), "Setting objective...")
+        logger.info("Setting objective...")
         self.set_objective()
 
         # Set constraints.
-        print(time_now(), "Setting constraints...")
+        logger.info("Setting constraints...")
         self.set_constraints()
 
     def solve_with_y_fixed(self):
