@@ -6,6 +6,7 @@ from gurobipy import *
 from s3utils import s3copy
 from excel_output_writer import ExcelOutputWriter
 from debug_info_writer import DebugInfoWriter
+from debug_excel_writer import DebugExcelWriter
 from farm_wo_cancellations import FARMWoCancellations
 from lines_builder import LinesBuilder
 from CsvToSsimConverter import Converter
@@ -25,6 +26,7 @@ if __name__ == "__main__":
                 "20261015", "20261016", "20261017", "20261018", "20261019", "20261020", "20261021",
                 "20261022", "20261023", "20261024"]
     #depdates = ["20261015"]
+    subfleets_to_fix = ["31E", "33S", "32I", "73Z"]
     costs_file = "s3://ay-rmp-home/anaplan_costs/{}/{}/{}/{}.csv".format(fcstyear, fcstmonth, fcstday, month)
     fleet_file = "s3://ay-rmp-home/fleet_assigner/input/aircraft_inventory.csv"
     cap_file = "s3://ay-rmp-home/fleet_assigner/input/subfleet_capacities.csv"
@@ -41,6 +43,27 @@ if __name__ == "__main__":
     dill_fwoc_fixed_fname = "../cache/fwoc_fixed_{}_{}.dill".format(month, fcstdate)
     mps_fname = "../cache/model_{}_{}.mps".format(month, fcstdate)
     dill_sol_fname = "../cache/sol_{}_{}.dill".format(month, fcstdate)
+
+    debug_excel_writer = DebugExcelWriter(
+        "../output/fa_debug_{}_{}.xlsx".format(fcstdate, month),
+        info={
+            "Forecast date": fcstdate,
+            "Month": month,
+            "Departure dates": ", ".join(depdates),
+            "Subfleets to fix": ", ".join(subfleets_to_fix),
+            "Costs file": costs_file,
+            "Fleet file": fleet_file,
+            "Capacities file": cap_file,
+            "Leg distance file": leg_distance_file,
+            "Subfleet ranges file": subfleet_ranges_file,
+            "Subfleet configurations file": subfleet_configurations_file,
+            "Maintenance file": maintenance_file,
+            "Airport allowance file": airport_allowance_file,
+            "Leg pairings file": leg_pairings_file,
+            "Turnaround times file": turnaround_times_file,
+            "Restrictions file": restrictions_file,
+        }
+    )
 
     if os.path.exists(dill_fwoc_fname) and\
        os.path.exists(dill_fwoc_fixed_fname) and\
@@ -110,9 +133,10 @@ if __name__ == "__main__":
             sol = s["sol"]
             sol_y = s["sol_y"]
             sol_y_fixed = s["sol_y_fixed"]
-    else:
-        subfleets_to_fix = ["31E", "33S", "32I", "73Z"]
 
+        debug_excel_writer.add_info("Loaded from cache", "yes (data and model sheets are not regenerated)")
+        debug_excel_writer.flush()
+    else:
         # Optimize with fixed subfleets.
         fwoc_fixed = FARMWoCancellations(fcstdate,
                                          month,
@@ -130,6 +154,7 @@ if __name__ == "__main__":
                                          restrictions_file,
                                          excel_output_writer,
                                          debug_info_writer,
+                                         debug_excel_writer,
                                          subfleets_to_fix)
         fwoc_fixed.load_data()
         fwoc_fixed.build_model()
@@ -164,6 +189,7 @@ if __name__ == "__main__":
                                    restrictions_file,
                                    excel_output_writer,
                                    debug_info_writer,
+                                   debug_excel_writer,
                                    subfleets_to_fix)
         fwoc.load_data()
         fwoc.build_model()
@@ -215,3 +241,4 @@ if __name__ == "__main__":
     s3copy("../output/lines.ssim", "s3://ay-rmp-home/fleet_assigner/{}/output/lines.ssim".format(month))
 
     s3copy("../output/{}".format(excel_fname), "s3://ay-rmp-home/fleet_assigner/{}/output/{}".format(month, excel_fname))
+    s3copy(debug_excel_writer.fname, "s3://ay-rmp-home/fleet_assigner/{}/output/{}".format(month, os.path.basename(debug_excel_writer.fname)))

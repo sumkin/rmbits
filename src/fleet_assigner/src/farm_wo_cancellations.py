@@ -14,6 +14,7 @@ from utils import time_now
 from data_reader import DataReader
 from excel_output_writer import ExcelOutputWriter
 from debug_info_writer import DebugInfoWriter
+from debug_excel_writer import DebugExcelWriter
 from s3utils import s3copy
 from farm_helpers import *
 from lines_builder import LinesBuilder
@@ -41,6 +42,7 @@ class FARMWoCancellations:
                  restrictions_file,
                  excel_output_writer,
                  debug_info_writer,
+                 debug_excel_writer,
                  subfleets_to_fix):
         self.fcstdate = fcstdate
         self.month = month
@@ -59,6 +61,7 @@ class FARMWoCancellations:
         #self.optimization_status_handler = optimization_status_handler
         self.excel_output_writer = excel_output_writer
         self.debug_info_writer = debug_info_writer
+        self.debug_excel_writer = debug_excel_writer
         self.subfleets_to_fix = subfleets_to_fix
 
         self.dr = None
@@ -67,6 +70,7 @@ class FARMWoCancellations:
         self.num_constrs = 0
         self.constr_name2id = {}
         self.fixed_y_vars = {}
+        self.run_label = None
 
     def load_data(self):
         #pkl_dr_fname = "../cache/dr_{}_{}.pkl".format(self.month, self.fcstdate)
@@ -92,6 +96,10 @@ class FARMWoCancellations:
         #with open(pkl_dr_fname, "wb") as f:
         #    pickle.dump(dr, f)
         self.dr = dr
+
+        logger.info("Writing debug info...")
+        self.debug_excel_writer.write_data_reader(dr)
+        self.debug_excel_writer.flush()
 
     def create_variables(self):
         """
@@ -265,6 +273,7 @@ class FARMWoCancellations:
         K = self.dr.get_num_fleet_types()
         D = self.dr.get_num_duties()
 
+        num_aircrafts = {}
         for k in range(K):
             Alpha = sparse.lil_matrix((D, T))
             for d in range(D):
@@ -277,6 +286,7 @@ class FARMWoCancellations:
             M = np.zeros(T)
             for t in range(1, T):
                 M[t] = self.dr.get_num_aircrafts(k, t)
+            num_aircrafts[k] = M
 
             name = "aircraft_types_constraints_{}".format(k)
             LHS = Alpha.T.dot(self.y_vars[:, k])
@@ -288,6 +298,8 @@ class FARMWoCancellations:
             assert name not in self.constr_name2id
             self.constr_name2id[name] = self.num_constrs
             self.num_constrs += 1
+
+        self.debug_excel_writer.write_aircraft_availability(self.dr, num_aircrafts)
 
     def set_fleet_range_constr(self):
         """
@@ -622,6 +634,9 @@ class FARMWoCancellations:
         logger.info("Setting constraints...")
         self.set_constraints(max_num_changes)
 
+        self.debug_excel_writer.write_fixed_y_vars("Fixed vars (build)", self.dr, self.fixed_y_vars)
+        self.debug_excel_writer.flush()
+
     def make_feasible(self):
         y = {}
         for d in range(self.dr.get_num_duties()):
@@ -730,6 +745,7 @@ class FARMWoCancellations:
                 else:
                     self.fix_y_var(d, k, 0, "solve_with_y_fixed")
             assert sm == 1, "sm = {}".format(sm)
+        self.run_label = "as planned"
         self.model.setParam("Presolve", 2)
         self.model.setParam("MIPGap", 0.05)
         self.model.setParam("MIPFocus", 2)
@@ -737,8 +753,10 @@ class FARMWoCancellations:
         if self.model.status == GRB.INFEASIBLE:
             self.model.computeIIS()
             self.model.write("model_fixed.ilp")
+        self.write_debug_solve_info()
 
     def solve(self):
+        self.run_label = "optimized"
         self.model.setParam("Presolve", 2)
         self.model.setParam("MIPGap", 0.05)
         self.model.setParam("MIPFocus", 2)
@@ -747,6 +765,12 @@ class FARMWoCancellations:
         if self.model.status == GRB.INFEASIBLE:
             self.model.computeIIS()
             self.model.write("model.ilp")
+        self.write_debug_solve_info()
+
+    def write_debug_solve_info(self):
+        self.debug_excel_writer.write_model_stats("Model ({})".format(self.run_label), self.model)
+        self.debug_excel_writer.write_fixed_y_vars("Fixed vars ({})".format(self.run_label), self.dr, self.fixed_y_vars)
+        self.debug_excel_writer.flush()
 
     def get_solution(self):
         """
@@ -799,6 +823,9 @@ class FARMWoCancellations:
                     val = self.w_vars[(i, k, q)].getAttr("x")
                     self.sol_w[(i, k, q)] = val
                     w[(i, k, q)] = val
+
+        self.debug_excel_writer.write_duty_assignment("Duties ({})".format(self.run_label), self.dr, self.sol_y)
+        self.debug_excel_writer.flush()
 
         # Calculate pax.
         pax = 0.0
@@ -866,6 +893,7 @@ if __name__ == "__main__":
     excel_fname = "fa_{}_{}.xlsx".format(fcstdate, month)
     excel_output_writer = ExcelOutputWriter("../output/{}".format(excel_fname))
     debug_info_writer = DebugInfoWriter("../output/")
+    debug_excel_writer = DebugExcelWriter("../output/fa_debug_{}_{}.xlsx".format(fcstdate, month))
 
     fcstyear, fcstmonth, fcstday = fcstdate[:4], fcstdate[4:6], fcstdate[6:]
 
@@ -945,6 +973,7 @@ if __name__ == "__main__":
                                    restrictions_file,
                                    excel_output_writer,
                                    debug_info_writer,
+                                   debug_excel_writer,
                                    subfleets_to_fix)
         fwoc.load_data()
         fwoc.build_model(max_num_changes=100000)
